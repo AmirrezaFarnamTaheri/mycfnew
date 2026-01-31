@@ -2506,8 +2506,11 @@
                     enableXhttp: '启用 xhttp 协议',
                     trojanPassword: 'Trojan 密码 (可选):',
                     customPath: '自定义路径 (d):',
+                    customPathPlaceholder: '例如: /secret-path',
                     customIP: '自定义ProxyIP (p):',
+                    customIPPlaceholder: '例如: 1.2.3.4 或 proxy.example.com',
                     preferredIPs: '优选IP列表 (yx):',
+                    preferredIPsPlaceholder: '例如: 1.1.1.1:443#香港, 8.8.8.8:443#美国',
                     preferredIPsURL: '优选IP来源URL (yxURL):',
                     latencyTest: '延迟测试',
                     latencyTestIP: '测试IP/域名:',
@@ -2522,7 +2525,7 @@
                     deselectAll: '取消全选',
                     testingInProgress: '测试中...',
                     testComplete: '测试完成',
-                    latencyMs: '延迟',
+                    latencyMs: '延迟 (HTTP握手)',
                     timeout: '超时',
                     ipSource: 'IP来源:',
                     manualInput: '手动输入',
@@ -2537,6 +2540,10 @@
                     customHomepage: '自定义首页URL (homepage):',
                     customHomepagePlaceholder: '例如: https://example.com',
                     customHomepageHint: '设置自定义URL作为首页伪装。访问根路径 / 时将显示该URL的内容。留空则显示默认终端页面。',
+                    customPathHint: '设置后仅能通过此路径访问，UUID 路径将失效。建议使用复杂路径以防止扫描。',
+                    customIPHint: '隐藏 Worker 真实 IP，或解决 Cloudflare Loop 问题。支持 IP:Port 或 Domain:Port。',
+                    preferredIPsHint: '手动指定优选节点。优先级最高。格式：IP:Port#备注。',
+                    socks5ConfigHint: '格式: user:pass@host:port。Worker 将通过此代理连接目标。',
                     saveConfig: '保存配置',
                     advancedControl: '高级控制',
                     subscriptionConverter: '订阅转换地址:',
@@ -2656,8 +2663,11 @@
                     customECHDomainHint: 'دامنه استفاده شده در پیکربندی ECH، خالی بگذارید تا از مقدار پیش‌فرض استفاده شود',
                     trojanPassword: 'رمز عبور Trojan (اختیاری):',
                     customPath: 'مسیر سفارشی (d):',
+                    customPathPlaceholder: 'مثال: /secret-path',
                     customIP: 'ProxyIP سفارشی (p):',
+                    customIPPlaceholder: 'مثال: 1.2.3.4 یا proxy.example.com',
                     preferredIPs: 'لیست IP ترجیحی (yx):',
+                    preferredIPsPlaceholder: 'مثال: 1.1.1.1:443#HongKong, 8.8.8.8:443#USA',
                     preferredIPsURL: 'URL منبع IP ترجیحی (yxURL):',
                     latencyTest: 'تست تاخیر',
                     latencyTestIP: 'IP/دامنه تست:',
@@ -2672,7 +2682,7 @@
                     deselectAll: 'لغو انتخاب',
                     testingInProgress: 'در حال تست...',
                     testComplete: 'تست کامل شد',
-                    latencyMs: 'تاخیر',
+                    latencyMs: 'تاخیر (هندشیک)',
                     timeout: 'زمان تمام شد',
                     ipSource: 'منبع IP:',
                     manualInput: 'ورودی دستی',
@@ -2687,6 +2697,10 @@
                     customHomepage: 'URL صفحه اصلی سفارشی (homepage):',
                     customHomepagePlaceholder: 'مثال: https://example.com',
                     customHomepageHint: 'تنظیم URL سفارشی به عنوان استتار صفحه اصلی. هنگام دسترسی به مسیر اصلی / محتوای این URL نمایش داده می‌شود. اگر خالی بگذارید صفحه ترمینال پیش‌فرض نمایش داده می‌شود.',
+                    customPathHint: 'پس از تنظیم، فقط از طریق این مسیر قابل دسترسی خواهد بود. پیشنهاد می‌شود برای امنیت بیشتر از مسیر پیچیده استفاده کنید.',
+                    customIPHint: 'مخفی کردن IP اصلی Worker یا حل مشکل Cloudflare Loop. فرمت: IP:Port یا Domain:Port.',
+                    preferredIPsHint: 'تعیین دستی نودهای ترجیحی. بالاترین اولویت. فرمت: IP:Port#توضیحات.',
+                    socks5ConfigHint: 'فرمت: user:pass@host:port. Worker از طریق این پروکسی به هدف متصل می‌شود.',
                     saveConfig: 'ذخیره تنظیمات',
                     advancedControl: 'کنترل پیشرفته',
                     subscriptionConverter: 'آدرس تبدیل اشتراک:',
@@ -3106,18 +3120,18 @@
                         </div>
                         <div style="margin-bottom: 15px;">
                                 <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">${t.customPath}</label>
-                                <input type="text" id="customPath" placeholder="${isFarsi ? 'مثال: /mypath یا خالی بگذارید تا از UUID استفاده شود' : '例如: /mypath 或留空使用 UUID'}" style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.8); border: 2px solid #00ff00; color: #00ff00; font-family: 'Courier New', monospace; font-size: 14px;">
-                                <small style="color: #00aa00; font-size: 0.85rem;">${isFarsi ? 'مسیر اشتراک سفارشی. اگر خالی بگذارید از UUID به عنوان مسیر استفاده می‌شود.' : '自定义订阅路径。留空则使用 UUID 作为路径。'}</small>
+                                <input type="text" id="customPath" placeholder="${t.customPathPlaceholder}" style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.8); border: 2px solid #00ff00; color: #00ff00; font-family: 'Courier New', monospace; font-size: 14px;">
+                                <small style="color: #00aa00; font-size: 0.85rem;">${t.customPathHint}</small>
                         </div>
                         <div style="margin-bottom: 15px;">
                                 <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">${t.customIP}</label>
-                                <input type="text" id="customIP" placeholder="${isFarsi ? 'مثال: 1.2.3.4:443' : '例如: 1.2.3.4:443'}" style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.8); border: 2px solid #00ff00; color: #00ff00; font-family: 'Courier New', monospace; font-size: 14px;">
-                                <small style="color: #00aa00; font-size: 0.85rem;">${isFarsi ? 'آدرس و پورت ProxyIP سفارشی' : '自定义ProxyIP地址和端口'}</small>
+                                <input type="text" id="customIP" placeholder="${t.customIPPlaceholder}" style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.8); border: 2px solid #00ff00; color: #00ff00; font-family: 'Courier New', monospace; font-size: 14px;">
+                                <small style="color: #00aa00; font-size: 0.85rem;">${t.customIPHint}</small>
                         </div>
                         <div style="margin-bottom: 15px;">
                                 <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">${t.preferredIPs}</label>
-                                <input type="text" id="yx" placeholder="${isFarsi ? 'مثال: 1.2.3.4:443#گره هنگ‌کنگ,5.6.7.8:80#گره آمریکا,example.com:8443#گره سنگاپور' : '例如: 1.2.3.4:443#日本节点,5.6.7.8:80#美国节点,example.com:8443#新加坡节点'}" style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.8); border: 2px solid #00ff00; color: #00ff00; font-family: 'Courier New', monospace; font-size: 14px;">
-                                <small style="color: #00aa00; font-size: 0.85rem;">${isFarsi ? 'فرمت: IP:پورت#نام گره یا IP:پورت (بدون # از نام پیش‌فرض استفاده می‌شود). پشتیبانی از چندین مورد، با کاما جدا می‌شوند. <span style="color: #ffaa00;">IP های اضافه شده از طریق API به طور خودکار در اینجا نمایش داده می‌شوند.</span>' : '格式: IP:端口#节点名称 或 IP:端口 (无#则使用默认名称)。支持多个，用逗号分隔。<span style="color: #ffaa00;">API添加的IP会自动显示在这里。</span>'}</small>
+                                <input type="text" id="yx" placeholder="${t.preferredIPsPlaceholder}" style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.8); border: 2px solid #00ff00; color: #00ff00; font-family: 'Courier New', monospace; font-size: 14px;">
+                                <small style="color: #00aa00; font-size: 0.85rem;">${t.preferredIPsHint}</small>
                         </div>
                         <div style="margin-bottom: 15px;">
                                 <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">${t.preferredIPsURL}</label>
@@ -3200,7 +3214,7 @@
                         <div style="margin-bottom: 15px;">
                                 <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">${t.socks5Config}</label>
                                 <input type="text" id="socksConfig" placeholder="${isFarsi ? 'مثال: user:pass@host:port یا host:port' : '例如: user:pass@host:port 或 host:port'}" style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.8); border: 2px solid #00ff00; color: #00ff00; font-family: 'Courier New', monospace; font-size: 14px;">
-                                <small style="color: #00aa00; font-size: 0.85rem;">${isFarsi ? 'آدرس پروکسی SOCKS5، برای انتقال تمام ترافیک خروجی استفاده می‌شود' : 'SOCKS5代理地址，用于转发所有出站流量'}</small>
+                                <small style="color: #00aa00; font-size: 0.85rem;">${t.socks5ConfigHint}</small>
                         </div>
                             <button type="submit" style="background: rgba(0, 255, 0, 0.15); border: 2px solid #00ff00; padding: 12px 24px; color: #00ff00; font-family: 'Courier New', monospace; font-weight: bold; cursor: pointer; margin-right: 10px; text-shadow: 0 0 8px #00ff00; transition: all 0.4s ease;">${t.saveConfig}</button>
                     </form>
@@ -3921,8 +3935,8 @@
                         const translations = {
                             zh: {
                                 kvDisabled: '⚠️ KV存储未启用或未配置',
-                                kvNotConfigured: 'KV存储未配置，无法使用配置管理功能。\\n\\n请在Cloudflare Workers中:\\n1. 创建KV命名空间\\n2. 绑定环境变量 C\\n3. 重新部署代码',
-                                kvNotEnabled: 'KV存储未配置',
+                                kvNotConfigured: '⚠️ KV存储未配置，无法使用图形化管理功能。\\n\\n🔧 修复步骤:\\n1. 访问 Cloudflare 面板 -> Workers & Pages -> KV。\\n2. 创建一个命名空间 (例如 CONFIG)。\\n3. 回到本 Worker -> Settings -> Variables -> KV Namespace Bindings。\\n4. 添加绑定: Variable name 填 "C" (大写)，Namespace 选择刚才创建的。\\n5. 保存并重新部署。',
+                                kvNotEnabled: 'KV存储未配置，请参照说明进行绑定',
                                 kvEnabled: '✅ KV存储已启用，可以使用配置管理功能',
                                 kvCheckFailed: '⚠️ KV存储检测失败',
                                 kvCheckFailedFormat: 'KV存储检测失败: 响应格式错误',
@@ -3931,8 +3945,8 @@
                             },
                             fa: {
                                 kvDisabled: '⚠️ ذخیره‌سازی KV فعال نیست یا پیکربندی نشده است',
-                                kvNotConfigured: 'ذخیره‌سازی KV پیکربندی نشده است، نمی‌توانید از عملکرد مدیریت تنظیمات استفاده کنید.\\n\\nلطفا در Cloudflare Workers:\\n1. فضای نام KV ایجاد کنید\\n2. متغیر محیطی C را پیوند دهید\\n3. کد را دوباره مستقر کنید',
-                                kvNotEnabled: 'ذخیره‌سازی KV پیکربندی نشده است',
+                                kvNotConfigured: '⚠️ ذخیره‌سازی KV پیکربندی نشده است. پنل گرافیکی غیرفعال است.\\n\\n🔧 راهنمای تعمیر:\\n1. به پنل Cloudflare -> Workers -> KV بروید.\\n2. یک Namespace جدید بسازید.\\n3. در تنظیمات Worker -> Variables -> KV Bindings.\\n4. متغیری با نام "C" (بزرگ) اضافه کرده و به KV متصل کنید.\\n5. ذخیره و Deploy کنید.',
+                                kvNotEnabled: 'KV متصل نیست. لطفاً طبق راهنما تنظیم کنید',
                                 kvEnabled: '✅ ذخیره‌سازی KV فعال است، می‌توانید از مدیریت تنظیمات استفاده کنید',
                                 kvCheckFailed: '⚠️ بررسی ذخیره‌سازی KV ناموفق',
                                 kvCheckFailedFormat: 'بررسی ذخیره‌سازی KV ناموفق: خطای فرمت پاسخ',
