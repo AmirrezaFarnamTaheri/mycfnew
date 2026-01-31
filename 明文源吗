@@ -18,7 +18,9 @@
 
     let ev = true;   
     let et = false; 
-    let ex = false;  
+    let ex = false;
+    let evm = false;
+    let ess = false;
     let tp = '';
     // 启用ECH功能（true启用，false禁用）
     let enableECH = false;  
@@ -424,6 +426,16 @@
                 if (xhttpControl !== undefined && xhttpControl !== '') {
                     ex = xhttpControl === 'yes' || xhttpControl === true || xhttpControl === 'true';
                 }
+
+                const vmessControl = getConfigValue('evm', env.evm);
+                if (vmessControl !== undefined && vmessControl !== '') {
+                    evm = vmessControl === 'yes' || vmessControl === true || vmessControl === 'true';
+                }
+
+                const ssControl = getConfigValue('ess', env.ess);
+                if (ssControl !== undefined && ssControl !== '') {
+                    ess = ssControl === 'yes' || ssControl === true || ssControl === 'true';
+                }
                 
                 scu = getConfigValue('scu', env.scu) || 'https://url.v1.mk/sub';
                 
@@ -469,7 +481,7 @@
                     }
                 }
                 
-                if (!ev && !et && !ex) {
+                if (!ev && !et && !ex && !evm && !ess) {
                     ev = true;
                 }
 
@@ -485,6 +497,9 @@
                 }
 
                 const url = new URL(request.url);
+
+            if (url.pathname === '/dns-query') return await handleDoHRequest(request, env, ctx);
+            if (url.pathname === '/dns-encoding') return serveDNSEncodingExplanation();
 
                 if (url.pathname.includes('/api/config')) {
                     const pathParts = url.pathname.split('/').filter(p => p);
@@ -1577,6 +1592,12 @@
             if (ex) {
                 finalLinks.push(...generateXhttpLinksFromSource(list, user, workerDomain, echConfig));
             }
+            if (evm) {
+                finalLinks.push(...generateVMessLinksFromSource(list, user, workerDomain));
+            }
+            if (ess) {
+                finalLinks.push(...generateShadowsocksLinksFromSource(list, user, workerDomain));
+            }
         }
 
         if (currentWorkerRegion === 'CUSTOM') {
@@ -1656,6 +1677,12 @@
                         }
                         if (et) {
                             finalLinks.push(...await generateTrojanLinksFromNewIPs(newIPList, user, workerDomain, echConfig));
+                        }
+                        if (evm) {
+                            finalLinks.push(...generateVMessLinksFromNewIPs(newIPList, user, workerDomain));
+                        }
+                        if (ess) {
+                            finalLinks.push(...generateShadowsocksLinksFromNewIPs(newIPList, user, workerDomain));
                         }
                 }
             } catch (error) {
@@ -6098,8 +6125,18 @@
         if (xhttpControl !== undefined && xhttpControl !== '') {
             ex = xhttpControl === 'yes' || xhttpControl === true || xhttpControl === 'true';
         }
+
+        const vmessControl = getConfigValue('evm', '');
+        if (vmessControl !== undefined && vmessControl !== '') {
+            evm = vmessControl === 'yes' || vmessControl === true || vmessControl === 'true';
+        }
+
+        const ssControl = getConfigValue('ess', '');
+        if (ssControl !== undefined && ssControl !== '') {
+            ess = ssControl === 'yes' || ssControl === true || ssControl === 'true';
+        }
         
-        if (!ev && !et && !ex) {
+        if (!ev && !et && !ex && !evm && !ess) {
             ev = true;
         }
         
@@ -6385,4 +6422,233 @@
             } catch (e) { }
         }));
         return Array.from(results);
+    }
+
+    // --- DoH & Protocols Implementation ---
+
+    const DOH_PROVIDERS = [
+      { name: "Cloudflare", url: "https://cloudflare-dns.com/dns-query", weight: 20 },
+      { name: "Google", url: "https://dns.google/dns-query", weight: 15 },
+      { name: "Quad9", url: "https://dns.quad9.net/dns-query", weight: 15 },
+      { name: "OpenDNS", url: "https://doh.opendns.com/dns-query", weight: 10 },
+      { name: "AdGuard", url: "https://dns.adguard.com/dns-query", weight: 10 },
+      { name: "ControlD", url: "https://freedns.controld.com/p2", weight: 10 },
+      { name: "Mullvad", url: "https://adblock.dns.mullvad.net/dns-query", weight: 10 },
+      { name: "NextDNS", url: "https://dns.nextdns.io/dns-query", weight: 10 }
+    ];
+    const CACHE_TTL = 300;
+
+    async function handleDoHRequest(request, env, ctx) {
+        const url = new URL(request.url);
+        if (request.method === 'OPTIONS') return handleCORS();
+
+        const isGet = request.method === 'GET';
+        const isPost = request.method === 'POST';
+        if (!isGet && !isPost) return new Response('Method not allowed', { status: 405 });
+        if (isGet && !url.searchParams.has('dns')) return new Response('Missing DNS query parameter', { status: 400 });
+
+        const selectedProvider = selectProvider(DOH_PROVIDERS);
+        try {
+            const targetUrl = selectedProvider.url + url.search;
+            const headers = new Headers(request.headers);
+            if (isPost) headers.set('Content-Type', 'application/dns-message');
+            else headers.set('Accept', 'application/dns-message');
+            headers.set('User-Agent', 'DoH-Proxy-Worker/1.0');
+
+            const upstreamRequest = new Request(targetUrl, {
+                method: request.method,
+                headers: headers,
+                body: isPost ? await request.arrayBuffer() : null,
+                redirect: 'follow'
+            });
+
+            const response = await fetch(upstreamRequest);
+            const responseHeaders = new Headers(response.headers);
+            responseHeaders.set('Access-Control-Allow-Origin', '*');
+            responseHeaders.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+            responseHeaders.set('Access-Control-Allow-Headers', 'Content-Type, Accept');
+            responseHeaders.set('Cache-Control', `public, max-age=${CACHE_TTL}`);
+
+            return new Response(response.body, {
+                status: response.status,
+                statusText: response.statusText,
+                headers: responseHeaders
+            });
+        } catch (error) {
+            return await tryFallbackProviders(request, url, selectedProvider);
+        }
+    }
+
+    function handleCORS() {
+        return new Response(null, {
+            status: 204,
+            headers: {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type, Accept',
+                'Access-Control-Max-Age': '86400'
+            }
+        });
+    }
+
+    function selectProvider(providers) {
+        const totalWeight = providers.reduce((sum, provider) => sum + provider.weight, 0);
+        let random = Math.random() * totalWeight;
+        for (const provider of providers) {
+            if (random < provider.weight) return provider;
+            random -= provider.weight;
+        }
+        return providers[0];
+    }
+
+    async function tryFallbackProviders(request, url, failedProvider) {
+        const fallbackProviders = DOH_PROVIDERS.filter(p => p.name !== failedProvider.name);
+        for (const provider of fallbackProviders.slice(0, 2)) {
+            try {
+                const targetUrl = provider.url + url.search;
+                const headers = new Headers(request.headers);
+                if (request.method === 'POST') headers.set('Content-Type', 'application/dns-message');
+                else headers.set('Accept', 'application/dns-message');
+
+                const upstreamRequest = new Request(targetUrl, {
+                    method: request.method,
+                    headers: headers,
+                    body: request.method === 'POST' ? await request.arrayBuffer() : null
+                });
+
+                const response = await fetch(upstreamRequest);
+                if (response.ok) {
+                    const responseHeaders = new Headers(response.headers);
+                    responseHeaders.set('Access-Control-Allow-Origin', '*');
+                    return new Response(response.body, {
+                        status: response.status,
+                        headers: responseHeaders
+                    });
+                }
+            } catch (e) { continue; }
+        }
+        return new Response('All DNS providers failed', { status: 503 });
+    }
+
+    function serveDNSEncodingExplanation() {
+        return new Response('DNS Encoding Explanation: GET requests must use base64url encoded DNS query in ?dns= param. POST requests send raw binary.', { status: 200 });
+    }
+
+    // --- VMess & Shadowsocks Link Generation ---
+
+    function generateVMessLinksFromSource(list, user, workerDomain) {
+        const links = [];
+        const wsPath = '/?ed=2048';
+        const CF_HTTP_PORTS = [80, 8080, 8880, 2052, 2082, 2086, 2095];
+        const CF_HTTPS_PORTS = [443, 2053, 2083, 2087, 2096, 8443];
+
+        list.forEach(item => {
+            let nodeName = item.isp.replace(/\\s/g, '_');
+            if (item.colo && item.colo.trim()) nodeName += `-${item.colo.trim()}`;
+            const port = parseInt(item.port || 443);
+            const isTLS = CF_HTTPS_PORTS.includes(port);
+
+            if (!isTLS && disableNonTLS) return;
+
+            const vmessConfig = {
+                v: "2",
+                ps: nodeName,
+                add: item.ip,
+                port: port,
+                id: user,
+                aid: "0",
+                scy: "auto",
+                net: "ws",
+                type: "none",
+                host: workerDomain,
+                path: wsPath,
+                tls: isTLS ? "tls" : "",
+                sni: isTLS ? workerDomain : "",
+                alpn: isTLS ? "h2,http/1.1" : ""
+            };
+            const b64 = btoa(JSON.stringify(vmessConfig));
+            links.push(`vmess://${b64}`);
+        });
+        return links;
+    }
+
+    function generateVMessLinksFromNewIPs(list, user, workerDomain) {
+        const links = [];
+        const wsPath = '/?ed=2048';
+        const CF_HTTPS_PORTS = [443, 2053, 2083, 2087, 2096, 8443];
+
+        list.forEach(item => {
+            const nodeName = item.name.replace(/\\s/g, '_');
+            const port = parseInt(item.port);
+            const isTLS = CF_HTTPS_PORTS.includes(port);
+
+            if (!isTLS && disableNonTLS) return;
+
+            const vmessConfig = {
+                v: "2",
+                ps: nodeName,
+                add: item.ip,
+                port: port,
+                id: user,
+                aid: "0",
+                scy: "auto",
+                net: "ws",
+                type: "none",
+                host: workerDomain,
+                path: wsPath,
+                tls: isTLS ? "tls" : "",
+                sni: isTLS ? workerDomain : "",
+                alpn: isTLS ? "h2,http/1.1" : ""
+            };
+            const b64 = btoa(JSON.stringify(vmessConfig));
+            links.push(`vmess://${b64}`);
+        });
+        return links;
+    }
+
+    function generateShadowsocksLinksFromSource(list, user, workerDomain) {
+        const links = [];
+        const method = 'chacha20-ietf-poly1305';
+        const password = user;
+        const wsPath = '/?ed=2048';
+        const CF_HTTPS_PORTS = [443, 2053, 2083, 2087, 2096, 8443];
+
+        list.forEach(item => {
+            let nodeName = item.isp.replace(/\\s/g, '_');
+            if (item.colo && item.colo.trim()) nodeName += `-${item.colo.trim()}`;
+            const port = parseInt(item.port || 443);
+            const isTLS = CF_HTTPS_PORTS.includes(port);
+
+            if (!isTLS && disableNonTLS) return;
+
+            const userInfo = btoa(`${method}:${password}`);
+            let pluginParam = `v2ray-plugin;mode=websocket;host=${workerDomain};path=${encodeURIComponent(wsPath)}`;
+            if (isTLS) pluginParam += ';tls';
+
+            links.push(`ss://${userInfo}@${item.ip}:${port}?plugin=${encodeURIComponent(pluginParam)}#${encodeURIComponent(nodeName)}`);
+        });
+        return links;
+    }
+
+    function generateShadowsocksLinksFromNewIPs(list, user, workerDomain) {
+        const links = [];
+        const method = 'chacha20-ietf-poly1305';
+        const password = user;
+        const wsPath = '/?ed=2048';
+        const CF_HTTPS_PORTS = [443, 2053, 2083, 2087, 2096, 8443];
+
+        list.forEach(item => {
+            const nodeName = item.name.replace(/\\s/g, '_');
+            const port = parseInt(item.port);
+            const isTLS = CF_HTTPS_PORTS.includes(port);
+
+            if (!isTLS && disableNonTLS) return;
+
+            const userInfo = btoa(`${method}:${password}`);
+            let pluginParam = `v2ray-plugin;mode=websocket;host=${workerDomain};path=${encodeURIComponent(wsPath)}`;
+            if (isTLS) pluginParam += ';tls';
+
+            links.push(`ss://${userInfo}@${item.ip}:${port}?plugin=${encodeURIComponent(pluginParam)}#${encodeURIComponent(nodeName)}`);
+        });
+        return links;
     }
