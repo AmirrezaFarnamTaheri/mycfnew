@@ -104,12 +104,20 @@
 | `yx` | 自定义优选IP/域名 | 可选，支持命名，格式：`1.1.1.1:443#香港节点,8.8.8.8:53#Google DNS` |
 | `yxURL` | 优选IP来源URL | 可选，自定义IP列表来源，留空用默认 |
 | `scu` | 订阅转换地址 | 可选，默认：`https://url.v1.mk/sub` |
+| `homepage` | 自定义首页URL | 可选，访问根路径 `/` 时返回该URL内容（伪装首页）。可在UI设置或用 `HOMEPAGE` |
 | `epd` | yes/no | 可选，启用优选域名（默认启用） |
 | `epi` | yes/no | 可选，启用优选IP（默认启用） |
 | `egi` | yes/no | 可选，启用GitHub默认优选（默认启用） |
+| `ipv4` | yes/no | 可选，优选IP筛选：启用IPv4（默认启用，仅KV/UI） |
+| `ipv6` | yes/no | 可选，优选IP筛选：启用IPv6（默认启用，仅KV/UI） |
+| `ispMobile` | yes/no | 可选，优选IP筛选：保留移动线路（默认启用，仅KV/UI） |
+| `ispUnicom` | yes/no | 可选，优选IP筛选：保留联通线路（默认启用，仅KV/UI） |
+| `ispTelecom` | yes/no | 可选，优选IP筛选：保留电信线路（默认启用，仅KV/UI） |
 | `qj` | no | 可选，设为`no`启用降级：CF直连失败→SOCKS5→fallback |
 | `dkby` | yes | 可选，设为`yes`只生成TLS节点 |
 | `ech` | yes/no | 可选，启用ECH功能（默认禁用，启用后自动开启仅TLS模式） |
+| `customDNS` | DoH URL | 可选，ECH配置查询使用的DNS-over-HTTPS地址（仅KV/UI） |
+| `customECHDomain` | 域名 | 可选，ECH配置使用的域名（仅KV/UI） |
 | `yxby` | yes | 可选，设为`yes`关闭所有优选功能 |
 | `rm` | no | 可选，设为`no`关闭地区智能匹配 |
 | `ae` | yes | 可选，设为`yes`允许API管理（默认关闭） |
@@ -124,7 +132,11 @@
 #### API使用
 1. 下载优选软件：https://github.com/byJoey/yx-tools/releases
 2. 开启API：访问 `/{UUID}` 或 `/{自定义路径}`，找到"允许API管理"，开启后保存
-3. 添加单个IP：
+3. 查询列表：
+```bash
+curl "https://your-worker.workers.dev/{UUID或自定义路径}/api/preferred-ips"
+```
+4. 添加单个IP：
 ```bash
 # 使用UUID路径
 curl -X POST "https://your-worker.workers.dev/{UUID}/api/preferred-ips" \
@@ -136,7 +148,7 @@ curl -X POST "https://your-worker.workers.dev/{自定义路径}/api/preferred-ip
   -H "Content-Type: application/json" \
   -d '{"ip": "1.2.3.4", "port": 443, "name": "香港节点"}'
 ```
-4. 批量添加IP：
+5. 批量添加IP：
 ```bash
 curl -X POST "https://your-worker.workers.dev/{UUID或自定义路径}/api/preferred-ips" \
   -H "Content-Type: application/json" \
@@ -145,7 +157,7 @@ curl -X POST "https://your-worker.workers.dev/{UUID或自定义路径}/api/prefe
     {"ip": "5.6.7.8", "port": 8443, "name": "节点2"}
   ]'
 ```
-5. 清空所有IP：
+6. 清空所有IP：
 ```bash
 curl -X DELETE "https://your-worker.workers.dev/{UUID或自定义路径}/api/preferred-ips" \
   -H "Content-Type: application/json" \
@@ -177,12 +189,24 @@ v2.7开始提供，v2.9增强了筛选功能
 - VLESS：默认启用
 - Trojan：支持Trojan-WS-TLS，可以自定义密码，不填就用UUID
 - xhttp：基于HTTP POST的伪装协议
-- VMess & Shadowsocks: 通过中继回退支持
-- TUIC & Hysteria 2: 仅支持链接生成 (Cloudflare Workers 不支持 UDP 入站)
+- VMess & Shadowsocks: WS 中继（需要 ProxyIP/fallback，详见下方说明）
+- TUIC & Hysteria 2: 仅生成链接（详见下方说明）
 - VLESS gRPC: 支持 gRPC 传输
 - 可以同时启用多个协议，客户端会自动识别
 - 图形界面一键开关
 - 协议配置有独立保存按钮
+
+#### 仅生成链接协议说明
+
+- “仅生成链接”指：Worker 不实现该协议服务端，只负责生成/分发订阅链接
+- TUIC / Hysteria 2 基于 UDP/QUIC，Workers 无法接收 UDP 入站，因此只能生成链接
+- VMess / Shadowsocks 采用 WS 中继模式：需要配置 `p`(ProxyIP) 或可用后端，否则连接会失败
+- 如果只使用本 Worker、不准备外部节点，请不要启用这些协议
+
+#### xhttp / gRPC 使用提示
+
+- xhttp 走 HTTP POST 伪装，建议绑定自定义域名并在 Cloudflare 开启 gRPC
+- VLESS gRPC 需要 `p`(ProxyIP) 或可用后端，否则会返回 503
 
 #### DoH 代理服务
 
@@ -202,6 +226,7 @@ v2.7开始提供，v2.9增强了筛选功能
 - 优先使用 Google DNS，失败时自动尝试 Cloudflare DNS
 - 智能模式：启用 ECH 时自动启用"仅 TLS"模式，避免 80 端口干扰
 - 图形界面：可在协议配置区域一键开启/关闭
+- 高级设置：在协议配置中可填写 `customDNS`(DoH地址) 与 `customECHDomain`(ECH域名) 替换默认值
 - 调试信息：在浏览器开发者工具的响应头中可查看详细的 ECH 获取过程
 - 响应头信息：
   - `X-ECH-Status`: SUCCESS 或 FAILED
@@ -223,6 +248,12 @@ v2.7开始提供，v2.9增强了筛选功能
 - 改完立即生效，不用重新部署
 - 优先级：KV配置 > 环境变量 > 默认值
 
+#### 自定义首页 (homepage)
+
+- 访问根路径 `/` 时返回你配置的URL内容（伪装首页）
+- 可在图形化面板设置，也可用环境变量 `HOMEPAGE`/`homepage`
+- 留空则显示默认终端页面；拉取失败会自动回退
+
 #### 多语言支持
 
 - 根据浏览器语言自动选择中文或波斯语
@@ -236,6 +267,13 @@ v2.7开始提供，v2.9增强了筛选功能
 - 可以单独控制优选域名、优选IP、GitHub优选
 - 默认全部启用
 - 改完立即生效
+
+#### 优选IP筛选（IPv4/IPv6/运营商）
+
+- 在图形化配置 → 高级控制 → 优选IP筛选设置中选择 IPv4/IPv6 和运营商
+- 关闭某项会过滤对应结果（默认全部启用）
+- 仅影响内置/URL 获取的优选列表，不会改动手动 `yx` 或 API 已有项
+- 该筛选仅存于 KV（UI 设置），环境变量不生效
 
 #### API管理
 
