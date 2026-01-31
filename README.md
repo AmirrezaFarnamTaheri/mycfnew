@@ -6,7 +6,7 @@
 
 ## 主要功能
 
-- 多协议支持：VLESS、Trojan、xhttp，可以同时启用多个
+- 多协议支持：VLESS、Trojan、xhttp、VMess、Shadowsocks、TUIC、Hysteria 2、VLESS gRPC，可以同时启用多个
 - 自定义路径：不用UUID当路径了，可以自己设置，支持多级路径
 - 延迟测试：内置测试工具，测IP延迟，自动获取机场码
 - 订阅转换：可以自定义转换服务地址
@@ -16,6 +16,15 @@
 - 应用唤醒：点按钮自动打开对应客户端
 - 自动识别：根据User-Agent自动返回对应格式
 - 多语言：支持中文和波斯语，根据浏览器语言自动切换
+- 内置 DoH 代理：高性能 DNS-over-HTTPS 代理服务
+
+## v2.9.4 更新 (Latest)
+
+- **协议扩展**：新增 VMess, Shadowsocks, TUIC, Hysteria 2, VLESS gRPC 协议支持 (链接生成与转发)
+- **DoH 服务**：内置高性能 DNS-over-HTTPS 代理 (`/dns-query`)
+  - 支持 Cloudflare, Google, Quad9 等多个上游
+  - 支持负载均衡和自动故障转移
+  - 支持 AdGuard 等去广告 DNS
 
 ## v2.9.3 更新
 
@@ -75,6 +84,11 @@
 | `ev` | yes/no | 可选，启用VLESS（默认启用） |
 | `et` | yes/no | 可选，启用Trojan（默认禁用） |
 | `ex` | yes/no | 可选，启用xhttp（默认禁用） |
+| `evm` | yes/no | 可选，启用VMess（默认禁用） |
+| `ess` | yes/no | 可选，启用Shadowsocks（默认禁用） |
+| `etu` | yes/no | 可选，启用TUIC（默认禁用，仅生成链接） |
+| `ehy` | yes/no | 可选，启用Hysteria 2（默认禁用，仅生成链接） |
+| `eg` | yes/no | 可选，启用VLESS gRPC（默认禁用） |
 | `tp` | 自定义密码 | 可选，Trojan密码，留空用UUID |
 | `ech` | yes/no | 可选，启用ECH功能（默认禁用） |
 
@@ -163,9 +177,23 @@ v2.7开始提供，v2.9增强了筛选功能
 - VLESS：默认启用
 - Trojan：支持Trojan-WS-TLS，可以自定义密码，不填就用UUID
 - xhttp：基于HTTP POST的伪装协议
+- VMess & Shadowsocks: 通过中继回退支持
+- TUIC & Hysteria 2: 仅支持链接生成 (Cloudflare Workers 不支持 UDP 入站)
+- VLESS gRPC: 支持 gRPC 传输
 - 可以同时启用多个协议，客户端会自动识别
 - 图形界面一键开关
 - 协议配置有独立保存按钮
+
+#### DoH 代理服务
+
+- 内置高性能 DNS-over-HTTPS 代理
+- 访问地址：`https://your-worker.workers.dev/dns-query`
+- 负载均衡：自动在 Cloudflare, Google, Quad9, OpenDNS 之间分配流量
+- 去广告支持：支持 AdGuard, ControlD, Mullvad, NextDNS 等去广告 DNS 上游
+- 缓存机制：内置 300秒 缓存，提升响应速度
+- 使用方法：
+  - GET: `/dns-query?dns=<base64url>`
+  - POST: `/dns-query` (Body: binary DNS message)
 
 #### ECH 功能 (Encrypted Client Hello)
 

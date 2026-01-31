@@ -18,7 +18,12 @@
 
     let ev = true;   
     let et = false; 
-    let ex = false;  
+    let ex = false;
+    let evm = false;
+    let ess = false;
+    let etu = false;
+    let ehy = false;
+    let eg = false;
     let tp = '';
     // 启用ECH功能（true启用，false禁用）
     let enableECH = false;  
@@ -48,6 +53,11 @@
         'NL': ['🇳🇱 荷兰', 'NL', 'Netherlands'],
         'FI': ['🇫🇮 芬兰', 'FI', 'Finland'],
         'GB': ['🇬🇧 英国', 'GB', 'United Kingdom'],
+        'FR': ['🇫🇷 法国', 'FR', 'France'],
+        'CA': ['🇨🇦 加拿大', 'CA', 'Canada'],
+        'AU': ['🇦🇺 澳大利亚', 'AU', 'Australia'],
+        'HK': ['🇭🇰 香港', 'HK', 'Hong Kong'],
+        'TW': ['🇹🇼 台湾', 'TW', 'Taiwan'],
         'Oracle': ['甲骨文', 'Oracle'],
         'DigitalOcean': ['数码海', 'DigitalOcean'],
         'Vultr': ['Vultr', 'Vultr'],
@@ -64,6 +74,11 @@
         { domain: 'ProxyIP.NL.CMLiussss.net', region: 'NL', regionCode: 'NL', port: 443 },
         { domain: 'ProxyIP.FI.CMLiussss.net', region: 'FI', regionCode: 'FI', port: 443 },
         { domain: 'ProxyIP.GB.CMLiussss.net', region: 'GB', regionCode: 'GB', port: 443 },
+        { domain: 'ProxyIP.FR.CMLiussss.net', region: 'FR', regionCode: 'FR', port: 443 },
+        { domain: 'ProxyIP.CA.CMLiussss.net', region: 'CA', regionCode: 'CA', port: 443 },
+        { domain: 'ProxyIP.AU.CMLiussss.net', region: 'AU', regionCode: 'AU', port: 443 },
+        { domain: 'ProxyIP.HK.CMLiussss.net', region: 'HK', regionCode: 'HK', port: 443 },
+        { domain: 'ProxyIP.TW.CMLiussss.net', region: 'TW', regionCode: 'TW', port: 443 },
         { domain: 'ProxyIP.Oracle.cmliussss.net', region: 'Oracle', regionCode: 'Oracle', port: 443 },
         { domain: 'ProxyIP.DigitalOcean.CMLiussss.net', region: 'DigitalOcean', regionCode: 'DigitalOcean', port: 443 },
         { domain: 'ProxyIP.Vultr.CMLiussss.net', region: 'Vultr', regionCode: 'Vultr', port: 443 },
@@ -183,9 +198,12 @@
                 const countryToRegion = {
                     'US': 'US', 'SG': 'SG', 'JP': 'JP', 'KR': 'KR',
                     'DE': 'DE', 'SE': 'SE', 'NL': 'NL', 'FI': 'FI', 'GB': 'GB',
-                    'CN': 'SG', 'TW': 'JP', 'AU': 'SG', 'CA': 'US',
-                    'FR': 'DE', 'IT': 'DE', 'ES': 'DE', 'CH': 'DE',
-                    'AT': 'DE', 'BE': 'NL', 'DK': 'SE', 'NO': 'SE', 'IE': 'GB'
+                    'FR': 'FR', 'CA': 'CA', 'AU': 'AU', 'HK': 'HK', 'TW': 'TW',
+                    'CN': 'SG',
+                    'IT': 'DE', 'ES': 'DE', 'CH': 'DE', 'AT': 'DE', // Europe fallbacks
+                    'BE': 'NL', 'DK': 'SE', 'NO': 'SE', 'IE': 'GB',
+                    'NZ': 'AU', 'MY': 'SG', 'ID': 'SG', 'TH': 'SG', // APAC fallbacks
+                    'VN': 'SG', 'PH': 'SG'
                 };
                 
                 if (countryToRegion[cfCountry]) {
@@ -424,6 +442,31 @@
                 if (xhttpControl !== undefined && xhttpControl !== '') {
                     ex = xhttpControl === 'yes' || xhttpControl === true || xhttpControl === 'true';
                 }
+
+                const vmessControl = getConfigValue('evm', env.evm);
+                if (vmessControl !== undefined && vmessControl !== '') {
+                    evm = vmessControl === 'yes' || vmessControl === true || vmessControl === 'true';
+                }
+
+                const ssControl = getConfigValue('ess', env.ess);
+                if (ssControl !== undefined && ssControl !== '') {
+                    ess = ssControl === 'yes' || ssControl === true || ssControl === 'true';
+                }
+
+                const tuicControl = getConfigValue('etu', env.etu);
+                if (tuicControl !== undefined && tuicControl !== '') {
+                    etu = tuicControl === 'yes' || tuicControl === true || tuicControl === 'true';
+                }
+
+                const hyControl = getConfigValue('ehy', env.ehy);
+                if (hyControl !== undefined && hyControl !== '') {
+                    ehy = hyControl === 'yes' || hyControl === true || hyControl === 'true';
+                }
+
+                const grpcControl = getConfigValue('eg', env.eg);
+                if (grpcControl !== undefined && grpcControl !== '') {
+                    eg = grpcControl === 'yes' || grpcControl === true || grpcControl === 'true';
+                }
                 
                 scu = getConfigValue('scu', env.scu) || 'https://url.v1.mk/sub';
                 
@@ -469,7 +512,7 @@
                     }
                 }
                 
-                if (!ev && !et && !ex) {
+                if (!ev && !et && !ex && !evm && !ess) {
                     ev = true;
                 }
 
@@ -485,6 +528,9 @@
                 }
 
                 const url = new URL(request.url);
+
+            if (url.pathname === '/dns-query') return await handleDoHRequest(request, env, ctx);
+            if (url.pathname === '/dns-encoding') return serveDNSEncodingExplanation();
 
                 if (url.pathname.includes('/api/config')) {
                     const pathParts = url.pathname.split('/').filter(p => p);
@@ -554,6 +600,10 @@
                     });
                 }
             
+            if (request.method === 'POST' && request.headers.get('content-type') === 'application/grpc' && eg) {
+                return await handleGrpcRequest(request);
+            }
+
             if (request.method === 'POST' && ex) {
                 const r = await handleXhttpPost(request);
                 if (r) {
@@ -1577,6 +1627,21 @@
             if (ex) {
                 finalLinks.push(...generateXhttpLinksFromSource(list, user, workerDomain, echConfig));
             }
+            if (evm) {
+                finalLinks.push(...generateVMessLinksFromSource(list, user, workerDomain));
+            }
+            if (ess) {
+                finalLinks.push(...generateShadowsocksLinksFromSource(list, user, workerDomain));
+            }
+            if (etu) {
+                finalLinks.push(...generateTuicLinksFromSource(list, user, workerDomain));
+            }
+            if (ehy) {
+                finalLinks.push(...generateHysteria2LinksFromSource(list, user, workerDomain));
+            }
+            if (eg) {
+                finalLinks.push(...generateVlessGrpcLinksFromSource(list, user, workerDomain));
+            }
         }
 
         if (currentWorkerRegion === 'CUSTOM') {
@@ -1656,6 +1721,21 @@
                         }
                         if (et) {
                             finalLinks.push(...await generateTrojanLinksFromNewIPs(newIPList, user, workerDomain, echConfig));
+                        }
+                        if (evm) {
+                            finalLinks.push(...generateVMessLinksFromNewIPs(newIPList, user, workerDomain));
+                        }
+                        if (ess) {
+                            finalLinks.push(...generateShadowsocksLinksFromNewIPs(newIPList, user, workerDomain));
+                        }
+                        if (etu) {
+                            finalLinks.push(...generateTuicLinksFromNewIPs(newIPList, user, workerDomain));
+                        }
+                        if (ehy) {
+                            finalLinks.push(...generateHysteria2LinksFromNewIPs(newIPList, user, workerDomain));
+                        }
+                        if (eg) {
+                            finalLinks.push(...generateVlessGrpcLinksFromNewIPs(newIPList, user, workerDomain));
                         }
                 }
             } catch (error) {
@@ -1817,6 +1897,104 @@
             });
         });
         return links;
+    }
+
+    function generateTuicLinksFromSource(list, user, workerDomain) {
+        const links = [];
+        list.forEach(item => {
+            const nodeName = item.isp.replace(/\s/g, '_') + (item.colo ? `-${item.colo}` : '');
+            const port = item.port || 443;
+            links.push(`tuic://${user}:${user}@${item.ip}:${port}?congestion_control=bbr&alpn=h3&sni=${workerDomain}&udp_relay_mode=native&allow_insecure=1#${encodeURIComponent(nodeName)}`);
+        });
+        return links;
+    }
+
+    function generateTuicLinksFromNewIPs(list, user, workerDomain) {
+        const links = [];
+        list.forEach(item => {
+            const nodeName = item.name.replace(/\s/g, '_');
+            const port = item.port || 443;
+            links.push(`tuic://${user}:${user}@${item.ip}:${port}?congestion_control=bbr&alpn=h3&sni=${workerDomain}&udp_relay_mode=native&allow_insecure=1#${encodeURIComponent(nodeName)}`);
+        });
+        return links;
+    }
+
+    function generateHysteria2LinksFromSource(list, user, workerDomain) {
+        const links = [];
+        list.forEach(item => {
+            const nodeName = item.isp.replace(/\s/g, '_') + (item.colo ? `-${item.colo}` : '');
+            const port = item.port || 443;
+            links.push(`hy2://${user}@${item.ip}:${port}?insecure=1&sni=${workerDomain}#${encodeURIComponent(nodeName)}`);
+        });
+        return links;
+    }
+
+    function generateHysteria2LinksFromNewIPs(list, user, workerDomain) {
+        const links = [];
+        list.forEach(item => {
+            const nodeName = item.name.replace(/\s/g, '_');
+            const port = item.port || 443;
+            links.push(`hy2://${user}@${item.ip}:${port}?insecure=1&sni=${workerDomain}#${encodeURIComponent(nodeName)}`);
+        });
+        return links;
+    }
+
+    function generateVlessGrpcLinksFromSource(list, user, workerDomain) {
+        const links = [];
+        const serviceName = 'grpc';
+        const CF_HTTPS_PORTS = [443, 2053, 2083, 2087, 2096, 8443];
+
+        list.forEach(item => {
+            let nodeName = item.isp.replace(/\s/g, '_');
+            if (item.colo && item.colo.trim()) nodeName += `-${item.colo.trim()}`;
+            const port = parseInt(item.port || 443);
+
+            if (CF_HTTPS_PORTS.includes(port)) {
+                const link = `vless://${user}@${item.ip}:${port}?encryption=none&security=tls&type=grpc&serviceName=${serviceName}&sni=${workerDomain}&fp=chrome#${encodeURIComponent(nodeName + '-gRPC')}`;
+                links.push(link);
+            }
+        });
+        return links;
+    }
+
+    function generateVlessGrpcLinksFromNewIPs(list, user, workerDomain) {
+        const links = [];
+        const serviceName = 'grpc';
+        const CF_HTTPS_PORTS = [443, 2053, 2083, 2087, 2096, 8443];
+
+        list.forEach(item => {
+            const nodeName = item.name.replace(/\s/g, '_');
+            const port = parseInt(item.port);
+
+            if (CF_HTTPS_PORTS.includes(port)) {
+                const link = `vless://${user}@${item.ip}:${port}?encryption=none&security=tls&type=grpc&serviceName=${serviceName}&sni=${workerDomain}&fp=chrome#${encodeURIComponent(nodeName + '-gRPC')}`;
+                links.push(link);
+            }
+        });
+        return links;
+    }
+
+    async function handleGrpcRequest(request) {
+        if (!fallbackAddress) return new Response('No backend for gRPC', { status: 503 });
+
+        const url = new URL(request.url);
+        const { address, port } = parseAddressAndPort(fallbackAddress);
+
+        const targetUrl = `https://${address}:${port || 443}${url.pathname}${url.search}`;
+
+        try {
+            const proxyReq = new Request(targetUrl, {
+                method: request.method,
+                headers: request.headers,
+                body: request.body,
+                redirect: 'follow'
+            });
+
+            const response = await fetch(proxyReq);
+            return response;
+        } catch (e) {
+            return new Response('gRPC Proxy Error: ' + e.message, { status: 502 });
+        }
     }
 
     async function generateTrojanLinksFromSource(list, user, workerDomain, echConfig = null) {
@@ -2001,6 +2179,7 @@
 
         const earlyData = request.headers.get(atob('c2VjLXdlYnNvY2tldC1wcm90b2NvbA==')) || '';
         const readable = makeReadableStream(serverSock, earlyData);
+        const url = new URL(request.url);
 
         readable.pipeTo(new WritableStream({
             async write(chunk) {
@@ -2014,6 +2193,31 @@
                 
                 if (!protocolType) {
                     
+                    // VMess 和 Shadowsocks 回退处理 (Reverse Proxy Mode)
+                    // 如果启用了 EVM/ESS 且路径匹配，直接转发流量到 fallbackAddress
+                    const isVMess = evm && url.pathname.startsWith('/vm');
+                    const isSS = ess && url.pathname.startsWith('/ss');
+
+                    if (isVMess || isSS) {
+                        protocolType = isVMess ? 'vmess' : 'shadowsocks';
+
+                        let targetAddress = fallbackAddress;
+                        // 如果没有配置 fallbackAddress，尝试使用优选 IP (虽然可能不兼容，但作为最后手段)
+                        if (!targetAddress && currentWorkerRegion) {
+                            const best = await getBestBackupIP(currentWorkerRegion);
+                            if (best) targetAddress = best.domain + ':' + best.port;
+                        }
+
+                        if (targetAddress) {
+                            const { address, port } = parseAddressAndPort(targetAddress);
+                            // 使用 URL 类型 (2) 作为通用回退
+                            await forwardTCP(2, address, port || 80, chunk, serverSock, null, remoteConnWrapper);
+                            return;
+                        } else {
+                            throw new Error('No backend configured for VMess/SS relay');
+                        }
+                    }
+
                     if (ev && chunk.byteLength >= 24) {
                         const vlessResult = parseWsPacketHeader(chunk, at);
                         if (!vlessResult.hasError) {
@@ -2296,6 +2500,8 @@
                     saveRegion: '保存地区配置',
                     protocolSelection: '协议选择:',
                     enableVLESS: '启用 VLESS 协议',
+                    enableVMess: '启用 VMess 协议',
+                    enableShadowsocks: '启用 Shadowsocks 协议',
                     enableTrojan: '启用 Trojan 协议',
                     enableXhttp: '启用 xhttp 协议',
                     trojanPassword: 'Trojan 密码 (可选):',
@@ -2352,7 +2558,7 @@
                     autoSubscriptionCopied: '自动识别订阅链接已复制，客户端访问时会根据User-Agent自动识别并返回对应格式',
                     trojanPasswordPlaceholder: '留空则自动使用 UUID',
                     trojanPasswordHint: '设置自定义 Trojan 密码。留空则使用 UUID。客户端会自动对密码进行 SHA224 哈希。',
-                    protocolHint: '可以同时启用多个协议。订阅将生成选中协议的节点。<br>• VLESS WS: 基于 WebSocket 的标准协议<br>• Trojan: 使用 SHA224 密码认证<br>• xhttp: 基于 HTTP POST 的伪装协议（需要绑定自定义域名并开启 gRPC）',
+                    protocolHint: '可以同时启用多个协议。订阅将生成选中协议的节点。<br>• VLESS WS: 基于 WebSocket 的标准协议<br>• VMess WS: 基于 WebSocket 的 VMess 协议 (生成链接)<br>• Shadowsocks: 基于 WebSocket 的 SS 协议 (生成链接)<br>• Trojan: 使用 SHA224 密码认证<br>• xhttp: 基于 HTTP POST 的伪装协议（需要绑定自定义域名并开启 gRPC）',
                     enableECH: '启用 ECH (Encrypted Client Hello)',
                     enableECHHint: '启用后，每次刷新订阅时会自动从 DoH 获取最新的 ECH 配置并添加到链接中',
                     customDNS: '自定义 DNS 服务器',
@@ -2383,7 +2589,8 @@
                     regionNames: {
                         US: '🇺🇸 美国', SG: '🇸🇬 新加坡', JP: '🇯🇵 日本',
                         KR: '🇰🇷 韩国', DE: '🇩🇪 德国', SE: '🇸🇪 瑞典', NL: '🇳🇱 荷兰',
-                        FI: '🇫🇮 芬兰', GB: '🇬🇧 英国'
+                        FI: '🇫🇮 芬兰', GB: '🇬🇧 英国', FR: '🇫🇷 法国', CA: '🇨🇦 加拿大',
+                        AU: '🇦🇺 澳大利亚', HK: '🇭🇰 香港', TW: '🇹🇼 台湾'
                     },
                     terminal: '终端 v2.9.3',
                     githubProject: 'GitHub 项目',
@@ -2435,6 +2642,8 @@
                     saveRegion: 'ذخیره تنظیمات منطقه',
                     protocolSelection: 'انتخاب پروتکل:',
                     enableVLESS: 'فعال‌سازی پروتکل VLESS',
+                    enableVMess: 'فعال‌سازی پروتکل VMess',
+                    enableShadowsocks: 'فعال‌سازی پروتکل Shadowsocks',
                     enableTrojan: 'فعال‌سازی پروتکل Trojan',
                     enableXhttp: 'فعال‌سازی پروتکل xhttp',
                     enableECH: 'فعال‌سازی ECH (Encrypted Client Hello)',
@@ -2499,7 +2708,7 @@
                     autoSubscriptionCopied: 'لینک اشتراک تشخیص خودکار کپی شد، کلاینت هنگام دسترسی بر اساس User-Agent به طور خودکار تشخیص داده و قالب مربوطه را برمی‌گرداند',
                     trojanPasswordPlaceholder: 'خالی بگذارید تا از UUID استفاده شود',
                     trojanPasswordHint: 'رمز عبور Trojan سفارشی را تنظیم کنید. اگر خالی بگذارید از UUID استفاده می‌شود. کلاینت به طور خودکار رمز عبور را با SHA224 هش می‌کند.',
-                    protocolHint: 'می‌توانید چندین پروتکل را همزمان فعال کنید. اشتراک گره‌های پروتکل‌های انتخاب شده را تولید می‌کند.<br>• VLESS WS: پروتکل استاندارد مبتنی بر WebSocket<br>• Trojan: احراز هویت با رمز عبور SHA224<br>• xhttp: پروتکل استتار مبتنی بر HTTP POST (نیاز به اتصال دامنه سفارشی و فعال‌سازی gRPC دارد)',
+                    protocolHint: 'می‌توانید چندین پروتکل را همزمان فعال کنید. اشتراک گره‌های پروتکل‌های انتخاب شده را تولید می‌کند.<br>• VLESS WS: پروتکل استاندارد مبتنی بر WebSocket<br>• VMess WS: پروتکل VMess مبتنی بر WebSocket (تولید لینک)<br>• Shadowsocks: پروتکل SS مبتنی بر WebSocket (تولید لینک)<br>• Trojan: احراز هویت با رمز عبور SHA224<br>• xhttp: پروتکل استتار مبتنی بر HTTP POST (نیاز به اتصال دامنه سفارشی و فعال‌سازی gRPC دارد)',
                     saveProtocol: 'ذخیره تنظیمات پروتکل',
                     subscriptionConverterPlaceholder: 'پیش‌فرض: https://url.v1.mk/sub',
                     subscriptionConverterHint: 'آدرس API تبدیل اشتراک سفارشی، اگر خالی بگذارید از آدرس پیش‌فرض استفاده می‌شود',
@@ -2522,7 +2731,8 @@
                     regionNames: {
                         US: '🇺🇸 آمریکا', SG: '🇸🇬 سنگاپور', JP: '🇯🇵 ژاپن',
                         KR: '🇰🇷 کره جنوبی', DE: '🇩🇪 آلمان', SE: '🇸🇪 سوئد', NL: '🇳🇱 هلند',
-                        FI: '🇫🇮 فنلاند', GB: '🇬🇧 بریتانیا'
+                        FI: '🇫🇮 فنلاند', GB: '🇬🇧 بریتانیا', FR: '🇫🇷 فرانسه', CA: '🇨🇦 کانادا',
+                        AU: '🇦🇺 استرالیا', HK: '🇭🇰 هنگ کنگ', TW: '🇹🇼 تایوان'
                     },
                     terminal: 'ترمینال v2.9.3',
                     githubProject: 'پروژه GitHub',
@@ -2851,6 +3061,13 @@
                                 <div style="margin-bottom: 10px;">
                                     <label style="display: inline-flex; align-items: center; cursor: pointer; color: #00ff00;">
                                         <input type="checkbox" id="ex" style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;">
+
+                            <div class="checkbox-item" style="margin-top: 10px;"><label style="display: flex; align-items: center;"><input type="checkbox" id="evm" ${evm ? 'checked' : ''} style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;"> 启用 VMess</label></div>
+                            <div class="checkbox-item" style="margin-top: 10px;"><label style="display: flex; align-items: center;"><input type="checkbox" id="ess" ${ess ? 'checked' : ''} style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;"> 启用 Shadowsocks</label></div>
+                            <div class="checkbox-item" style="margin-top: 10px;"><label style="display: flex; align-items: center;"><input type="checkbox" id="etu" ${etu ? 'checked' : ''} style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;"> 启用 TUIC</label></div>
+                            <div class="checkbox-item" style="margin-top: 10px;"><label style="display: flex; align-items: center;"><input type="checkbox" id="ehy" ${ehy ? 'checked' : ''} style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;"> 启用 Hysteria 2</label></div>
+                            <div class="checkbox-item" style="margin-top: 10px;"><label style="display: flex; align-items: center;"><input type="checkbox" id="eg" ${eg ? 'checked' : ''} style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;"> 启用 VLESS gRPC</label></div>
+
                                             <span style="font-size: 1.1rem;">${t.enableXhttp}</span>
                                     </label>
                                 </div>
@@ -4125,6 +4342,11 @@
                         e.preventDefault();
                         const configData = { 
                             ev: document.getElementById('ev').checked ? 'yes' : 'no', 
+                            evm: document.getElementById('evm').checked ? 'yes' : 'no',
+                            ess: document.getElementById('ess').checked ? 'yes' : 'no',
+                            etu: document.getElementById('etu').checked ? 'yes' : 'no',
+                            ehy: document.getElementById('ehy').checked ? 'yes' : 'no',
+                            eg: document.getElementById('eg').checked ? 'yes' : 'no',
                             et: document.getElementById('et').checked ? 'yes' : 'no', 
                             ex: document.getElementById('ex').checked ? 'yes' : 'no', 
                             ech: document.getElementById('ech').checked ? 'yes' : 'no',
@@ -4134,6 +4356,8 @@
                         };
                         
                         if (!document.getElementById('ev').checked && 
+                            !document.getElementById('evm').checked &&
+                            !document.getElementById('ess').checked &&
                             !document.getElementById('et').checked && 
                             !document.getElementById('ex').checked) {
                             alert('至少需要启用一个协议！');
@@ -4148,7 +4372,17 @@
                 if (otherConfigForm) {
                     otherConfigForm.addEventListener('submit', async function(e) {
                         e.preventDefault();
-                        const configData = { ev: document.getElementById('ev').checked ? 'yes' : 'no', et: document.getElementById('et').checked ? 'yes' : 'no', ex: document.getElementById('ex').checked ? 'yes' : 'no', ech: document.getElementById('ech').checked ? 'yes' : 'no', tp: document.getElementById('tp').value,
+                        const configData = {
+                            ev: document.getElementById('ev').checked ? 'yes' : 'no',
+                            evm: document.getElementById('evm').checked ? 'yes' : 'no',
+                            ess: document.getElementById('ess').checked ? 'yes' : 'no',
+                            etu: document.getElementById('etu').checked ? 'yes' : 'no',
+                            ehy: document.getElementById('ehy').checked ? 'yes' : 'no',
+                            eg: document.getElementById('eg').checked ? 'yes' : 'no',
+                            et: document.getElementById('et').checked ? 'yes' : 'no',
+                            ex: document.getElementById('ex').checked ? 'yes' : 'no',
+                            ech: document.getElementById('ech').checked ? 'yes' : 'no',
+                            tp: document.getElementById('tp').value,
                             d: document.getElementById('customPath').value,
                             p: document.getElementById('customIP').value,
                             yx: document.getElementById('yx').value,
@@ -4161,6 +4395,8 @@
                         
                         // 确保至少选择一个协议
                         if (!document.getElementById('ev').checked && 
+                            !document.getElementById('evm').checked &&
+                            !document.getElementById('ess').checked &&
                             !document.getElementById('et').checked && 
                             !document.getElementById('ex').checked) {
                             alert('至少需要启用一个协议！');
@@ -6098,8 +6334,33 @@
         if (xhttpControl !== undefined && xhttpControl !== '') {
             ex = xhttpControl === 'yes' || xhttpControl === true || xhttpControl === 'true';
         }
+
+        const vmessControl = getConfigValue('evm', '');
+        if (vmessControl !== undefined && vmessControl !== '') {
+            evm = vmessControl === 'yes' || vmessControl === true || vmessControl === 'true';
+        }
+
+        const ssControl = getConfigValue('ess', '');
+        if (ssControl !== undefined && ssControl !== '') {
+            ess = ssControl === 'yes' || ssControl === true || ssControl === 'true';
+        }
+
+        const tuicControl = getConfigValue('etu', '');
+        if (tuicControl !== undefined && tuicControl !== '') {
+            etu = tuicControl === 'yes' || tuicControl === true || tuicControl === 'true';
+        }
+
+        const hyControl = getConfigValue('ehy', '');
+        if (hyControl !== undefined && hyControl !== '') {
+            ehy = hyControl === 'yes' || hyControl === true || hyControl === 'true';
+        }
+
+        const grpcControl = getConfigValue('eg', '');
+        if (grpcControl !== undefined && grpcControl !== '') {
+            eg = grpcControl === 'yes' || grpcControl === true || grpcControl === 'true';
+        }
         
-        if (!ev && !et && !ex) {
+        if (!ev && !et && !ex && !evm && !ess && !etu && !ehy && !eg) {
             ev = true;
         }
         
@@ -6385,4 +6646,233 @@
             } catch (e) { }
         }));
         return Array.from(results);
+    }
+
+    // --- DoH & Protocols Implementation ---
+
+    const DOH_PROVIDERS = [
+      { name: "Cloudflare", url: "https://cloudflare-dns.com/dns-query", weight: 20 },
+      { name: "Google", url: "https://dns.google/dns-query", weight: 15 },
+      { name: "Quad9", url: "https://dns.quad9.net/dns-query", weight: 15 },
+      { name: "OpenDNS", url: "https://doh.opendns.com/dns-query", weight: 10 },
+      { name: "AdGuard", url: "https://dns.adguard.com/dns-query", weight: 10 },
+      { name: "ControlD", url: "https://freedns.controld.com/p2", weight: 10 },
+      { name: "Mullvad", url: "https://adblock.dns.mullvad.net/dns-query", weight: 10 },
+      { name: "NextDNS", url: "https://dns.nextdns.io/dns-query", weight: 10 }
+    ];
+    const CACHE_TTL = 300;
+
+    async function handleDoHRequest(request, env, ctx) {
+        const url = new URL(request.url);
+        if (request.method === 'OPTIONS') return handleCORS();
+
+        const isGet = request.method === 'GET';
+        const isPost = request.method === 'POST';
+        if (!isGet && !isPost) return new Response('Method not allowed', { status: 405 });
+        if (isGet && !url.searchParams.has('dns')) return new Response('Missing DNS query parameter', { status: 400 });
+
+        const selectedProvider = selectProvider(DOH_PROVIDERS);
+        try {
+            const targetUrl = selectedProvider.url + url.search;
+            const headers = new Headers(request.headers);
+            if (isPost) headers.set('Content-Type', 'application/dns-message');
+            else headers.set('Accept', 'application/dns-message');
+            headers.set('User-Agent', 'DoH-Proxy-Worker/1.0');
+
+            const upstreamRequest = new Request(targetUrl, {
+                method: request.method,
+                headers: headers,
+                body: isPost ? await request.arrayBuffer() : null,
+                redirect: 'follow'
+            });
+
+            const response = await fetch(upstreamRequest);
+            const responseHeaders = new Headers(response.headers);
+            responseHeaders.set('Access-Control-Allow-Origin', '*');
+            responseHeaders.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+            responseHeaders.set('Access-Control-Allow-Headers', 'Content-Type, Accept');
+            responseHeaders.set('Cache-Control', `public, max-age=${CACHE_TTL}`);
+
+            return new Response(response.body, {
+                status: response.status,
+                statusText: response.statusText,
+                headers: responseHeaders
+            });
+        } catch (error) {
+            return await tryFallbackProviders(request, url, selectedProvider);
+        }
+    }
+
+    function handleCORS() {
+        return new Response(null, {
+            status: 204,
+            headers: {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type, Accept',
+                'Access-Control-Max-Age': '86400'
+            }
+        });
+    }
+
+    function selectProvider(providers) {
+        const totalWeight = providers.reduce((sum, provider) => sum + provider.weight, 0);
+        let random = Math.random() * totalWeight;
+        for (const provider of providers) {
+            if (random < provider.weight) return provider;
+            random -= provider.weight;
+        }
+        return providers[0];
+    }
+
+    async function tryFallbackProviders(request, url, failedProvider) {
+        const fallbackProviders = DOH_PROVIDERS.filter(p => p.name !== failedProvider.name);
+        for (const provider of fallbackProviders.slice(0, 2)) {
+            try {
+                const targetUrl = provider.url + url.search;
+                const headers = new Headers(request.headers);
+                if (request.method === 'POST') headers.set('Content-Type', 'application/dns-message');
+                else headers.set('Accept', 'application/dns-message');
+
+                const upstreamRequest = new Request(targetUrl, {
+                    method: request.method,
+                    headers: headers,
+                    body: request.method === 'POST' ? await request.arrayBuffer() : null
+                });
+
+                const response = await fetch(upstreamRequest);
+                if (response.ok) {
+                    const responseHeaders = new Headers(response.headers);
+                    responseHeaders.set('Access-Control-Allow-Origin', '*');
+                    return new Response(response.body, {
+                        status: response.status,
+                        headers: responseHeaders
+                    });
+                }
+            } catch (e) { continue; }
+        }
+        return new Response('All DNS providers failed', { status: 503 });
+    }
+
+    function serveDNSEncodingExplanation() {
+        return new Response('DNS Encoding Explanation: GET requests must use base64url encoded DNS query in ?dns= param. POST requests send raw binary.', { status: 200 });
+    }
+
+    // --- VMess & Shadowsocks Link Generation ---
+
+    function generateVMessLinksFromSource(list, user, workerDomain) {
+        const links = [];
+        const wsPath = '/vm?ed=2048';
+        const CF_HTTP_PORTS = [80, 8080, 8880, 2052, 2082, 2086, 2095];
+        const CF_HTTPS_PORTS = [443, 2053, 2083, 2087, 2096, 8443];
+
+        list.forEach(item => {
+            let nodeName = item.isp.replace(/\\s/g, '_');
+            if (item.colo && item.colo.trim()) nodeName += `-${item.colo.trim()}`;
+            const port = parseInt(item.port || 443);
+            const isTLS = CF_HTTPS_PORTS.includes(port);
+
+            if (!isTLS && disableNonTLS) return;
+
+            const vmessConfig = {
+                v: "2",
+                ps: nodeName,
+                add: item.ip,
+                port: port,
+                id: user,
+                aid: "0",
+                scy: "auto",
+                net: "ws",
+                type: "none",
+                host: workerDomain,
+                path: wsPath,
+                tls: isTLS ? "tls" : "",
+                sni: isTLS ? workerDomain : "",
+                alpn: isTLS ? "h2,http/1.1" : ""
+            };
+            const b64 = btoa(JSON.stringify(vmessConfig));
+            links.push(`vmess://${b64}`);
+        });
+        return links;
+    }
+
+    function generateVMessLinksFromNewIPs(list, user, workerDomain) {
+        const links = [];
+        const wsPath = '/vm?ed=2048';
+        const CF_HTTPS_PORTS = [443, 2053, 2083, 2087, 2096, 8443];
+
+        list.forEach(item => {
+            const nodeName = item.name.replace(/\\s/g, '_');
+            const port = parseInt(item.port);
+            const isTLS = CF_HTTPS_PORTS.includes(port);
+
+            if (!isTLS && disableNonTLS) return;
+
+            const vmessConfig = {
+                v: "2",
+                ps: nodeName,
+                add: item.ip,
+                port: port,
+                id: user,
+                aid: "0",
+                scy: "auto",
+                net: "ws",
+                type: "none",
+                host: workerDomain,
+                path: wsPath,
+                tls: isTLS ? "tls" : "",
+                sni: isTLS ? workerDomain : "",
+                alpn: isTLS ? "h2,http/1.1" : ""
+            };
+            const b64 = btoa(JSON.stringify(vmessConfig));
+            links.push(`vmess://${b64}`);
+        });
+        return links;
+    }
+
+    function generateShadowsocksLinksFromSource(list, user, workerDomain) {
+        const links = [];
+        const method = 'chacha20-ietf-poly1305';
+        const password = user;
+        const wsPath = '/ss?ed=2048';
+        const CF_HTTPS_PORTS = [443, 2053, 2083, 2087, 2096, 8443];
+
+        list.forEach(item => {
+            let nodeName = item.isp.replace(/\\s/g, '_');
+            if (item.colo && item.colo.trim()) nodeName += `-${item.colo.trim()}`;
+            const port = parseInt(item.port || 443);
+            const isTLS = CF_HTTPS_PORTS.includes(port);
+
+            if (!isTLS && disableNonTLS) return;
+
+            const userInfo = btoa(`${method}:${password}`);
+            let pluginParam = `v2ray-plugin;mode=websocket;host=${workerDomain};path=${encodeURIComponent(wsPath)}`;
+            if (isTLS) pluginParam += ';tls';
+
+            links.push(`ss://${userInfo}@${item.ip}:${port}?plugin=${encodeURIComponent(pluginParam)}#${encodeURIComponent(nodeName)}`);
+        });
+        return links;
+    }
+
+    function generateShadowsocksLinksFromNewIPs(list, user, workerDomain) {
+        const links = [];
+        const method = 'chacha20-ietf-poly1305';
+        const password = user;
+        const wsPath = '/ss?ed=2048';
+        const CF_HTTPS_PORTS = [443, 2053, 2083, 2087, 2096, 8443];
+
+        list.forEach(item => {
+            const nodeName = item.name.replace(/\\s/g, '_');
+            const port = parseInt(item.port);
+            const isTLS = CF_HTTPS_PORTS.includes(port);
+
+            if (!isTLS && disableNonTLS) return;
+
+            const userInfo = btoa(`${method}:${password}`);
+            let pluginParam = `v2ray-plugin;mode=websocket;host=${workerDomain};path=${encodeURIComponent(wsPath)}`;
+            if (isTLS) pluginParam += ';tls';
+
+            links.push(`ss://${userInfo}@${item.ip}:${port}?plugin=${encodeURIComponent(pluginParam)}#${encodeURIComponent(nodeName)}`);
+        });
+        return links;
     }
