@@ -739,8 +739,13 @@
                         const customHomepage = getConfigValue('homepage', env.homepage || env.HOMEPAGE);
                         if (customHomepage && customHomepage.trim()) {
                             try {
+                const homepageUrl = new URL(customHomepage.trim());
+                if (homepageUrl.protocol !== 'https:') {
+                    throw new Error('Invalid homepage URL protocol');
+                }
+
                                 // 从自定义URL获取内容
-                                const homepageResponse = await fetch(customHomepage.trim(), {
+                const homepageResponse = await fetch(homepageUrl.toString(), {
                                     method: 'GET',
                                     headers: {
                                         'User-Agent': request.headers.get('User-Agent') || 'Mozilla/5.0',
@@ -1260,7 +1265,9 @@
                             }
                         }
                     }
-                    if (url.pathname.toLowerCase().includes(`/${subPath}`)) {
+                    const normalizedPathname = url.pathname.replace(/\/+$/, '').toLowerCase();
+                    const normalizedSubPath = `/${subPath}`.toLowerCase();
+                    if (normalizedPathname === normalizedSubPath) {
                         return await handleSubscriptionRequest(request, at);
                     }
                 }
