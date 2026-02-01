@@ -10,12 +10,15 @@
 
 **CFnew** is a state-of-the-art, all-in-one proxy solution running on Cloudflare Workers. It is designed to be **unblockable**, **fast**, and **easy to manage**.
 
+### Why CFnew?
+Unlike traditional VPNs that are easily detected and blocked, CFnew leverages the massive infrastructure of Cloudflare to hide your traffic. To the censor, your traffic looks exactly like normal web browsing to a legitimate business website.
+
 *   **Serverless**: No VPS required. Runs on Cloudflare's global edge network (300+ cities).
 *   **No-Code Management**: Manage everything (UUID, IPs, Protocols) via a beautiful "Matrix-style" Web Dashboard.
-*   **Polymorphic**: Acts as VLESS, Trojan, and a normal website simultaneously.
-*   **Smart Routing**: Automatically selects the best route based on your region.
+*   **Polymorphic Nature**: Acts as VLESS, Trojan, and a normal website simultaneously. The server intelligently detects the type of request and responds accordingly—serving a real webpage to unauthorized users and a proxy connection to you.
+*   **Smart Routing**: Automatically selects the best route based on your region to minimize latency.
 *   **Expanded Regions**: Supports region detection for US, SG, JP, KR, DE, SE, NL, FI, GB, FR, CA, AU, HK, TW, IT, ES, RU, UA, BR, IN, ZA, TR, AR, NG, EG, VN, ID.
-*   **Legacy IPs**: Includes a robust list of Legacy IPs (Google, Microsoft, Apple, etc.) to bypass restrictions in sensitive regions like Iran.
+*   **Legacy IPs**: Includes a robust list of Legacy IPs (Google, Microsoft, Apple, etc.) to bypass restrictions in sensitive regions like Iran where standard IPs might be throttled.
 
 > **Note:** The final `worker.js` file is minified/obscured for performance and compactness.
 
@@ -46,7 +49,7 @@ To the outside world, you are just talking to Cloudflare.
 
 ## 🚀 Quick Start
 
-### 1. Deployment
+### 1. Deployment (New Install)
 1.  Copy the code from `worker.js`.
 2.  Paste it into a new Cloudflare Worker.
 3.  Deploy.
@@ -55,6 +58,10 @@ To the outside world, you are just talking to Cloudflare.
 1.  Go to Worker Settings -> Variables.
 2.  Add `u` = `YOUR_UUID` (Generate one [here](https://www.uuidgenerator.net/)).
 3.  Add KV Namespace binding named `C` (Required for dashboard settings).
+
+### 3. Updating Existing Worker
+1.  Simply replace the code in your existing Worker with the content of `worker.js`.
+2.  Save and Deploy. Your settings in KV will be preserved.
 
 > [!WARNING]
 > **Security Warning**
@@ -94,8 +101,8 @@ Visit: `https://your-worker.workers.dev/<YOUR_UUID>`
 ## 📚 Documentation
 
 *   **[Walkthrough](docs/WALKTHROUGH.md)**: Zero to Hero guide.
-*   **[Deployment Guide](docs/DEPLOYMENT.md)**: Technical deployment details.
-*   **[Analogy](docs/ANALOGY.md)**: Conceptual explanation.
+*   **[Deployment Guide](docs/DEPLOYMENT.md)**: Technical deployment details and [Troubleshooting](docs/DEPLOYMENT.md#troubleshooting-%EF%B8%8F).
+*   **[Analogy](docs/ANALOGY.md)**: Conceptual explanation of how the proxy works.
 
 ---
 
