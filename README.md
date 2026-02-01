@@ -38,6 +38,10 @@ A comprehensive, all-in-one Cloudflare Worker solution that combines a high-perf
 -   **[Deployment Guide](docs/DEPLOYMENT.md)**: Step-by-step instructions to get running in 5 minutes.
 -   **[DNS Encoding Guide](docs/DNS_ENCODING.md)**: Technical details on DoH `GET` request encoding.
 
+### DoH Request Format
+-   **POST**: `Content-Type: application/dns-message` with a binary DNS message body.
+-   **GET**: `?dns=...` where `dns` is **base64url-encoded** (RFC 8484); clients should send `Accept: application/dns-message`.
+
 ---
 
 ## 🚀 Quick Start
@@ -59,9 +63,8 @@ A comprehensive, all-in-one Cloudflare Worker solution that combines a high-perf
 | Variable | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
 | `UUID` | Secret | *None* | **Required (secret).** Acts as the access credential for VLESS/Trojan. **Generate a unique value, never reuse, and rotate immediately if exposed (git commit/screenshot/shared UI URL).** |
-| `PROXYIP` | Text | *Empty* | Custom upstream proxy IP/Domain. |
+| `PROXYIP` | Text | *Empty* | *(Optional)* Custom upstream proxy IP/Domain. **Do not** set this to your own Worker domain or other Cloudflare/Workers endpoints to avoid routing loops/timeouts. |
 | `SOCKS5` | Secret | *Empty* | Optional SOCKS5 fallback (`user:pass@host:port`). |
-| `C` | KV | *None* | KV Namespace binding for config storage. |
 
 ---
 

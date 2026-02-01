@@ -2422,14 +2422,43 @@
         try {
             const tcpSocket = connect({ hostname: '8.8.4.4', port: 53 });
             let header = respHeader;
+
+            // DNS over TCP requires a 2-byte length prefix
+            const msgLen = udpChunk.byteLength;
+            const framed = new Uint8Array(2 + msgLen);
+            framed[0] = (msgLen >> 8) & 0xff;
+            framed[1] = msgLen & 0xff;
+            framed.set(new Uint8Array(udpChunk), 2);
+
             const writer = tcpSocket.writable.getWriter();
-            await writer.write(udpChunk);
+            await writer.write(framed);
             writer.releaseLock();
+
+            let buffer = new Uint8Array(0);
+
             await tcpSocket.readable.pipeTo(new WritableStream({
                 async write(chunk) {
-                    if (webSocket.readyState === 1) {
-                        if (header) { webSocket.send(await new Blob([header, chunk]).arrayBuffer()); header = null; }
-                        else { webSocket.send(chunk); }
+                    // Simple concatenation helper
+                    const newBuffer = new Uint8Array(buffer.length + chunk.length);
+                    newBuffer.set(buffer);
+                    newBuffer.set(new Uint8Array(chunk), buffer.length);
+                    buffer = newBuffer;
+
+                    while (buffer.byteLength >= 2) {
+                        const len = (buffer[0] << 8) | buffer[1];
+                        if (buffer.byteLength < 2 + len) break;
+
+                        const dnsPayload = buffer.slice(2, 2 + len);
+                        buffer = buffer.slice(2 + len);
+
+                        if (webSocket.readyState === 1) {
+                            if (header) {
+                                webSocket.send(await new Blob([header, dnsPayload]).arrayBuffer());
+                                header = null;
+                            } else {
+                                webSocket.send(dnsPayload);
+                            }
+                        }
                     }
                 },
             }));
