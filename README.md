@@ -169,8 +169,8 @@ Cloudflare Workers 运行在一个特殊的无服务器环境中，这带来了�
 | **`qj`** | **强制降级** | `yes` | **注意**：设为 `no` 才是开启降级！逻辑：CF直连失败 -> SOCKS5 -> ProxyIP。 |
 | **`dkby`** | **端口控制** | `no` | 设为 `yes` 开启 "仅 TLS"。只生成 443 等安全端口节点，屏蔽 80 端口。 |
 | **`ae`** | **API Enable** | `no` | 设为 `yes` 开启 API 管理功能。 |
-| **`customDNS`** | **Custom DNS** | (Built-in) | **KV 专用**。指定用于 ECH 配置查询的 DoH 地址。默认为 `https://dns.joeyblog.eu.org/joeyblog`。 |
-| **`customECHDomain`** | **ECH Domain** | (Built-in) | **KV 专用**。指定用于查询 ECH 配置的目标域名。默认为 `cloudflare-ech.com`。 |
+| **`customDNS`** | **Custom DNS** | (Built-in) | **KV 专用**。用于查询 ECH 配置的 DoH **HTTPS endpoint**（必须可被 Worker 访问）。不支持传统 53 端口 DNS/UDP。填错会导致 ECH 配置获取失败。默认 `https://dns.joeyblog.eu.org/joeyblog`。 |
+| **`customECHDomain`** | **ECH Domain** | (Built-in) | **KV 专用**。用于获取 ECHConfig 的目标域名（需支持发布 ECH 配置）。填错会导致订阅中无法注入 ECH 信息。默认 `cloudflare-ech.com`。 |
 
 ---
 
