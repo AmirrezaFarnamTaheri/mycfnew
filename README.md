@@ -14,7 +14,7 @@
 *   **No-Code Management**: Manage everything (UUID, IPs, Protocols) via a beautiful "Matrix-style" Web Dashboard.
 *   **Polymorphic**: Acts as VLESS, Trojan, and a normal website simultaneously.
 *   **Smart Routing**: Automatically selects the best route based on your region.
-*   **Expanded Regions**: Supports region detection for US, SG, JP, KR, DE, SE, NL, FI, GB, FR, CA, AU, HK, TW, IT, ES, RU, UA, BR, IN, ZA.
+*   **Expanded Regions**: Supports region detection for US, SG, JP, KR, DE, SE, NL, FI, GB, FR, CA, AU, HK, TW, IT, ES, RU, UA, BR, IN, ZA, TR, AR, NG, EG, VN, ID.
 *   **Legacy IPs**: Includes a robust list of Legacy IPs (Google, Microsoft, Apple, etc.) to bypass restrictions in sensitive regions like Iran.
 
 > **Note:** The final `worker.js` file is minified/obscured for performance and compactness.

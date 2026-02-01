@@ -14,7 +14,7 @@
 *   **无代码管理 (No-Code)**: 通过漂亮的“黑客帝国”风格网页控制面板管理所有内容（UUID、IP、协议）。
 *   **多态伪装**: 同时作为 VLESS、Trojan 服务器和一个普通的伪装网站运行。
 *   **智能路由**: 根据您的区域自动选择最佳路线。
-*   **扩展区域**: 支持 US, SG, JP, KR, DE, SE, NL, FI, GB, FR, CA, AU, HK, TW, IT, ES, RU, UA, BR, IN, ZA 等多国区域检测。
+*   **扩展区域**: 支持 US, SG, JP, KR, DE, SE, NL, FI, GB, FR, CA, AU, HK, TW, IT, ES, RU, UA, BR, IN, ZA, TR, AR, NG, EG, VN, ID 等多国区域检测。
 *   **Legacy IPs**: 内置丰富的 Legacy IP 列表 (Google, Microsoft, Apple 等)，以应对伊朗等地区的特殊网络环境。
 
 > **注意:** 最终的 `worker.js` 文件已经过混淆/压缩处理，以提高性能并保持紧凑。
