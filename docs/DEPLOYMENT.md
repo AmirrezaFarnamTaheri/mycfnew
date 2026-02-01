@@ -33,17 +33,32 @@ This guide provides step-by-step instructions for deploying the Cloudflare Worke
 > **Security Risk**: Do NOT use the default UUID. Generate a new one using a tool like `uuidgenerator.net` or run `uuidgen` in your terminal.
 
 ### 4. Setup KV Storage (Optional but Recommended) 💾
-To use the "Save Config" feature in the UI:
+To use the "Save Config" feature in the UI and Advanced IP Filtering:
 1.  Go to **Workers & Pages** > **KV**.
-2.  Click **Create a Namespace** and name it (e.g., `WORKER_CONFIG`).
+2.  Click **Create a Namespace**.
+    -   *Recommendation*: Name it `CONFIG` (or `WORKER_CONFIG`).
+    -   Click **Add**.
 3.  Go back to your Worker > **Settings** > **Variables and Secrets**.
 4.  Scroll to **KV Namespace Bindings**.
 5.  Click **Add Binding**.
     -   **Variable name**: `C` (Must be exactly `C`).
-    -   **KV Namespace**: Select the namespace you just created.
+    -   **KV Namespace**: Select the namespace you just created (e.g., `CONFIG`).
 6.  Click **Save and Deploy**.
 
-### 5. Access the UI 🌐
+### 5. Advanced KV Configuration (IP Filtering) ⚙️
+You can fine-tune the built-in IP scanner by adding these keys to your KV Namespace or environment variables (though KV is preferred for dynamic updates via the UI).
+
+| Variable | Description | Default | Values |
+| :--- | :--- | :--- | :--- |
+| `ipv4` | Enable IPv4 Preferred IPs | `yes` | `yes` / `no` |
+| `ipv6` | Enable IPv6 Preferred IPs | `yes` | `yes` / `no` |
+| `ispMobile` | Include **China Mobile** IPs | `yes` | `yes` / `no` |
+| `ispUnicom` | Include **China Unicom** IPs | `yes` | `yes` / `no` |
+| `ispTelecom` | Include **China Telecom** IPs | `yes` | `yes` / `no` |
+
+*These settings control which IPs are selected when generating subscriptions using the built-in preferred IP source.*
+
+### 6. Access the UI 🌐
 Visit your worker's URL with your UUID:
 `https://<your-worker-name>.<your-subdomain>.workers.dev/<YOUR_UUID>`
 
