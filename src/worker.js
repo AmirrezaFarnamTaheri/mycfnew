@@ -749,9 +749,17 @@
                         const customHomepage = getConfigValue('homepage', env.homepage || env.HOMEPAGE);
                         if (customHomepage && customHomepage.trim()) {
                             try {
-                                // 从自定义URL获取内容
-                                const homepageResponse = await fetch(customHomepage.trim(), {
+                                const homepageUrl = new URL(customHomepage.trim());
+                                if (homepageUrl.protocol !== 'https:') {
+                                    throw new Error('homepage must be https');
+                                }
+
+                                const controller = new AbortController();
+                                const timeoutId = setTimeout(() => controller.abort(), 2500);
+
+                                const homepageResponse = await fetch(homepageUrl.toString(), {
                                     method: 'GET',
+                                    signal: controller.signal,
                                     headers: {
                                         'User-Agent': request.headers.get('User-Agent') || 'Mozilla/5.0',
                                         'Accept': request.headers.get('Accept') || '*/*',
@@ -760,12 +768,17 @@
                                     redirect: 'follow'
                                 });
 
+                                clearTimeout(timeoutId);
+
                                 if (homepageResponse.ok) {
-                                    // 获取响应内容
+                                    const contentLength = parseInt(homepageResponse.headers.get('Content-Length') || '0', 10);
+                                    if (contentLength && contentLength > 1024 * 1024) {
+                                        throw new Error('homepage too large');
+                                    }
+
                                     const contentType = homepageResponse.headers.get('Content-Type') || 'text/html; charset=utf-8';
                                     const content = await homepageResponse.text();
 
-                                    // 返回自定义首页内容
                                     return new Response(content, {
                                         status: homepageResponse.status,
                                         headers: {
@@ -775,7 +788,6 @@
                                     });
                                 }
                             } catch (error) {
-                                // 如果获取失败，继续使用默认终端页面
                                 console.error('获取自定义首页失败:', error);
                             }
                         }
@@ -6870,9 +6882,8 @@
         return providers[0];
     }
 
-    async function tryFallbackProviders(request, url, failedProvider) {
+    async function tryFallbackProviders(request, url, failedProvider, bodyBuffer = null) {
         const fallbackProviders = DOH_PROVIDERS.filter(p => p.name !== failedProvider.name);
-        const body = request.method === 'POST' ? await request.arrayBuffer() : null;
 
         for (const provider of fallbackProviders.slice(0, 2)) {
             try {
@@ -6885,7 +6896,7 @@
                 const upstreamRequest = new Request(targetUrl, {
                     method: request.method,
                     headers: headers,
-                    body: body
+                    body: bodyBuffer
                 });
 
                 const response = await fetch(upstreamRequest);

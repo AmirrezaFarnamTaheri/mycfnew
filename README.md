@@ -39,9 +39,9 @@ A comprehensive, all-in-one Cloudflare Worker solution that combines a high-perf
 -   **[DNS Encoding Guide](docs/DNS_ENCODING.md)**: Technical details on DoH `GET` request encoding.
 
 ### DoH Request Format
+-   **POST**: `Content-Type: application/dns-message` with a binary DNS *wire-format* message body.
+-   **GET**: `?dns=...` where `dns` is the DNS *wire-format* message **base64url-encoded without `=` padding** (RFC 8484 / RFC 4648); clients should send `Accept: application/dns-message`.
 -   **POST**: `Content-Type: application/dns-message` with a binary DNS message body.
--   **GET**: `?dns=...` where `dns` is **base64url-encoded** (RFC 8484); clients should send `Accept: application/dns-message`.
-
 ---
 
 ## 🚀 Quick Start
@@ -54,6 +54,8 @@ A comprehensive, all-in-one Cloudflare Worker solution that combines a high-perf
 > [!WARNING]
 > **Security Warning**:
 > 1.  **Protect your UUID**: Your UI URL contains your secret UUID. Do not share it.
+>     - **Recommended**: Protect `/<UUID>` with Cloudflare Access (or at minimum an IP allowlist / geo restriction).
+>     - **Stronger**: Add a second factor such as a required secret header or `?token=` and reject requests without it (treat the UUID as *not* the only secret).
 > 2.  **DoH Abuse**: If you enable the `/dns-query` endpoint publicly, it can be used as an open resolver. Consider adding access controls if necessary.
 
 ---
@@ -63,7 +65,7 @@ A comprehensive, all-in-one Cloudflare Worker solution that combines a high-perf
 | Variable | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
 | `UUID` | Secret | *None* | **Required (secret).** Acts as the access credential for VLESS/Trojan. **Generate a unique value, never reuse, and rotate immediately if exposed (git commit/screenshot/shared UI URL).** |
-| `PROXYIP` | Text | *Empty* | *(Optional)* Custom upstream proxy IP/Domain. **Do not** set this to your own Worker domain or other Cloudflare/Workers endpoints to avoid routing loops/timeouts. |
+| `PROXYIP` | Text | *Empty* | *(Optional)* Custom upstream proxy IP/Domain. **Do not** set this to the Worker’s own hostname (e.g., `*.workers.dev` or any custom domain routed to this Worker) or any endpoint that resolves back to this Worker, to avoid routing loops/timeouts. |
 | `SOCKS5` | Secret | *Empty* | Optional SOCKS5 fallback (`user:pass@host:port`). |
 
 ---
