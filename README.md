@@ -50,9 +50,9 @@ You can configure the worker via **Settings -> Variables and Secrets**.
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `UUID` | Your VLESS/Trojan User ID | `db7dfe45-b10c-457c-81d2-0c934f3b0100` |
-| `PROXYIP` | Custom Proxy IP/Domain | `ts.hpc.tw` (and others) |
-| `KV` | Bind a KV Namespace as `C` to enable config saving | N/A |
+| `UUID` | **Required.** Your VLESS/Trojan User ID. **Must be changed for security.** | (Generate a new one) |
+| `PROXYIP` | *(Optional)* Custom Proxy IP/Domain (traffic exits via this upstream; only use endpoints you trust) | (empty) |
+| `C` | KV Namespace binding name (required for "Save Config") | N/A |
 
 **Generating a UUID:**
 - Windows (PowerShell): `[guid]::NewGuid()`
@@ -73,6 +73,9 @@ To use the "Save Config" feature in the UI:
 Visit: `https://your-domain.workers.dev/YOUR_UUID`
 (Replace `YOUR_UUID` with the actual UUID configured).
 
+> [!WARNING]
+> **Security Risk**: The UI URL contains your secret `UUID`. Avoid accessing it on public or untrusted networks. Anyone who obtains this URL can access your proxy settings and use your worker.
+
 ### Subscription Links
 In the UI, you can copy subscription links for various clients.
 - **Auto**: Detects client based on User-Agent.
@@ -83,6 +86,9 @@ In the UI, you can copy subscription links for various clients.
 Use your worker as a secure DNS resolver:
 - **URL**: `https://your-domain.workers.dev/dns-query`
 - **Dashboard**: `https://your-domain.workers.dev/doh`
+
+> [!WARNING]
+> If `/dns-query` is publicly accessible, your worker can function as an open DNS resolver and may be abused. Consider restricting access (token/header, Cloudflare WAF rules, IP allowlist, etc.) before sharing the URL.
 
 ---
 

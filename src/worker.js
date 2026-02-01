@@ -1,7 +1,7 @@
     // CFnew - 终端 v2.9.3
     // 版本: v2.9.3
     import { connect } from 'cloudflare:sockets';
-    let at = '351c9981-04b6-4103-aa4b-864aa9c91469';
+    let at = '';
     let fallbackAddress = '';
     let socks5Config = '';
     let customPreferredIPs = [];
@@ -236,7 +236,7 @@
             clearTimeout(timeoutId);
             return response.status < 500;
         } catch (error) {
-            return true;
+            return false;
         }
     }
 
@@ -608,7 +608,8 @@
                     });
                 }
 
-            if (request.method === 'POST' && request.headers.get('content-type') === 'application/grpc' && eg) {
+            const ct = request.headers.get('content-type') || '';
+            if (request.method === 'POST' && ct.toLowerCase().startsWith('application/grpc') && eg) {
                 return await handleGrpcRequest(request);
             }
 
@@ -629,7 +630,7 @@
                 return new Response('Internal Server Error', { status: 500 });
             }
 
-            if (request.headers.get('Upgrade') === atob('d2Vic29ja2V0')) {
+            if (request.headers.get('Upgrade')?.toLowerCase() === atob('d2Vic29ja2V0')) {
                 return await handleWsRequest(request);
                 }
 
@@ -1399,67 +1400,9 @@
 
     // 生成 Clash 配置
     async function generateClashConfig(links, request, user) {
-        // 先通过订阅转换服务获取 Clash 配置
-        const subscriptionUrl = new URL(request.url);
-        subscriptionUrl.pathname = subscriptionUrl.pathname.replace(/\/sub$/, '') + '/sub';
-        subscriptionUrl.searchParams.set('target', 'base64');
-        const encodedUrl = encodeURIComponent(subscriptionUrl.toString());
-        const converterUrl = `${scu}?target=clash&url=${encodedUrl}&insert=false&emoji=true&list=false&xudp=false&udp=false&tfo=false&expand=true&scv=false&fdn=false&new_name=true`;
-
-        try {
-            const response = await fetch(converterUrl);
-            if (!response.ok) {
-                throw new Error('订阅转换服务失败');
-            }
-
-            let clashConfig = await response.text();
-
-            // 如果 ECH 开启，为所有节点添加 ECH 参数
-            if (enableECH) {
-                // 处理单行格式的节点：  - {name: ..., server: ..., ...}
-                // 需要正确处理嵌套的花括号（如 ws-opts: {path: "...", headers: {Host: ...}}）
-                clashConfig = clashConfig.split('\n').map(line => {
-                    // 检查是否是节点行（以 "  - {" 开头，且包含 name: 和 server:）
-                    if (/^\s*-\s*\{/.test(line) && line.includes('name:') && line.includes('server:')) {
-                        // 检查是否已经有 ech-opts
-                        if (line.includes('ech-opts')) {
-                            return line; // 已有 ech-opts，不修改
-                        }
-                        // 找到最后一个 } 的位置（从右往左查找，处理嵌套花括号）
-                        const lastBraceIndex = line.lastIndexOf('}');
-                        if (lastBraceIndex > 0) {
-                            // 检查最后一个 } 之前是否有内容，确保格式正确
-                            const beforeBrace = line.substring(0, lastBraceIndex).trim();
-                            if (beforeBrace.length > 0) {
-                                // 在最后一个 } 之前添加 , ech-opts: {enable: true, query-server-name: ...}
-                                // 确保在逗号前有空格
-                                const echDomain = customECHDomain || 'cloudflare-ech.com';
-                                const needsComma = !beforeBrace.endsWith(',') && !beforeBrace.endsWith('{');
-                                return line.substring(0, lastBraceIndex) + (needsComma ? ', ' : ' ') + `ech-opts: {enable: true, query-server-name: ${echDomain}}` + line.substring(lastBraceIndex);
-                            }
-                        }
-                    }
-                    return line;
-                }).join('\n');
-
-                // 处理多行格式的节点（如果存在）
-                // 只处理单行格式，多行格式由订阅转换服务处理，不需要额外修改
-                // 如果订阅转换服务返回多行格式，通常已经是正确的格式
-            }
-
-            // 替换 DNS nameserver 为阿里的加密 DNS
-            clashConfig = clashConfig.replace(/^(\s*nameserver:\s*\n)((?:\s*-\s*[^\n]+\n)*)/m, (match, header, items) => {
-                // 替换所有 nameserver 项为阿里的加密 DNS
-                const workerDomain = subscriptionUrl.hostname;
-                const dnsServer = (customDNS && customDNS !== 'https://dns.joeyblog.eu.org/joeyblog') ? customDNS : 'https://' + workerDomain + '/dns-query';
-                return header + `    - ${dnsServer}\n`;
-            });
-
-            return clashConfig;
-        } catch (e) {
-            // 如果订阅转换失败，返回错误
-            throw new Error('无法获取 Clash 配置: ' + e.message);
-        }
+        // Generate Clash configuration locally to avoid external dependencies and data leaks.
+        const clashConfig = generateLocalClashConfig(links, user);
+        return clashConfig;
     }
 
     // 全局变量存储ECH调试信息
@@ -2010,9 +1953,12 @@
         const targetUrl = `https://${address}:${port || 443}${url.pathname}${url.search}`;
 
         try {
+            const headers = new Headers(request.headers);
+            headers.set('Host', address);
+
             const proxyReq = new Request(targetUrl, {
                 method: request.method,
-                headers: request.headers,
+                headers: headers,
                 body: request.body,
                 redirect: 'follow'
             });
@@ -2238,7 +2184,7 @@
                         if (targetAddress) {
                             const { address, port } = parseAddressAndPort(targetAddress);
                             // 使用 URL 类型 (2) 作为通用回退
-                            await forwardTCP(2, address, port || 80, chunk, serverSock, null, remoteConnWrapper);
+                            await forwardTCP(2, address, port || 443, chunk, serverSock, null, remoteConnWrapper);
                             return;
                         } else {
                             throw new Error('No backend configured for VMess/SS relay');
@@ -6821,6 +6767,8 @@
 
     async function tryFallbackProviders(request, url, failedProvider) {
         const fallbackProviders = DOH_PROVIDERS.filter(p => p.name !== failedProvider.name);
+        const body = request.method === 'POST' ? await request.arrayBuffer() : null;
+
         for (const provider of fallbackProviders.slice(0, 2)) {
             try {
                 const targetUrl = provider.url + url.search;
@@ -6831,7 +6779,7 @@
                 const upstreamRequest = new Request(targetUrl, {
                     method: request.method,
                     headers: headers,
-                    body: request.method === 'POST' ? await request.arrayBuffer() : null
+                    body: body
                 });
 
                 const response = await fetch(upstreamRequest);
