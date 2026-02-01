@@ -2670,7 +2670,7 @@
                     customDNSHint: 'آدرس سرور DNS برای جستجوی پیکربندی ECH (فرمت DoH)',
                     customECHDomain: 'دامنه ECH سفارشی',
                     customECHDomainPlaceholder: 'مثال: cloudflare-ech.com',
-                    customECHDomainHint: 'دامنه استفاده شده در پیکربندی ECH، خالی بگذارید تا از مقدار پیش‌فرض استفاده شود',
+                    customECHDomainHint: 'دامنه مورد استفاده در پیکربندی ECH، اگر خالی باشد از پیش‌فرض استفاده می‌شود',
                     trojanPassword: 'رمز عبور Trojan (اختیاری):',
                     customPath: 'مسیر سفارشی (d):',
                     customPathPlaceholder: 'مثال: /secret-path',

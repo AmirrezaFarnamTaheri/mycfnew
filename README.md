@@ -1,92 +1,92 @@
-# Cloudflare Worker Proxy & DoH Ultimate 🛡️🚀
+# CFnew - Ultimate Terminal v2.9.3
 
-A comprehensive, all-in-one Cloudflare Worker solution that combines a high-performance **VLESS/Trojan Proxy** with a robust **DNS-over-HTTPS (DoH) Resolver**.
+**Language:** [English](README.md) | [中文](README_ZH.md) | [فارسی](فارسی.md)
 
-![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-orange?style=flat&logo=cloudflare)
-![License](https://img.shields.io/badge/License-MIT-blue.svg)
+[Telegram Group](https://t.me/+ft-zI76oovgwNmRh)
 
 ---
 
-## 🌟 Key Features
+## 🛡️ Introduction
 
-### 1. Advanced Proxy Protocols
--   **Multi-Protocol**: Support for **VLESS**, **Trojan**, **Shadowsocks**, **VMess**, and **gRPC**.
--   **WebSocket & TLS**: Fully compliant with standard transport protocols.
--   **Region-Smart Routing**: Automatically selects the best upstream IP based on region (e.g., US, SG, DE).
--   **Legacy IP Support**: Integrated support for Visa/CDN legacy IPs (toggleable via UI).
+**CFnew** is a state-of-the-art, all-in-one proxy solution running on Cloudflare Workers. It is designed to be **unblockable**, **fast**, and **easy to manage**.
 
-### 2. High-Performance DoH Resolver
--   **Multi-Provider Load Balancing**: Distributes DNS queries across Cloudflare, Google, Quad9, OpenDNS, and more.
--   **Privacy & Ad-Blocking**: Optional routing to ad-blocking providers (AdGuard, NextDNS).
--   **Caching**: Built-in response caching to minimize latency.
--   **Standards Compliant**: Supports RFC 8484 (`GET` and `POST`).
+*   **Serverless**: No VPS required. Runs on Cloudflare's global edge network (300+ cities).
+*   **No-Code Management**: Manage everything (UUID, IPs, Protocols) via a beautiful "Matrix-style" Web Dashboard.
+*   **Polymorphic**: Acts as VLESS, Trojan, and a normal website simultaneously.
+*   **Smart Routing**: Automatically selects the best route based on your region.
 
-### 3. Ultimate UI & Management
--   **Web Interface**: A beautiful, bilingual (Chinese/Farsi) dashboard to manage your worker.
--   **Configuration Persistence**: Save your settings (Custom IPs, UUIDs, Ports) using Cloudflare KV.
--   **Subscription Generation**: Generate subscription links for:
-    -   Clash (Meta/Premium)
-    -   Sing-box
-    -   V2Ray / Xray
-    -   Surge / Quantumult X
--   **Local Config Generation**: Generate full configuration files *locally* on the worker, avoiding external converters for better security.
+---
+
+## 🧠 The Mailman Analogy: How it Works
+
+To understand how this tool bypasses censorship, imagine a **Secure Postal Service**.
+
+### 1. The Disguise 🎭
+You want to send a letter to **YouTube** (a blocked location).
+Instead of mailing it directly, you put it in an envelope addressed to **Cloudflare** (a allowed business).
+The Inspector (Firewall) sees the address "Cloudflare" and lets it pass.
+
+### 2. The Verification 🔐
+On the back of the envelope, you place a special, invisible stamp called a **UUID**.
+When the letter arrives at Cloudflare, the Worker checks this stamp.
+*   **No stamp?** The letter is thrown away.
+*   **Valid stamp?** The Worker opens the envelope, reads your actual request ("Go to YouTube"), and fetches the data for you.
+
+### 3. The Delivery 🚚
+The Worker gets the data from YouTube and sends it back to you in a Cloudflare envelope.
+To the outside world, you are just talking to Cloudflare.
+
+*   **Read the full [Analogy & Deep Dive](docs/ANALOGY.md)** for details on ECH, Fragmentation, and ProxyIPs.
+
+---
+
+## 🚀 Quick Start
+
+### 1. Deployment
+1.  Copy the code from `worker.js`.
+2.  Paste it into a new Cloudflare Worker.
+3.  Deploy.
+
+### 2. Configuration
+1.  Go to Worker Settings -> Variables.
+2.  Add `u` = `YOUR_UUID` (Generate one [here](https://www.uuidgenerator.net/)).
+3.  Add KV Namespace binding named `C` (Required for dashboard settings).
+
+### 3. Usage
+Visit: `https://your-worker.workers.dev/<YOUR_UUID>`
+
+**[👉 Full Step-by-Step Walkthrough](docs/WALKTHROUGH.md)**
+
+---
+
+## 🛠️ Features & Configuration
+
+### Supported Protocols
+*   **VLESS** (Native, WebSocket, TLS) - *Recommended*
+*   **Trojan** (Native, TLS) - *High Security*
+*   **Shadowsocks / VMess** (Link Generation Only)
+*   **Hysteria 2 / TUIC** (Link Generation Only - requires external backend)
+
+### Key Variables
+
+| Variable | Description |
+| :--- | :--- |
+| `u` | **UUID**. Your secret password. |
+| `p` | **ProxyIP**. The backend IP to relay traffic (e.g., `ip.example.com`). |
+| `d` | **Hidden Path**. Access dashboard via `/secret-path` instead of UUID. |
+| `s` | **SOCKS5**. Upstream proxy (`user:pass@host:port`). |
+
+*Full configuration guide available in the Dashboard.*
 
 ---
 
 ## 📚 Documentation
 
--   **[Deployment Guide](docs/DEPLOYMENT.md)**: Step-by-step instructions to get running in 5 minutes.
--   **[DNS Encoding Guide](docs/DNS_ENCODING.md)**: Technical details on DoH `GET` request encoding.
-
-### DoH Request Format
--   **POST**: `Content-Type: application/dns-message` with a binary DNS *wire-format* message body.
--   **GET**: `?dns=...` where `dns` is the DNS *wire-format* message **base64url-encoded without `=` padding** (RFC 8484 / RFC 4648); clients should send `Accept: application/dns-message`.
--   **POST**: `Content-Type: application/dns-message` with a binary DNS message body.
----
-
-## 🚀 Quick Start
-
-1.  **Deploy Code**: Copy `worker.js` to your Cloudflare Worker.
-2.  **Set Secrets**: Configure your `UUID` in "Variables and Secrets".
-3.  **Bind KV**: Add a KV Namespace binding named `C` to enable saving settings.
-4.  **Visit UI**: Go to `https://your-worker.workers.dev/<YOUR_UUID>`.
-
-> [!WARNING]
-> **Security Warning**:
-> 1.  **Protect your UUID**: Your UI URL contains your secret UUID. Do not share it.
->     - **Recommended**: Protect `/<UUID>` with Cloudflare Access (or at minimum an IP allowlist / geo restriction).
->     - **Stronger**: Add a second factor such as a required secret header or `?token=` and reject requests without it (treat the UUID as *not* the only secret).
-> 2.  **DoH Abuse**: If you enable the `/dns-query` endpoint publicly, it can be used as an open resolver. Consider adding access controls if necessary.
+*   **[Walkthrough](docs/WALKTHROUGH.md)**: Zero to Hero guide.
+*   **[Deployment Guide](docs/DEPLOYMENT.md)**: Technical deployment details.
+*   **[Analogy](docs/ANALOGY.md)**: Conceptual explanation.
 
 ---
 
-## 🛠️ Configuration Variables
-
-| Variable | Type | Default | Description |
-| :--- | :--- | :--- | :--- |
-| `UUID` | Secret | *None* | **Required (secret).** Acts as the access credential for VLESS/Trojan. **Generate a unique value, never reuse, and rotate immediately if exposed (git commit/screenshot/shared UI URL).** |
-| `PROXYIP` | Text | *Empty* | *(Optional)* Custom upstream proxy IP/Domain. **Do not** set this to the Worker’s own hostname (e.g., `*.workers.dev` or any custom domain routed to this Worker) or any endpoint that resolves back to this Worker, to avoid routing loops/timeouts. |
-| `SOCKS5` | Secret | *Empty* | Optional SOCKS5 fallback (`user:pass@host:port`). |
-
----
-
-## 🔗 Endpoints
-
-| Path | Method | Description |
-| :--- | :--- | :--- |
-| `/<UUID>` | GET | Access the Web UI Dashboard. |
-| `/<UUID>/sub` | GET | Get subscription links. |
-| `/dns-query` | GET/POST | DNS-over-HTTPS endpoint. |
-| `/doh` | GET | DoH Information Landing Page. |
-
----
-
-## 🤝 Credits & Acknowledgements
-
-This project integrates and improves upon the work of several open-source projects:
--   **3Kmfi6HP**: Original VLESS Worker script.
--   **Hossein Pira**: DoH Proxy Worker logic.
--   **Tehran Network**: UI concepts and Persian localization.
--   **Yongge**: Optimization and features.
-
-**Disclaimer**: This tool is for educational and research purposes only. The developers are not responsible for any misuse.
+## ⚠️ Disclaimer
+This tool is for educational and research purposes only. The developers are not responsible for any misuse.
