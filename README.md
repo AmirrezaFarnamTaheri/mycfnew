@@ -174,9 +174,9 @@ graph TD
 | 变量名 | 功能 | 默认 | 详细说明 |
 | :--- | :--- | :--- | :--- |
 | **`rm`** | Region Match | `yes` | **地区匹配**。是否根据访问者 IP 自动匹配最近的 Worker 节点。设为 `no` 则随机分配。 |
-| **`qj`** | Downgrade | `yes` | **降级控制**。设为 `no` 开启自动故障转移。逻辑：CF直连失败 -> 尝试 SOCKS5 -> 尝试 ProxyIP。 |
+| **`qj`** | Downgrade | `yes` | **降级控制**。`yes` (默认) 表示**禁用**故障转移。设为 `no` 则**开启**自动故障转移 (CF直连失败后 -> 尝试 SOCKS5/ProxyIP)。 |
 | **`dkby`** | Port Filter | `no` | **端口过滤**。设为 `yes` 则只生成 TLS (443/2053等) 节点，屏蔽非 TLS (80/8080等)。ECH 开启时强制为 yes。 |
-| **`yxby`** | Prefer Filter | `no` | **优选过滤**。设为 `yes` 则**禁用**所有优选 IP，只保留原生 Worker 地址。 |
+| **`yxby`** | Prefer Filter | `no` | **优选过滤**。`no` (默认) 表示**使用**优选 IP。设为 `yes` 则**禁用**所有优选 IP，只保留原生 Worker 地址。 |
 | **`ae`** | API Enable | `no` | **API 开关**。设为 `yes` 允许通过 REST API 修改配置/IP。建议仅在需要时开启。 |
 | **`scu`** | SubConverter | (内置) | **订阅转换后端**。用于将 VLESS 链接转换为 Clash/Surge 格式。默认使用 `url.v1.mk`。 |
 | **`homepage`**| Camouflage | (空) | **伪装首页**。访问根路径 `/` 时，Worker 会获取此 URL 的内容并返回。模拟真实网站。 |
@@ -252,7 +252,7 @@ graph TD
 2.  选择 **Workers & Pages** -> **Create Worker**。
 3.  命名 (如 `cf-proxy`) -> **Deploy**。
 4.  点击 **Edit Code**。
-5.  **关键步骤**: 打开本项目的 `少年你相信光吗` 文件，全选复制。
+ 5.  **关键步骤**: 打开本项目的 Worker 入口文件 `少年你相信光吗` (源码)，全选复制其内容。
 6.  清空 Cloudflare 编辑器中的代码，粘贴进去。
 7.  **Save and deploy**。
 
