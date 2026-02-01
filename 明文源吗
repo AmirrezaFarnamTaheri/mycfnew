@@ -2504,6 +2504,11 @@
                     enableShadowsocks: '启用 Shadowsocks 协议',
                     enableTrojan: '启用 Trojan 协议',
                     enableXhttp: '启用 xhttp 协议',
+                    enableTUIC: '启用 TUIC 协议',
+                    enableHysteria2: '启用 Hysteria 2 协议',
+                    enableVLESSgRPC: '启用 VLESS gRPC 协议',
+                    linkOnlyHint: '需外置后端 (Link-Only)',
+                    grpcHint: '需配合自定义域名 (gRPC)',
                     trojanPassword: 'Trojan 密码 (可选):',
                     customPath: '自定义路径 (d):',
                     customPathPlaceholder: '例如: /secret-path',
@@ -2653,6 +2658,11 @@
                     enableShadowsocks: 'فعال‌سازی پروتکل Shadowsocks',
                     enableTrojan: 'فعال‌سازی پروتکل Trojan',
                     enableXhttp: 'فعال‌سازی پروتکل xhttp',
+                    enableTUIC: 'فعال‌سازی پروتکل TUIC',
+                    enableHysteria2: 'فعال‌سازی پروتکل Hysteria 2',
+                    enableVLESSgRPC: 'فعال‌سازی پروتکل VLESS gRPC',
+                    linkOnlyHint: 'نیاز به سرور بک‌اند (Link-Only)',
+                    grpcHint: 'نیازمند دامنه شخصی (gRPC)',
                     enableECH: 'فعال‌سازی ECH (Encrypted Client Hello)',
                     enableECHHint: 'پس از فعال‌سازی، در هر بار تازه‌سازی اشتراک، پیکربندی ECH به‌روز به‌طور خودکار از DoH دریافت شده و به لینک‌ها اضافه می‌شود',
                     customDNS: 'سرور DNS سفارشی',
@@ -3076,11 +3086,26 @@
                                     <label style="display: inline-flex; align-items: center; cursor: pointer; color: #00ff00;">
                                         <input type="checkbox" id="ex" style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;">
 
-                            <div class="checkbox-item" style="margin-top: 10px;"><label style="display: flex; align-items: center;"><input type="checkbox" id="evm" ${evm ? 'checked' : ''} style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;"> 启用 VMess</label></div>
-                            <div class="checkbox-item" style="margin-top: 10px;"><label style="display: flex; align-items: center;"><input type="checkbox" id="ess" ${ess ? 'checked' : ''} style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;"> 启用 Shadowsocks</label></div>
-                            <div class="checkbox-item" style="margin-top: 10px;"><label style="display: flex; align-items: center;"><input type="checkbox" id="etu" ${etu ? 'checked' : ''} style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;"> 启用 TUIC</label></div>
-                            <div class="checkbox-item" style="margin-top: 10px;"><label style="display: flex; align-items: center;"><input type="checkbox" id="ehy" ${ehy ? 'checked' : ''} style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;"> 启用 Hysteria 2</label></div>
-                            <div class="checkbox-item" style="margin-top: 10px;"><label style="display: flex; align-items: center;"><input type="checkbox" id="eg" ${eg ? 'checked' : ''} style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;"> 启用 VLESS gRPC</label></div>
+                            <div class="checkbox-item" style="margin-top: 10px;">
+                                <label style="display: flex; align-items: center;"><input type="checkbox" id="evm" ${evm ? 'checked' : ''} style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;"> ${t.enableVMess}</label>
+                                <small style="color: #ffaa00; font-size: 0.8rem; display: block; margin-top: 2px; margin-left: 26px;">${t.linkOnlyHint}</small>
+                            </div>
+                            <div class="checkbox-item" style="margin-top: 10px;">
+                                <label style="display: flex; align-items: center;"><input type="checkbox" id="ess" ${ess ? 'checked' : ''} style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;"> ${t.enableShadowsocks}</label>
+                                <small style="color: #ffaa00; font-size: 0.8rem; display: block; margin-top: 2px; margin-left: 26px;">${t.linkOnlyHint}</small>
+                            </div>
+                            <div class="checkbox-item" style="margin-top: 10px;">
+                                <label style="display: flex; align-items: center;"><input type="checkbox" id="etu" ${etu ? 'checked' : ''} style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;"> ${t.enableTUIC}</label>
+                                <small style="color: #ffaa00; font-size: 0.8rem; display: block; margin-top: 2px; margin-left: 26px;">${t.linkOnlyHint}</small>
+                            </div>
+                            <div class="checkbox-item" style="margin-top: 10px;">
+                                <label style="display: flex; align-items: center;"><input type="checkbox" id="ehy" ${ehy ? 'checked' : ''} style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;"> ${t.enableHysteria2}</label>
+                                <small style="color: #ffaa00; font-size: 0.8rem; display: block; margin-top: 2px; margin-left: 26px;">${t.linkOnlyHint}</small>
+                            </div>
+                            <div class="checkbox-item" style="margin-top: 10px;">
+                                <label style="display: flex; align-items: center;"><input type="checkbox" id="eg" ${eg ? 'checked' : ''} style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;"> ${t.enableVLESSgRPC}</label>
+                                <small style="color: #ffaa00; font-size: 0.8rem; display: block; margin-top: 2px; margin-left: 26px;">${t.grpcHint}</small>
+                            </div>
 
                                             <span style="font-size: 1.1rem;">${t.enableXhttp}</span>
                                     </label>

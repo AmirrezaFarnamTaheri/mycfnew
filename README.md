@@ -7,18 +7,21 @@
 ## 📖 目录
 
 1.  [简介与功能](#简介与功能)
-2.  [核心概念拆解](#核心概念拆解-unpacking-concepts)
-3.  [配置百科全书 (Configuration Encyclopedia)](#配置百科全书-configuration-encyclopedia)
+2.  [Capabilities Showcase (功能展示)](#capabilities-showcase-功能展示)
+3.  [核心概念拆解](#核心概念拆解-unpacking-concepts)
+4.  ["Link-Only" 协议深度解析](#link-only-协议深度解析)
+5.  [配置百科全书 (Configuration Encyclopedia)](#配置百科全书-configuration-encyclopedia)
     *   [基础身份验证](#1-基础身份验证-identity)
     *   [网络中继与隐藏](#2-网络中继与隐藏-relay--stealth)
-    *   [协议开关](#3-协议开关-protocols)
+    *   [协议开关与技术细节](#3-协议开关与技术细节-protocols)
     *   [高级控制与优选](#4-高级控制与优选-advanced--preferred)
-4.  [终极配置指南：开启所有功能](#终极配置指南开启所有功能)
-5.  [ProxyIP 深度解析](#proxyip-深度解析)
-6.  [客户端配置指南](#客户端配置指南)
-7.  [故障排除](#故障排除-troubleshooting)
-8.  [API 管理](#api-管理)
-9.  [Star History](#star-history)
+6.  [终极配置指南：开启所有功能](#终极配置指南开启所有功能)
+7.  [从零开始安装 (Zero to Hero)](#从零开始安装-zero-to-hero)
+8.  [ProxyIP 深度解析](#proxyip-深度解析)
+9.  [客户端配置指南](#客户端配置指南)
+10. [故障排除](#故障排除-troubleshooting)
+11. [API 管理](#api-管理)
+12. [Star History](#star-history)
 
 ---
 
@@ -31,6 +34,28 @@ CFnew 是一个运行在 Cloudflare Workers 上的轻量级代理脚本。它利
 *   **图形化管理**：通过 KV 存储配置，无需修改代码即可在网页端实时调整设置。
 *   **内置工具**：集成延迟测试、优选 IP 管理、DoH (DNS-over-HTTPS) 代理。
 *   **智能订阅**：根据您的客户端 (Clash, v2rayNG, etc.) 自动输出最合适的配置格式。
+
+---
+
+## Capabilities Showcase (功能展示)
+
+CFnew 不仅仅是一个简单的代理脚本，它集成了多种强大的能力：
+
+*   **🛡️ Proxy Power (代理能力)**:
+    *   **Native**: 原生支持 VLESS、Trojan、VLESS gRPC，性能最佳。
+    *   **Relay**: 支持 VMess、Shadowsocks 流量转发，兼容旧设备。
+*   **📡 Subscription Manager (订阅管理)**:
+    *   智能识别 Clash, v2rayNG, Sing-box, Surge, Quantumult X 等客户端 User-Agent。
+    *   自动生成对应格式的配置，无需手动转换。
+*   **⚡ Latency Test (延迟测试)**:
+    *   内置图形化界面，直接在浏览器中测试 Cloudflare 各个 IP 的 HTTP 握手延迟。
+    *   一键将最快 IP 添加到优选列表。
+*   **🔒 DoH Relay (安全 DNS)**:
+    *   提供 `/dns-query` 接口，支持标准 DoH 协议。
+    *   自动负载均衡请求到 Google, Cloudflare, Quad9 等上游，抗 DNS 污染。
+*   **⚙️ API Engine (自动化引擎)**:
+    *   提供 RESTful API，允许通过脚本自动更新优选 IP。
+    *   支持 IP 的增删改查，适合高级用户编写定时任务。
 
 ---
 
@@ -52,15 +77,49 @@ CFnew 是一个运行在 Cloudflare Workers 上的轻量级代理脚本。它利
 
 ---
 
+## "Link-Only" 协议深度解析
+
+**为什么 VMess, Shadowsocks, TUIC, Hysteria 2 被称为 "Link-Only" (仅生成链接)?**
+
+Cloudflare Workers 运行在一个特殊的无服务器环境中，这带来了一些关键限制：
+1.  **UDP 限制**: Workers 目前对 UDP 的支持有限，无法像标准服务器那样处理复杂的 UDP 握手（这直接排除了 Hysteria 2 和 TUIC 的服务端运行）。
+2.  **端口监听**: Workers 只能由 Cloudflare 触发运行，不能监听任意端口（如 1080 或 443 以外的端口）。
+
+**Worker 的角色**:
+在这种情况下，Worker 充当 **"链接生成器"** 和 **"订阅管理器"**。
+*   它**不**运行 Hysteria 2 或 TUIC 服务端。
+*   它**生成**指向您自建后端服务器的配置链接。
+
+**如何使用**:
+1.  **必须有后端**: 您必须有一台独立的服务器（VPS, Serv00, etc.）实际运行 Hysteria 2 / TUIC / VMess / Shadowsocks 服务。
+2.  **配置分发**: 使用 Worker 生成的订阅链接，将配置下发给您的客户端。
+3.  **流量走向**:
+    *   **TUIC/Hysteria**: 客户端 -> 您的后端服务器 (Worker 仅作为配置源)。
+    *   **VMess/SS (Relay模式)**: 客户端 -> Worker -> 您的后端服务器 (通过 `p` 或 `s` 变量转发)。
+
+---
+
 ## 配置百科全书 (Configuration Encyclopedia)
 
 这里详细解释每一个变量。
+
+**KV vs 环境变量 (Precedence)**:
+*   **KV 配置优先**: 如果您在图形界面 (KV) 和 Worker 设置 (环境变量) 中都配置了同一个变量，**KV 中的值会覆盖环境变量**。
+*   **建议**: 使用环境变量进行初始设置 (如 UUID)，使用图形界面进行日常管理。
 
 ### 1. 基础身份验证 (Identity)
 
 | 变量 | 全称 | 类型 | 默认值 | 详细说明 | 为什么使用? | 示例 |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **`u`** | **UUID** | String | (必需) | 这里的 `u` 代表 User ID。它是 VLESS/Trojan 协议认证的核心。Worker 会检查请求中的 UUID 是否与此变量匹配。 | **安全**。防止未授权用户使用您的代理消耗流量。 | `84439981-04b6-4103-aa4b-864aa9c91469` |
+
+**Tip: 如何生成 UUID?**
+您可以在 Linux/Mac 终端运行 `uuidgen`，或者在 Windows PowerShell 运行 `[guid]::NewGuid()`。也可以使用在线生成器。
+
+**关于 UUID 版本 (v1 vs v4 vs v7):**
+*   **v4 (随机)**: **最推荐**。完全随机生成，隐私性最好，也是最通用的标准。
+*   **v1 (时间+MAC)**: 包含生成时间戳和网卡 MAC 地址。虽然保证唯一，但可能会暴露您的设备信息，不推荐用于公开代理。
+*   **v7 (时间排序)**: 新标准，按时间顺序生成，适合数据库索引。对于代理认证来说，与 v4 区别不大，可以使用。
 
 ### 2. 网络中继与隐藏 (Relay & Stealth)
 
@@ -71,7 +130,11 @@ CFnew 是一个运行在 Cloudflare Workers 上的轻量级代理脚本。它利
 | **`d`** | **Directory** | String | (空) | 自定义访问路径。设置后，UUID 路径失效。 | **防探测**。让 Worker 看起来像个普通网站，只有知道路径的人才能看到面板。 | `/my-secret-path` |
 | **`wk`** | **Worker Region** | String | (自动) | 强制 Worker 匹配的地区代码。支持 `SG`, `US`, `JP`, `HK` 等。 | **就近接入**。强制 Worker 使用指定地区的优选 IP，降低延迟。 | `SG` |
 
-### 3. 协议开关 (Protocols)
+**ProxyIP 与 SOCKS5 进阶**:
+*   **`p` (ProxyIP)**: 仅支持 TCP 转发。目标必须支持 HTTP/HTTPS 流量。如果填入域名，Worker 会解析该域名。
+*   **`s` (SOCKS5)**: 支持更复杂的认证。格式严格为 `user:pass@host:port`。如果密码包含特殊字符，请进行 URL 编码。
+
+### 3. 协议开关与技术细节 (Protocols)
 
 设置为 `yes` 开启，`no` 关闭。
 
@@ -80,13 +143,17 @@ CFnew 是一个运行在 Cloudflare Workers 上的轻量级代理脚本。它利
 | **`ev`** | **VLESS** | Bool | `yes` | **原生处理**。最推荐，性能最好。 |
 | **`et`** | **Trojan** | Bool | `no` | **原生处理**。伪装成 HTTPS 流量，抗干扰强。 |
 | **`ex`** | **xhttp** | Bool | `no` | **原生处理**。基于 HTTP POST。需开启 Cloudflare gRPC。 |
-| **`evm`** | **VMess** | Bool | `no` | **仅生成链接**。流量需通过 `p` 或 `s` 中继。Worker 无法直接作为 VMess 服务端。 |
-| **`ess`** | **Shadowsocks** | Bool | `no` | **仅生成链接**。同上，需后端支持。 |
-| **`etu`** | **TUIC** | Bool | `no` | **仅生成链接**。UDP 协议。Worker 无法处理，仅用于分发自建服务器配置。 |
-| **`ehy`** | **Hysteria 2** | Bool | `no` | **仅生成链接**。UDP 协议。同上。 |
+| **`evm`** | **VMess** | Bool | `no` | **仅生成链接**。需后端支持。 |
+| **`ess`** | **Shadowsocks** | Bool | `no` | **仅生成链接**。需后端支持。 |
+| **`etu`** | **TUIC** | Bool | `no` | **仅生成链接**。UDP 协议。需独立后端。 |
+| **`ehy`** | **Hysteria 2** | Bool | `no` | **仅生成链接**。UDP 协议。需独立后端。 |
 | **`eg`** | **VLESS gRPC** | Bool | `no` | **原生处理**。流量通过 gRPC 传输。 |
-| **`tp`** | **Trojan Pass** | String | (UUID) | Trojan 协议的密码。如果不填，默认使用 `u` 变量的值。 |
-| **`ech`** | **ECH** | Bool | `no` | **增强功能**。开启 Encrypted Client Hello。自动启用 `dkby=yes`。 |
+
+**Technical Deep Dive: VLESS vs Trojan**
+*   **VLESS (Native)**: 一种无状态的轻量级传输协议。它不进行握手签名，而是依赖底层的传输层（如 TLS）进行加密。
+    *   *优势*: 极低的握手延迟，资源占用极小。
+*   **Trojan (Native)**: 旨在模仿互联网上最常见的 HTTPS 流量。它在连接建立时验证 SHA224 哈希后的密码。
+    *   *优势*: 在强审查网络中，其流量特征更像正常的网页浏览，抗封锁能力理论上更强。
 
 ### 4. 高级控制与优选 (Advanced & Preferred)
 
@@ -94,15 +161,13 @@ CFnew 是一个运行在 Cloudflare Workers 上的轻量级代理脚本。它利
 | :--- | :--- | :--- | :--- |
 | **`yx`** | **优选 IP** | (空) | **最高优先级**。手动指定的优选列表。格式: `IP:Port#备注`。 |
 | **`yxURL`** | **优选 URL** | (默认) | 从远程 TXT 文件获取优选 IP。覆盖内置默认源。 |
-| **`scu`** | **Sub Converter** | (默认) | 订阅转换后端 URL。用于生成 Clash/Surge 格式。 |
-| **`homepage`**| **伪装首页** | (空) | 访问根路径 `/` 时显示的内容。填入一个 URL (如 `https://www.google.com`)。 |
-| **`epd`** | **优选域名** | `yes` | 是否启用内置的优选域名 (如 `time.is` 等)。 |
-| **`epi`** | **优选 IP** | `yes` | 是否启用动态获取的优选 IP 池。 |
-| **`egi`** | **GitHub IP** | `yes` | 是否启用 GitHub 相关的优选 IP。 |
+| **`ipv4`** | **IPv4 源** | `yes` | 是否从优选源获取 IPv4 地址。 |
+| **`ipv6`** | **IPv6 源** | `yes` | 是否从优选源获取 IPv6 地址。 |
+| **`ispMobile`** | **移动** | `yes` | 是否包含中国移动的优选 IP。 |
+| **`ispTelecom`**| **电信** | `yes` | 是否包含中国电信的优选 IP。 |
+| **`ispUnicom`** | **联通** | `yes` | 是否包含中国联通的优选 IP。 |
 | **`qj`** | **强制降级** | `yes` | **注意**：设为 `no` 才是开启降级！逻辑：CF直连失败 -> SOCKS5 -> ProxyIP。 |
 | **`dkby`** | **端口控制** | `no` | 设为 `yes` 开启 "仅 TLS"。只生成 443 等安全端口节点，屏蔽 80 端口。 |
-| **`rm`** | **地区匹配** | `yes` | 设为 `no` 关闭智能地区匹配。 |
-| **`ae`** | **API Enable** | `no` | 设为 `yes` 开启 API 管理功能。 |
 
 ---
 
@@ -141,15 +206,54 @@ CFnew 是一个运行在 Cloudflare Workers 上的轻量级代理脚本。它利
 
 ---
 
+## 从零开始安装 (Zero to Hero)
+
+只需要 5 分钟。
+
+### 步骤 1: 准备
+1.  注册一个 [Cloudflare](https://dash.cloudflare.com/sign-up) 账号。
+2.  生成一个 UUID (建议使用 `uuidgen` 或在线生成器)。
+
+### 步骤 2: 创建 Worker
+1.  登录 Cloudflare 面板，选择左侧的 **"Workers & Pages"**。
+2.  点击 **"Create Application"**，然后点击 **"Create Worker"**。
+3.  输入名字 (例如 `my-proxy`) 并点击 **"Deploy"**。
+4.  点击 **"Edit code"**。
+5.  将本项目的 `_worker.js` (或 `snippets` 中的代码) 复制并覆盖编辑器中的所有内容。
+6.  点击右上角的 **"Save and deploy"**。
+
+### 步骤 3: 配置 KV (关键)
+*要使用图形化面板，这一步是必须的。*
+1.  回到 Cloudflare 面板，进入 **"Workers & Pages"** -> **"KV"**。
+2.  点击 **"Create a namespace"**，命名为 `CONFIG`，点击 **"Add"**。
+3.  回到您的 Worker 设置页面，选择 **"Settings"** -> **"Variables"**。
+4.  向下滚动到 **"KV Namespace Bindings"**。
+5.  点击 **"Add binding"**。
+    *   **Variable name**: 输入 `C` (必须是大写 C)。
+    *   **KV Namespace**: 选择刚才创建的 `CONFIG`。
+6.  点击 **"Save and deploy"**。
+
+### 步骤 4: 设置变量
+1.  在同一个 **"Settings"** -> **"Variables"** 页面，找到 **"Environment Variables"**。
+2.  点击 **"Add variable"**。
+    *   **Variable name**: `u`
+    *   **Value**: 粘贴第一步生成的 UUID。
+3.  点击 **"Save and deploy"**。
+
+### 步骤 5: 开始使用
+访问 `https://您的-worker-域名/您的-UUID`。您将看到管理面板！
+
+---
+
 ## ProxyIP 深度解析
 
 **原理**:
 通常情况下，Worker 访问网站时，目标网站看到的是 Cloudflare 的 IP。ProxyIP 是您在 Worker 和目标网站之间架设的一座桥。
 
-**作用**:
-1.  **解锁流媒体**: Netflix/Disney+ 等往往封锁 Cloudflare 数据中心 IP。使用家宽 ProxyIP 可解锁。
-2.  **规避 Google 验证码**: 频繁使用 CF IP 访问 Google 会触发验证码。ProxyIP 可解决此问题。
-3.  **解决 Cloudflare Loop**: 如果目标网站也使用了 Cloudflare CDN，Worker 直接访问可能会报错 (Error 1000)。ProxyIP 可绕过此限制。
+**如何寻找可用的 ProxyIP? (Mini-Guide)**
+1.  **优选域名**: 社区维护了一些长期可用的优选域名，如 `proxyip.fxxk.dedyn.io`。
+2.  **自建**: 可以在支持非 443 端口的 VPS 上搭建 VLESS/Trojan 服务，并将其 IP:Port 填入 `p`。
+3.  **扫描**: 使用专门的 Cloudflare IP 扫描工具，寻找开放了非标准端口（如 2053, 2083）的 Cloudflare CDN IP。
 
 ---
 
@@ -190,9 +294,14 @@ CFnew 是一个运行在 Cloudflare Workers 上的轻量级代理脚本。它利
 *   **原因**: Worker 无法连接到上游 (ProxyIP 或 目标网站)。
 *   *解法*: 您配置的 ProxyIP (`p` 变量) 可能已失效。请更换 ProxyIP 或暂时清空 `p` 变量测试直连。
 
-**场景 4: 速度很慢**
-*   **原因**: 分配的 Cloudflare 节点拥堵。
-*   *解法*: 在配置面板使用 "延迟测试"，测出一批低延迟 IP，点击 "添加到优选列表" 并保存。
+**常见错误代码**:
+*   **522 Connection Timed Out**: Worker 无法连接到源站 (ProxyIP)。检查 IP 是否被墙。
+*   **523 Origin Unreachable**: 无法到达源站。检查端口是否开放。
+*   **1000 DNS Error**: 配置了错误的 DNS 或循环重定向。检查 ProxyIP 是否指向了另一个 CF 节点 (Loop)。
+
+**调试技巧**:
+*   打开浏览器控制台 (F12 -> Console)，查看连接时的具体报错信息。
+*   使用 `/test-api` 路径检查 API 是否正常响应。
 
 ---
 
