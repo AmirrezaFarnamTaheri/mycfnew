@@ -168,6 +168,9 @@ Cloudflare Workers 运行在一个特殊的无服务器环境中，这带来了�
 | **`ispUnicom`** | **联通** | `yes` | 是否包含中国联通的优选 IP。 |
 | **`qj`** | **强制降级** | `yes` | **注意**：设为 `no` 才是开启降级！逻辑：CF直连失败 -> SOCKS5 -> ProxyIP。 |
 | **`dkby`** | **端口控制** | `no` | 设为 `yes` 开启 "仅 TLS"。只生成 443 等安全端口节点，屏蔽 80 端口。 |
+| **`ae`** | **API Enable** | `no` | 设为 `yes` 开启 API 管理功能。 |
+| **`customDNS`** | **Custom DNS** | (Built-in) | **KV 专用**。指定用于 ECH 配置查询的 DoH 地址。默认为 `https://dns.joeyblog.eu.org/joeyblog`。 |
+| **`customECHDomain`** | **ECH Domain** | (Built-in) | **KV 专用**。指定用于查询 ECH 配置的目标域名。默认为 `cloudflare-ech.com`。 |
 
 ---
 
@@ -242,6 +245,11 @@ Cloudflare Workers 运行在一个特殊的无服务器环境中，这带来了�
 
 ### 步骤 5: 开始使用
 访问 `https://您的-worker-域名/您的-UUID`。您将看到管理面板！
+
+### 步骤 6: 验证与连接
+1.  在面板中点击顶部的 **[ 订阅管理 ]** (或者直接复制页面上的订阅链接)。
+2.  将链接导入到您的客户端 (v2rayNG, Clash, Shadowrocket)。
+3.  测试连接 (真连接测试，不仅仅是 Ping)。如果通了，恭喜！
 
 ---
 
