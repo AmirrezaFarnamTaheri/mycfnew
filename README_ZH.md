@@ -52,6 +52,13 @@ Worker 从 YouTube 获取数据，并将其装在 Cloudflare 的信封里寄回�
 2.  添加 `u` = `你的UUID` (在此生成: [uuidgenerator.net](https://www.uuidgenerator.net/))。
 3.  添加 KV 命名空间绑定，变量名为 `C`（仪表盘设置保存需要此项）。
 
+> [!WARNING]
+> **安全警告**
+> 1. **保护您的 UUID**: 仪表盘链接包含您的 UUID（密钥），请勿分享给他人。
+>    - 建议：使用 Cloudflare Access 保护仪表盘路径（或至少设置 IP 白名单/地理限制）。
+>    - 进阶：需要二次验证（如 `?token=` 或强制自定义 Header），并拒绝无验证的请求。
+> 2. **DoH 滥用风险**: 如果您公开 `/dns-query` 端点，它可能会被滥用为开放解析器。如果启用此功能，请务必添加访问控制。
+
 ### 3. 使用
 访问: `https://你的worker域名.workers.dev/<你的UUID>`
 

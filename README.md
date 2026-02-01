@@ -52,6 +52,13 @@ To the outside world, you are just talking to Cloudflare.
 2.  Add `u` = `YOUR_UUID` (Generate one [here](https://www.uuidgenerator.net/)).
 3.  Add KV Namespace binding named `C` (Required for dashboard settings).
 
+> [!WARNING]
+> **Security Warning**
+> 1. **Protect your UUID**: The dashboard URL contains your secret UUID. Do not share it.
+>    - Recommended: protect the dashboard path with Cloudflare Access (or at least an IP allowlist / geo restriction).
+>    - Stronger: require a second factor (e.g., a secret header or `?token=`) and reject requests without it.
+> 2. **DoH abuse risk**: If you expose the `/dns-query` endpoint publicly, it can be abused as an open resolver. Add access controls if you enable it.
+
 ### 3. Usage
 Visit: `https://your-worker.workers.dev/<YOUR_UUID>`
 
