@@ -313,6 +313,11 @@
             }
         }
 
+        const colonCount = (input.match(/:/g) || []).length;
+        if (colonCount > 1) {
+            return { address: input, port: null };
+        }
+
         const lastColonIndex = input.lastIndexOf(':');
         if (lastColonIndex > 0) {
             const address = input.substring(0, lastColonIndex);
