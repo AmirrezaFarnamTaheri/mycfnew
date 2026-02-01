@@ -225,7 +225,8 @@
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-            const response = await fetch(`https://${domain}`, {
+            const url = port === 443 ? `https://${domain}` : `https://${domain}:${port}`;
+            const response = await fetch(url, {
                 method: 'HEAD',
                 signal: controller.signal,
                 headers: {
@@ -6789,7 +6790,7 @@
         const selectedProvider = selectProvider(DOH_PROVIDERS);
         try {
             const targetUrl = selectedProvider.url + url.search;
-            const headers = new Headers(request.headers);
+            const headers = new Headers();
             if (isPost) headers.set('Content-Type', 'application/dns-message');
             else headers.set('Accept', 'application/dns-message');
             headers.set('User-Agent', 'DoH-Proxy-Worker/1.0');
@@ -6847,9 +6848,10 @@
         for (const provider of fallbackProviders.slice(0, 2)) {
             try {
                 const targetUrl = provider.url + url.search;
-                const headers = new Headers(request.headers);
+                const headers = new Headers();
                 if (request.method === 'POST') headers.set('Content-Type', 'application/dns-message');
                 else headers.set('Accept', 'application/dns-message');
+                headers.set('User-Agent', 'DoH-Proxy-Worker/1.0');
 
                 const upstreamRequest = new Request(targetUrl, {
                     method: request.method,

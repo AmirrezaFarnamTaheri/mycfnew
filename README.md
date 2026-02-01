@@ -58,7 +58,7 @@ A comprehensive, all-in-one Cloudflare Worker solution that combines a high-perf
 
 | Variable | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `UUID` | Secret | *None* | **Required**. Your access credential. |
+| `UUID` | Secret | *None* | **Required (secret).** Acts as the access credential for VLESS/Trojan. **Generate a unique value, never reuse, and rotate immediately if exposed (git commit/screenshot/shared UI URL).** |
 | `PROXYIP` | Text | *Empty* | Custom upstream proxy IP/Domain. |
 | `SOCKS5` | Secret | *Empty* | Optional SOCKS5 fallback (`user:pass@host:port`). |
 | `C` | KV | *None* | KV Namespace binding for config storage. |
