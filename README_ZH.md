@@ -103,6 +103,7 @@ Worker 从 YouTube 获取数据，并将其装在 Cloudflare 的信封里寄回�
 *   **[新手教程](docs/WALKTHROUGH_ZH.md)**: 从零开始的指南。
 *   **[部署指南](docs/DEPLOYMENT_ZH.md)**: 技术部署细节与[故障排除](docs/DEPLOYMENT_ZH.md#故障排除-%EF%B8%8F)。
 *   **[深度原理解析](docs/ANALOGY_ZH.md)**: 代理工作原理的概念解释。
+*   **[DNS 编码指南](docs/DNS_ENCODING_ZH.md)**: DoH DNS 查询编码的技术指南。
 
 ---
 

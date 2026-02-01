@@ -103,6 +103,7 @@ Visit: `https://your-worker.workers.dev/<YOUR_UUID>`
 *   **[Walkthrough](docs/WALKTHROUGH.md)**: Zero to Hero guide.
 *   **[Deployment Guide](docs/DEPLOYMENT.md)**: Technical deployment details and [Troubleshooting](docs/DEPLOYMENT.md#troubleshooting-%EF%B8%8F).
 *   **[Analogy](docs/ANALOGY.md)**: Conceptual explanation of how the proxy works.
+*   **[DNS Encoding](docs/DNS_ENCODING.md)**: Technical guide on DoH DNS query encoding.
 
 ---
 
