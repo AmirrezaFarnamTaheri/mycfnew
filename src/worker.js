@@ -993,10 +993,15 @@
         <div class="matrix-rain"></div>
         <div class="matrix-code-rain" id="matrixCodeRain"></div>
             <div class="matrix-text">${t.terminal}</div>
-            <div style="position: fixed; top: 20px; left: 20px; z-index: 1000;">
+            <div style="position: fixed; top: 20px; left: 20px; z-index: 1000; display: flex; gap: 10px;">
                 <select id="languageSelector" style="background: rgba(0, 20, 0, 0.9); border: 2px solid #00ff00; color: #00ff00; padding: 8px 12px; font-family: 'Courier New', monospace; font-size: 14px; cursor: pointer; text-shadow: 0 0 5px #00ff00; box-shadow: 0 0 15px rgba(0, 255, 0, 0.4);" onchange="changeLanguage(this.value)">
                     <option value="zh" ${!isFarsi ? 'selected' : ''}>🇨🇳 中文</option>
                     <option value="fa" ${isFarsi ? 'selected' : ''}>🇮🇷 فارسی</option>
+                </select>
+                <select id="themeSelector" style="background: rgba(0, 20, 0, 0.9); border: 2px solid #00ff00; color: #00ff00; padding: 8px 12px; font-family: 'Courier New', monospace; font-size: 14px; cursor: pointer; text-shadow: 0 0 5px #00ff00; box-shadow: 0 0 15px rgba(0, 255, 0, 0.4);" onchange="changeTheme(this.value)">
+                    <option value="matrix">${t.themeDefault}</option>
+                    <option value="cyberpunk">${t.themeCyberpunk}</option>
+                    <option value="light">${t.themeLight}</option>
                 </select>
             </div>
         <div class="terminal">
@@ -1162,8 +1167,70 @@
                     window.location.reload();
                 }
 
+                function changeTheme(theme) {
+                    localStorage.setItem('preferredTheme', theme);
+                    applyTheme(theme);
+                }
+
+                function applyTheme(theme) {
+                    const root = document.documentElement;
+                    const matrixBg = document.querySelector('.matrix-bg');
+                    const matrixRain = document.querySelector('.matrix-code-rain');
+
+                    if (theme === 'cyberpunk') {
+                        root.style.setProperty('--primary', '#fcee0a');
+                        root.style.setProperty('--bg-color', '#000b1e');
+                        root.style.setProperty('--text-color', '#00ff9f');
+                        root.style.setProperty('--border-color', '#ff003c');
+                        if(matrixBg) matrixBg.style.background = 'linear-gradient(45deg, #000b1e, #050014)';
+                        if(matrixRain) matrixRain.style.opacity = '0.3';
+                        document.body.style.color = '#00ff9f';
+                        document.querySelectorAll('.terminal').forEach(el => {
+                            el.style.borderColor = '#ff003c';
+                            el.style.boxShadow = '0 0 20px rgba(255, 0, 60, 0.4)';
+                        });
+                    } else if (theme === 'light') {
+                        root.style.setProperty('--primary', '#0066cc');
+                        root.style.setProperty('--bg-color', '#f0f2f5');
+                        root.style.setProperty('--text-color', '#333333');
+                        root.style.setProperty('--border-color', '#cccccc');
+                        if(matrixBg) matrixBg.style.background = '#f0f2f5';
+                        if(matrixRain) matrixRain.style.display = 'none';
+                        document.body.style.color = '#333333';
+                        document.querySelectorAll('.terminal').forEach(el => {
+                            el.style.background = 'rgba(255, 255, 255, 0.95)';
+                            el.style.borderColor = '#cccccc';
+                            el.style.boxShadow = '0 5px 15px rgba(0,0,0,0.1)';
+                            el.style.color = '#333333';
+                        });
+                        document.querySelectorAll('.terminal-input').forEach(el => el.style.color = '#333333');
+                    } else {
+                        // Default Matrix
+                        root.style.setProperty('--primary', '#00ff00');
+                        root.style.setProperty('--bg-color', '#000000');
+                        root.style.setProperty('--text-color', '#00ff00');
+                        root.style.setProperty('--border-color', '#00ff00');
+                        if(matrixBg) matrixBg.style.background = '#000';
+                        if(matrixRain) matrixRain.style.display = 'block';
+                        if(matrixRain) matrixRain.style.opacity = '1';
+                        document.body.style.color = '#00ff00';
+                        document.querySelectorAll('.terminal').forEach(el => {
+                            el.style.background = 'rgba(0, 0, 0, 0.9)';
+                            el.style.borderColor = '#00ff00';
+                            el.style.boxShadow = '0 0 30px rgba(0, 255, 0, 0.5)';
+                            el.style.color = '#00ff00';
+                        });
+                        document.querySelectorAll('.terminal-input').forEach(el => el.style.color = '#00ff00');
+                    }
+                }
+
                 // 页面加载时检查 localStorage 和 Cookie，并清理URL参数
                 window.addEventListener('DOMContentLoaded', function() {
+                    const savedTheme = localStorage.getItem('preferredTheme') || 'matrix';
+                    const themeSelector = document.getElementById('themeSelector');
+                    if(themeSelector) themeSelector.value = savedTheme;
+                    applyTheme(savedTheme);
+
                     function getCookie(name) {
                         const value = '; ' + document.cookie;
                         const parts = value.split('; ' + name + '=');
@@ -2553,6 +2620,10 @@
                     customECHDomain: '自定义 ECH 域名',
                     customECHDomainPlaceholder: '例如: cloudflare-ech.com',
                     customECHDomainHint: 'ECH配置中使用的域名，留空则使用默认值',
+                    theme: '界面主题',
+                    themeDefault: '黑客绿 (默认)',
+                    themeCyberpunk: '赛博朋克',
+                    themeLight: '明亮模式',
                     saveProtocol: '保存协议配置',
                     subscriptionConverterPlaceholder: '默认: https://url.v1.mk/sub',
                     subscriptionConverterHint: '自定义订阅转换API地址，留空则使用默认地址',
@@ -2645,6 +2716,10 @@
                     customECHDomain: 'دامنه ECH سفارشی',
                     customECHDomainPlaceholder: 'مثال: cloudflare-ech.com',
                     customECHDomainHint: 'دامنه استفاده شده در پیکربندی ECH، خالی بگذارید تا از مقدار پیش‌فرض استفاده شود',
+                    theme: 'تم رابط کاربری',
+                    themeDefault: 'ماتریس سبز (پیش‌فرض)',
+                    themeCyberpunk: 'سایبرپانک',
+                    themeLight: 'حالت روشن',
                     trojanPassword: 'رمز عبور Trojan (اختیاری):',
                     customPath: 'مسیر سفارشی (d):',
                     customPathPlaceholder: 'مثال: /secret-path',
