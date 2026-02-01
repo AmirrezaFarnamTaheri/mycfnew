@@ -25,9 +25,9 @@ This guide provides step-by-step instructions for deploying the Cloudflare Worke
 
 | Variable | Type | Description | Example Value |
 | :--- | :--- | :--- | :--- |
-| `UUID` | **Secret** | **Required.** Your VLESS/Trojan User ID. | `de305d54-75b4-431b-adb2-eb6b9e546014` |
-| `PROXYIP` | Text | *(Optional)* Custom Proxy IP/Domain. | `ts.hpc.tw` |
-| `SOCKS5` | Secret | *(Optional)* SOCKS5 Proxy for fallback. | `user:pass@1.2.3.4:1080` |
+| `u` | **Environment Variable** | **Required.** Your VLESS/Trojan User ID (UUID). | `de305d54-75b4-431b-adb2-eb6b9e546014` |
+| `p` | Text | *(Optional)* Custom Proxy IP/Domain. | `ts.hpc.tw` |
+| `s` | Secret | *(Optional)* SOCKS5 Proxy for fallback. | `user:pass@1.2.3.4:1080` |
 
 > [!WARNING]
 > **Security Risk**: Do NOT use the default UUID. Generate a new one using a tool like `uuidgenerator.net` or run `uuidgen` in your terminal.
@@ -36,72 +36,18 @@ This guide provides step-by-step instructions for deploying the Cloudflare Worke
 To use the "Save Config" feature in the UI and Advanced IP Filtering:
 1.  Go to **Workers & Pages** > **KV**.
 2.  Click **Create a Namespace**.
-    -   *Recommendation*: Name it `CONFIG` (or `WORKER_CONFIG`).
-    -   Click **Add**.
+    *   *Recommendation*: Name it `CONFIG` (or `WORKER_CONFIG`).
+    *   Click **Add**.
 3.  Go back to your Worker > **Settings** > **Variables and Secrets**.
 4.  Scroll to **KV Namespace Bindings**.
 5.  Click **Add Binding**.
-    -   **Variable name**: `C` (Must be exactly `C`).
-    -   **KV Namespace**: Select the namespace you just created (e.g., `CONFIG`).
+    *   **Variable name**: `C` (Must be exactly `C`).
+    *   **KV Namespace**: Select the namespace you just created (e.g., `CONFIG`).
 6.  Click **Save and Deploy**.
 
-### 5. Advanced KV Configuration (IP Filtering) ⚙️
-You can fine-tune the built-in IP scanner by adding these keys to your KV Namespace or environment variables (though KV is preferred for dynamic updates via the UI).
-
-| Variable | Description | Default | Values |
-| :--- | :--- | :--- | :--- |
-| `ipv4` | Enable IPv4 Preferred IPs | `yes` | `yes` / `no` |
-| `ipv6` | Enable IPv6 Preferred IPs | `yes` | `yes` / `no` |
-| `ispMobile` | Include **China Mobile** IPs | `yes` | `yes` / `no` |
-| `ispUnicom` | Include **China Unicom** IPs | `yes` | `yes` / `no` |
-| `ispTelecom` | Include **China Telecom** IPs | `yes` | `yes` / `no` |
-
-*These settings control which IPs are selected when generating subscriptions using the built-in preferred IP source.*
-
-### 6. Access the UI 🌐
+### 5. Access the UI 🌐
 Visit your worker's URL with your UUID:
 `https://<your-worker-name>.<your-subdomain>.workers.dev/<YOUR_UUID>`
-
----
-
-## Method 2: Wrangler CLI (Advanced) ⌨️
-
-### 1. Install Wrangler
-```bash
-npm install -g wrangler
-```
-
-### 2. Login
-```bash
-wrangler login
-```
-
-### 3. Initialize & Deploy
-1.  Clone this repository.
-2.  Run the deployment command:
-    ```bash
-    npm run deploy
-    ```
-    *Or manually:*
-    ```bash
-    wrangler deploy
-    ```
-
-### 4. Set Secrets
-```bash
-wrangler secret put UUID
-# Enter your UUID when prompted
-```
-
----
-
-## Method 3: Custom Domain (Best Performance) 🚀
-
-1.  Go to your Worker > **Settings** > **Triggers**.
-2.  Under **Custom Domains**, click **Add Custom Domain**.
-3.  Enter a subdomain you own (e.g., `proxy.yourdomain.com`).
-4.  Cloudflare will automatically configure the DNS records.
-5.  Access your worker via `https://proxy.yourdomain.com/<YOUR_UUID>`.
 
 ---
 
@@ -110,7 +56,7 @@ wrangler secret put UUID
 -   **"Error 1101"**: usually means code exception. Check `wrangler tail` logs.
 -   **"UUID Invalid"**: Ensure your UUID matches the format `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`.
 -   **"KV not configured"**: You cannot save settings in the UI. Follow "Setup KV Storage" above.
--   **Slow Speed**: Try setting a valid `PROXYIP` (e.g., a Cloudflare CDN IP or a clean IP).
+-   **Slow Speed**: Try setting a valid `p` (ProxyIP) (e.g., a Cloudflare CDN IP or a clean IP).
 
 ---
 
