@@ -65,6 +65,14 @@
         'RU': ['🇷🇺 RU', 'RU', 'Russia'],
         'LV': ['🇱🇻 LV', 'LV', 'Latvia'],
         'IR': ['🇮🇷 IR', 'IR', 'Iran'],
+        'AE': ['🇦🇪 AE', 'AE', 'United Arab Emirates'],
+        'OM': ['🇴🇲 OM', 'OM', 'Oman'],
+        'NO': ['🇳🇴 NO', 'NO', 'Norway'],
+        'SC': ['🇸🇨 SC', 'SC', 'Seychelles'],
+        'CO': ['🇨🇴 CO', 'CO', 'Colombia'],
+        'ZA': ['🇿🇦 ZA', 'ZA', 'South Africa'],
+        'EC': ['🇪🇨 EC', 'EC', 'Ecuador'],
+        'IL': ['🇮🇱 IL', 'IL', 'Israel'],
         'Oracle': ['Oracle', 'Oracle'],
         'DigitalOcean': ['DigitalOcean', 'DigitalOcean'],
         'Vultr': ['Vultr', 'Vultr'],
@@ -92,6 +100,14 @@
         { domain: 'ProxyIP.RU.CMLiussss.net', region: 'RU', regionCode: 'RU', port: 443 },
         { domain: 'ProxyIP.LV.CMLiussss.net', region: 'LV', regionCode: 'LV', port: 443 },
         { domain: 'ProxyIP.IR.CMLiussss.net', region: 'IR', regionCode: 'IR', port: 443 },
+        { domain: 'ProxyIP.AE.CMLiussss.net', region: 'AE', regionCode: 'AE', port: 443 },
+        { domain: 'ProxyIP.OM.CMLiussss.net', region: 'OM', regionCode: 'OM', port: 443 },
+        { domain: 'ProxyIP.NO.CMLiussss.net', region: 'NO', regionCode: 'NO', port: 443 },
+        { domain: 'ProxyIP.SC.CMLiussss.net', region: 'SC', regionCode: 'SC', port: 443 },
+        { domain: 'ProxyIP.CO.CMLiussss.net', region: 'CO', regionCode: 'CO', port: 443 },
+        { domain: 'ProxyIP.ZA.CMLiussss.net', region: 'ZA', regionCode: 'ZA', port: 443 },
+        { domain: 'ProxyIP.EC.CMLiussss.net', region: 'EC', regionCode: 'EC', port: 443 },
+        { domain: 'ProxyIP.IL.CMLiussss.net', region: 'IL', regionCode: 'IL', port: 443 },
         { domain: 'ProxyIP.Oracle.cmliussss.net', region: 'Oracle', regionCode: 'Oracle', port: 443 },
         { domain: 'ProxyIP.DigitalOcean.CMLiussss.net', region: 'DigitalOcean', regionCode: 'DigitalOcean', port: 443 },
         { domain: 'ProxyIP.Vultr.CMLiussss.net', region: 'Vultr', regionCode: 'Vultr', port: 443 },
@@ -213,13 +229,14 @@
                     'DE': 'DE', 'SE': 'SE', 'NL': 'NL', 'FI': 'FI', 'GB': 'GB',
                     'FR': 'FR', 'CA': 'CA', 'AU': 'AU', 'HK': 'HK', 'TW': 'TW',
                     'IN': 'IN', 'BR': 'BR', 'PL': 'PL', 'RU': 'RU',
+                    'AE': 'AE', 'OM': 'OM', 'SC': 'SC', 'ZA': 'ZA', 'EC': 'EC', 'IL': 'IL',
                     'CN': 'SG',
                     'IT': 'DE', 'ES': 'DE', 'CH': 'DE', 'AT': 'DE', // Europe fallbacks
-                    'BE': 'NL', 'DK': 'SE', 'NO': 'SE', 'IE': 'GB',
+                    'BE': 'NL', 'DK': 'SE', 'NO': 'NO', 'IE': 'GB',
                     'NZ': 'AU', 'MY': 'SG', 'ID': 'SG', 'TH': 'SG', // APAC fallbacks
                     'VN': 'SG', 'PH': 'SG',
                     'BD': 'IN', 'LK': 'IN', 'NP': 'IN', 'PK': 'IN', // South Asia -> IN
-                    'AR': 'BR', 'CL': 'BR', 'CO': 'BR', 'PE': 'BR', // South America -> BR
+                    'AR': 'BR', 'CL': 'BR', 'CO': 'CO', 'PE': 'BR', // South America -> BR
                     'CZ': 'PL', 'SK': 'PL', 'HU': 'PL', 'UA': 'PL', 'BY': 'PL', // Eastern Europe -> PL
                     'KZ': 'RU', 'UZ': 'RU' // Central Asia -> RU
                 };
@@ -292,7 +309,7 @@
             'PL': ['DE', 'SE', 'FI', 'NL', 'RU'],
             'RU': ['FI', 'SE', 'DE', 'PL'],
             'LV': ['FI', 'SE', 'PL', 'RU'],
-            'IR': ['LV', 'SG', 'JP', 'KR', 'DE', 'SE', 'NL', 'FI', 'GB', 'FR', 'PL', 'RU', 'US', 'CA', 'BR', 'IN', 'AU', 'HK', 'TW']
+            'IR': ['LV', 'SG', 'JP', 'KR', 'DE', 'SE', 'NL', 'FI', 'GB', 'FR', 'PL', 'RU', 'US', 'CA', 'BR', 'IN', 'AU', 'HK', 'TW', 'AE', 'OM', 'NO', 'SC', 'CO', 'ZA', 'EC', 'IL']
         };
 
         return nearbyMap[region] || [];
@@ -300,7 +317,7 @@
 
     function getAllRegionsByPriority(region) {
         const nearbyRegions = getNearbyRegions(region);
-        const allRegions = ['US', 'SG', 'JP', 'KR', 'DE', 'SE', 'NL', 'FI', 'GB', 'IN', 'BR', 'PL', 'RU', 'LV', 'IR', 'AU', 'HK', 'TW'];
+        const allRegions = ['US', 'SG', 'JP', 'KR', 'DE', 'SE', 'NL', 'FI', 'GB', 'IN', 'BR', 'PL', 'RU', 'LV', 'IR', 'AU', 'HK', 'TW', 'AE', 'OM', 'NO', 'SC', 'CO', 'ZA', 'EC', 'IL'];
 
         return [region, ...nearbyRegions, ...allRegions.filter(r => r !== region && !nearbyRegions.includes(r))];
     }
@@ -975,7 +992,10 @@
                         US: '🇺🇸 US', SG: '🇸🇬 Singapore', JP: '🇯🇵 Japan',
                         KR: '🇰🇷 South Korea', DE: '🇩🇪 Germany', SE: '🇸🇪 Sweden', NL: '🇳🇱 Netherlands',
                         FI: '🇫🇮 Finland', GB: '🇬🇧 UK', FR: '🇫🇷 France', CA: '🇨🇦 Canada',
-                        AU: '🇦🇺 Australia', HK: '🇭🇰 Hong Kong', TW: '🇹🇼 Taiwan'
+                        AU: '🇦🇺 Australia', HK: '🇭🇰 Hong Kong', TW: '🇹🇼 Taiwan',
+                        IN: '🇮🇳 India', BR: '🇧🇷 Brazil', PL: '🇵🇱 Poland', RU: '🇷🇺 Russia',
+                        AE: '🇦🇪 UAE', OM: '🇴🇲 Oman', NO: '🇳🇴 Norway', SC: '🇸🇨 Seychelles',
+                        CO: '🇨🇴 Colombia', ZA: '🇿🇦 South Africa', EC: '🇪🇨 Ecuador', IL: '🇮🇱 Israel'
                     },
                     terminal: 'Terminal v2.9.3',
                     githubProject: 'GitHub Project',
@@ -1425,7 +1445,10 @@
                         US: '🇺🇸 US', SG: '🇸🇬 Singapore', JP: '🇯🇵 Japan',
                         KR: '🇰🇷 South Korea', DE: '🇩🇪 Germany', SE: '🇸🇪 Sweden', NL: '🇳🇱 Netherlands',
                         FI: '🇫🇮 Finland', GB: '🇬🇧 UK', FR: '🇫🇷 France', CA: '🇨🇦 Canada',
-                        AU: '🇦🇺 Australia', HK: '🇭🇰 Hong Kong', TW: '🇹🇼 Taiwan'
+                        AU: '🇦🇺 Australia', HK: '🇭🇰 Hong Kong', TW: '🇹🇼 Taiwan',
+                        IN: '🇮🇳 India', BR: '🇧🇷 Brazil', PL: '🇵🇱 Poland', RU: '🇷🇺 Russia',
+                        AE: '🇦🇪 UAE', OM: '🇴🇲 Oman', NO: '🇳🇴 Norway', SC: '🇸🇨 Seychelles',
+                        CO: '🇨🇴 Colombia', ZA: '🇿🇦 South Africa', EC: '🇪🇨 Ecuador', IL: '🇮🇱 Israel'
                     },
                     terminal: 'Terminal v2.9.3',
                     githubProject: 'GitHub Project',
@@ -2981,7 +3004,10 @@
                         US: '🇺🇸 US', SG: '🇸🇬 Singapore', JP: '🇯🇵 Japan',
                         KR: '🇰🇷 South Korea', DE: '🇩🇪 Germany', SE: '🇸🇪 Sweden', NL: '🇳🇱 Netherlands',
                         FI: '🇫🇮 Finland', GB: '🇬🇧 UK', FR: '🇫🇷 France', CA: '🇨🇦 Canada',
-                        AU: '🇦🇺 Australia', HK: '🇭🇰 Hong Kong', TW: '🇹🇼 Taiwan'
+                        AU: '🇦🇺 Australia', HK: '🇭🇰 Hong Kong', TW: '🇹🇼 Taiwan',
+                        IN: '🇮🇳 India', BR: '🇧🇷 Brazil', PL: '🇵🇱 Poland', RU: '🇷🇺 Russia',
+                        AE: '🇦🇪 UAE', OM: '🇴🇲 Oman', NO: '🇳🇴 Norway', SC: '🇸🇨 Seychelles',
+                        CO: '🇨🇴 Colombia', ZA: '🇿🇦 South Africa', EC: '🇪🇨 Ecuador', IL: '🇮🇱 Israel'
                     },
                     terminal: 'Terminal v2.9.3',
                     githubProject: 'GitHub Project',
@@ -3912,7 +3938,10 @@
                         US: '🇺🇸 US', SG: '🇸🇬 Singapore', JP: '🇯🇵 Japan',
                         KR: '🇰🇷 South Korea', DE: '🇩🇪 Germany', SE: '🇸🇪 Sweden', NL: '🇳🇱 Netherlands',
                         FI: '🇫🇮 Finland', GB: '🇬🇧 UK', FR: '🇫🇷 France', CA: '🇨🇦 Canada',
-                        AU: '🇦🇺 Australia', HK: '🇭🇰 Hong Kong', TW: '🇹🇼 Taiwan'
+                        AU: '🇦🇺 Australia', HK: '🇭🇰 Hong Kong', TW: '🇹🇼 Taiwan',
+                        IN: '🇮🇳 India', BR: '🇧🇷 Brazil', PL: '🇵🇱 Poland', RU: '🇷🇺 Russia',
+                        AE: '🇦🇪 UAE', OM: '🇴🇲 Oman', NO: '🇳🇴 Norway', SC: '🇸🇨 Seychelles',
+                        CO: '🇨🇴 Colombia', ZA: '🇿🇦 South Africa', EC: '🇪🇨 Ecuador', IL: '🇮🇱 Israel'
                     },
                     terminal: 'Terminal v2.9.3',
                     githubProject: 'GitHub Project',
@@ -4393,7 +4422,10 @@
                         US: '🇺🇸 US', SG: '🇸🇬 Singapore', JP: '🇯🇵 Japan',
                         KR: '🇰🇷 South Korea', DE: '🇩🇪 Germany', SE: '🇸🇪 Sweden', NL: '🇳🇱 Netherlands',
                         FI: '🇫🇮 Finland', GB: '🇬🇧 UK', FR: '🇫🇷 France', CA: '🇨🇦 Canada',
-                        AU: '🇦🇺 Australia', HK: '🇭🇰 Hong Kong', TW: '🇹🇼 Taiwan'
+                        AU: '🇦🇺 Australia', HK: '🇭🇰 Hong Kong', TW: '🇹🇼 Taiwan',
+                        IN: '🇮🇳 India', BR: '🇧🇷 Brazil', PL: '🇵🇱 Poland', RU: '🇷🇺 Russia',
+                        AE: '🇦🇪 UAE', OM: '🇴🇲 Oman', NO: '🇳🇴 Norway', SC: '🇸🇨 Seychelles',
+                        CO: '🇨🇴 Colombia', ZA: '🇿🇦 South Africa', EC: '🇪🇨 Ecuador', IL: '🇮🇱 Israel'
                     },
                     terminal: 'Terminal v2.9.3',
                     githubProject: 'GitHub Project',
@@ -4686,7 +4718,10 @@
                         US: '🇺🇸 US', SG: '🇸🇬 Singapore', JP: '🇯🇵 Japan',
                         KR: '🇰🇷 South Korea', DE: '🇩🇪 Germany', SE: '🇸🇪 Sweden', NL: '🇳🇱 Netherlands',
                         FI: '🇫🇮 Finland', GB: '🇬🇧 UK', FR: '🇫🇷 France', CA: '🇨🇦 Canada',
-                        AU: '🇦🇺 Australia', HK: '🇭🇰 Hong Kong', TW: '🇹🇼 Taiwan'
+                        AU: '🇦🇺 Australia', HK: '🇭🇰 Hong Kong', TW: '🇹🇼 Taiwan',
+                        IN: '🇮🇳 India', BR: '🇧🇷 Brazil', PL: '🇵🇱 Poland', RU: '🇷🇺 Russia',
+                        AE: '🇦🇪 UAE', OM: '🇴🇲 Oman', NO: '🇳🇴 Norway', SC: '🇸🇨 Seychelles',
+                        CO: '🇨🇴 Colombia', ZA: '🇿🇦 South Africa', EC: '🇪🇨 Ecuador', IL: '🇮🇱 Israel'
                     },
                     terminal: 'Terminal v2.9.3',
                     githubProject: 'GitHub Project',
@@ -4896,7 +4931,10 @@
                         US: '🇺🇸 US', SG: '🇸🇬 Singapore', JP: '🇯🇵 Japan',
                         KR: '🇰🇷 South Korea', DE: '🇩🇪 Germany', SE: '🇸🇪 Sweden', NL: '🇳🇱 Netherlands',
                         FI: '🇫🇮 Finland', GB: '🇬🇧 UK', FR: '🇫🇷 France', CA: '🇨🇦 Canada',
-                        AU: '🇦🇺 Australia', HK: '🇭🇰 Hong Kong', TW: '🇹🇼 Taiwan'
+                        AU: '🇦🇺 Australia', HK: '🇭🇰 Hong Kong', TW: '🇹🇼 Taiwan',
+                        IN: '🇮🇳 India', BR: '🇧🇷 Brazil', PL: '🇵🇱 Poland', RU: '🇷🇺 Russia',
+                        AE: '🇦🇪 UAE', OM: '🇴🇲 Oman', NO: '🇳🇴 Norway', SC: '🇸🇨 Seychelles',
+                        CO: '🇨🇴 Colombia', ZA: '🇿🇦 South Africa', EC: '🇪🇨 Ecuador', IL: '🇮🇱 Israel'
                     },
                     terminal: 'Terminal v2.9.3',
                     githubProject: 'GitHub Project',
@@ -5104,7 +5142,10 @@
                         US: '🇺🇸 US', SG: '🇸🇬 Singapore', JP: '🇯🇵 Japan',
                         KR: '🇰🇷 South Korea', DE: '🇩🇪 Germany', SE: '🇸🇪 Sweden', NL: '🇳🇱 Netherlands',
                         FI: '🇫🇮 Finland', GB: '🇬🇧 UK', FR: '🇫🇷 France', CA: '🇨🇦 Canada',
-                        AU: '🇦🇺 Australia', HK: '🇭🇰 Hong Kong', TW: '🇹🇼 Taiwan'
+                        AU: '🇦🇺 Australia', HK: '🇭🇰 Hong Kong', TW: '🇹🇼 Taiwan',
+                        IN: '🇮🇳 India', BR: '🇧🇷 Brazil', PL: '🇵🇱 Poland', RU: '🇷🇺 Russia',
+                        AE: '🇦🇪 UAE', OM: '🇴🇲 Oman', NO: '🇳🇴 Norway', SC: '🇸🇨 Seychelles',
+                        CO: '🇨🇴 Colombia', ZA: '🇿🇦 South Africa', EC: '🇪🇨 Ecuador', IL: '🇮🇱 Israel'
                     },
                     terminal: 'Terminal v2.9.3',
                     githubProject: 'GitHub Project',
@@ -5307,7 +5348,10 @@
                         US: '🇺🇸 US', SG: '🇸🇬 Singapore', JP: '🇯🇵 Japan',
                         KR: '🇰🇷 South Korea', DE: '🇩🇪 Germany', SE: '🇸🇪 Sweden', NL: '🇳🇱 Netherlands',
                         FI: '🇫🇮 Finland', GB: '🇬🇧 UK', FR: '🇫🇷 France', CA: '🇨🇦 Canada',
-                        AU: '🇦🇺 Australia', HK: '🇭🇰 Hong Kong', TW: '🇹🇼 Taiwan'
+                        AU: '🇦🇺 Australia', HK: '🇭🇰 Hong Kong', TW: '🇹🇼 Taiwan',
+                        IN: '🇮🇳 India', BR: '🇧🇷 Brazil', PL: '🇵🇱 Poland', RU: '🇷🇺 Russia',
+                        AE: '🇦🇪 UAE', OM: '🇴🇲 Oman', NO: '🇳🇴 Norway', SC: '🇸🇨 Seychelles',
+                        CO: '🇨🇴 Colombia', ZA: '🇿🇦 South Africa', EC: '🇪🇨 Ecuador', IL: '🇮🇱 Israel'
                     },
                     terminal: 'Terminal v2.9.3',
                     githubProject: 'GitHub Project',
@@ -5540,7 +5584,10 @@
                         US: '🇺🇸 US', SG: '🇸🇬 Singapore', JP: '🇯🇵 Japan',
                         KR: '🇰🇷 South Korea', DE: '🇩🇪 Germany', SE: '🇸🇪 Sweden', NL: '🇳🇱 Netherlands',
                         FI: '🇫🇮 Finland', GB: '🇬🇧 UK', FR: '🇫🇷 France', CA: '🇨🇦 Canada',
-                        AU: '🇦🇺 Australia', HK: '🇭🇰 Hong Kong', TW: '🇹🇼 Taiwan'
+                        AU: '🇦🇺 Australia', HK: '🇭🇰 Hong Kong', TW: '🇹🇼 Taiwan',
+                        IN: '🇮🇳 India', BR: '🇧🇷 Brazil', PL: '🇵🇱 Poland', RU: '🇷🇺 Russia',
+                        AE: '🇦🇪 UAE', OM: '🇴🇲 Oman', NO: '🇳🇴 Norway', SC: '🇸🇨 Seychelles',
+                        CO: '🇨🇴 Colombia', ZA: '🇿🇦 South Africa', EC: '🇪🇨 Ecuador', IL: '🇮🇱 Israel'
                     },
                     terminal: 'Terminal v2.9.3',
                     githubProject: 'GitHub Project',
@@ -7615,6 +7662,14 @@
                         { domain: 'ProxyIP.RU.CMLiussss.net', region: 'RU', regionCode: 'RU', port: 443 },
                         { domain: 'ProxyIP.LV.CMLiussss.net', region: 'LV', regionCode: 'LV', port: 443 },
                         { domain: 'ProxyIP.IR.CMLiussss.net', region: 'IR', regionCode: 'IR', port: 443 },
+                        { domain: 'ProxyIP.AE.CMLiussss.net', region: 'AE', regionCode: 'AE', port: 443 },
+                        { domain: 'ProxyIP.OM.CMLiussss.net', region: 'OM', regionCode: 'OM', port: 443 },
+                        { domain: 'ProxyIP.NO.CMLiussss.net', region: 'NO', regionCode: 'NO', port: 443 },
+                        { domain: 'ProxyIP.SC.CMLiussss.net', region: 'SC', regionCode: 'SC', port: 443 },
+                        { domain: 'ProxyIP.CO.CMLiussss.net', region: 'CO', regionCode: 'CO', port: 443 },
+                        { domain: 'ProxyIP.ZA.CMLiussss.net', region: 'ZA', regionCode: 'ZA', port: 443 },
+                        { domain: 'ProxyIP.EC.CMLiussss.net', region: 'EC', regionCode: 'EC', port: 443 },
+                        { domain: 'ProxyIP.IL.CMLiussss.net', region: 'IL', regionCode: 'IL', port: 443 },
                         { domain: 'ProxyIP.Oracle.cmliussss.net', region: 'Oracle', regionCode: 'Oracle', port: 443 },
                         { domain: 'ProxyIP.DigitalOcean.CMLiussss.net', region: 'DigitalOcean', regionCode: 'DigitalOcean', port: 443 },
                         { domain: 'ProxyIP.Vultr.CMLiussss.net', region: 'Vultr', regionCode: 'Vultr', port: 443 },
