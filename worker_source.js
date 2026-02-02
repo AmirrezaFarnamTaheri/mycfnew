@@ -1546,7 +1546,7 @@
                 const input = document.getElementById('uuidInput');
                 input.focus();
                 input.addEventListener('keydown', function(e) {
-                    if (e.key === 'Enter') {
+                    if (e.key === 'Enter' || e.keyCode === 13) {
                         handleUUIDInput();
                     }
                 });
