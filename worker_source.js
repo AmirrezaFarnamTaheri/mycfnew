@@ -773,6 +773,10 @@
                     throw new Error('Invalid homepage URL protocol');
                 }
 
+            if (homepageUrl.hostname === url.hostname) {
+                throw new Error('Homepage loop detected');
+            }
+
                                 // Fetch content from custom URL
                 const homepageResponse = await fetch(homepageUrl.toString(), {
                                     method: 'GET',
