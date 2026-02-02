@@ -24,22 +24,22 @@ jobs:
       
       - name: Check if source file exists
         run: |
-          if [ ! -f "少年你相信光吗" ]; then
-            echo "错误：在项目根目录未找到 '少年你相信光吗' 文件。"
+          if [ ! -f "worker_obfuscated.js" ]; then
+            echo "Error: 'worker_obfuscated.js' not found in root directory."
             exit 1
           fi
-          echo "成功找到源文件 '少年你相信光吗'"
+          echo "Found source file 'worker_obfuscated.js'"
       
       - name: Rename file to _worker.js
         run: |
-          cp "少年你相信光吗" "_worker.js"
-          echo "成功将 '少年你相信光吗' 复制为 '_worker.js'"
-          echo "注意：文件不会提交到仓库，仅用于 Release"
+          cp "worker_obfuscated.js" "_worker.js"
+          echo "Successfully copied 'worker_obfuscated.js' to '_worker.js'"
+          echo "Note: This file is not committed, only used for Release"
       
       - name: Create zip file
         run: |
           zip Pages.zip _worker.js
-          echo "成功将 '_worker.js' 压缩为 'Pages.zip'"
+          echo "Successfully compressed '_worker.js' to 'Pages.zip'"
       
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
@@ -47,17 +47,17 @@ jobs:
           tag_name: ${{ steps.get_tag.outputs.tag_name }}
           name: Pages ${{ steps.get_tag.outputs.tag_name }}
           body: |
-            ## 部署信息
+            ## Deployment Info
             
-            - **源文件**: 少年你相信光吗
-            - **目标文件**: _worker.js
-            - **压缩文件**: Pages.zip
-            - **标签**: ${{ steps.get_tag.outputs.tag_name }}
-            - **部署时间**: ${{ github.event.head_commit.timestamp }}
+            - **Source**: worker_obfuscated.js
+            - **Target**: _worker.js
+            - **Archive**: Pages.zip
+            - **Tag**: ${{ steps.get_tag.outputs.tag_name }}
+            - **Time**: ${{ github.event.head_commit.timestamp }}
             
-            ## 文件变更
+            ## Changes
             
-            已从 `少年你相信光吗` 生成 `_worker.js` 文件，并压缩为 `Pages.zip`。
+            Generated `_worker.js` from `worker_obfuscated.js` and compressed to `Pages.zip`.
           draft: false
           prerelease: false
           files: Pages.zip
@@ -66,9 +66,9 @@ jobs:
       
       - name: Output summary
         run: |
-          echo "## 部署完成" >> $GITHUB_STEP_SUMMARY
-          echo "- 源文件: 少年你相信光吗" >> $GITHUB_STEP_SUMMARY
-          echo "- 目标文件: _worker.js" >> $GITHUB_STEP_SUMMARY
+          echo "## Deployment Complete" >> $GITHUB_STEP_SUMMARY
+          echo "- Source: worker_obfuscated.js" >> $GITHUB_STEP_SUMMARY
+          echo "- Target: _worker.js" >> $GITHUB_STEP_SUMMARY
           echo "- 压缩文件: Pages.zip" >> $GITHUB_STEP_SUMMARY
           echo "- 标签: ${{ steps.get_tag.outputs.tag_name }}" >> $GITHUB_STEP_SUMMARY
           echo "- GitHub Release 已创建" >> $GITHUB_STEP_SUMMARY
