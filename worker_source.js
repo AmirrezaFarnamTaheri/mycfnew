@@ -1,5 +1,5 @@
-    // CFnew - 终端 v2.9.3
-    // 版本: v2.9.3
+    // CFnew - Terminal v2.9.3
+    // Version: v2.9.3
     import { connect } from 'cloudflare:sockets';
     let at = 'uuid';
     let fallbackAddress = '';
@@ -25,41 +25,47 @@
     let ehy = false;
     let eg = false;
     let tp = '';
-    // 启用ECH功能（true启用，false禁用）
+    // Enable ECH (true to enable, false to disable)
     let enableECH = false;
-    // 自定义DNS服务器（默认：https://dns.joeyblog.eu.org/joeyblog）
+    // Custom DNS server (Default: https://dns.joeyblog.eu.org/joeyblog)
     let customDNS = 'https://dns.joeyblog.eu.org/joeyblog';
-    // 自定义ECH域名（默认：cloudflare-ech.com）
+    // Custom ECH domain (Default: cloudflare-ech.com)
     let customECHDomain = 'cloudflare-ech.com';
 
     let scu = 'https://url.v1.mk/sub';
-    // 远程配置URL（硬编码）
+    // Remote config URL (Hardcoded)
     const remoteConfigUrl = 'https://raw.githubusercontent.com/byJoey/test/refs/heads/main/tist.ini';
 
-    let epd = false;   // 优选域名默认关闭
+    let epd = false;   // Preferred domains disabled by default
     let epi = true;
     let egi = true;
+    let enableDiverseProxies = false; // Generate all supported ports for each IP
 
     let kvStore = null;
     let kvConfig = {};
 
     const regionMapping = {
-        'US': ['🇺🇸 美国', 'US', 'United States'],
-        'SG': ['🇸🇬 新加坡', 'SG', 'Singapore'],
-        'JP': ['🇯🇵 日本', 'JP', 'Japan'],
-        'KR': ['🇰🇷 韩国', 'KR', 'South Korea'],
-        'DE': ['🇩🇪 德国', 'DE', 'Germany'],
-        'SE': ['🇸🇪 瑞典', 'SE', 'Sweden'],
-        'NL': ['🇳🇱 荷兰', 'NL', 'Netherlands'],
-        'FI': ['🇫🇮 芬兰', 'FI', 'Finland'],
-        'GB': ['🇬🇧 英国', 'GB', 'United Kingdom'],
-        'FR': ['🇫🇷 法国', 'FR', 'France'],
-        'CA': ['🇨🇦 加拿大', 'CA', 'Canada'],
-        'AU': ['🇦🇺 澳大利亚', 'AU', 'Australia'],
-        'HK': ['🇭🇰 香港', 'HK', 'Hong Kong'],
-        'TW': ['🇹🇼 台湾', 'TW', 'Taiwan'],
-        'Oracle': ['甲骨文', 'Oracle'],
-        'DigitalOcean': ['数码海', 'DigitalOcean'],
+        'US': ['🇺🇸 US', 'US', 'United States'],
+        'SG': ['🇸🇬 SG', 'SG', 'Singapore'],
+        'JP': ['🇯🇵 JP', 'JP', 'Japan'],
+        'KR': ['🇰🇷 KR', 'KR', 'South Korea'],
+        'DE': ['🇩🇪 DE', 'DE', 'Germany'],
+        'SE': ['🇸🇪 SE', 'SE', 'Sweden'],
+        'NL': ['🇳🇱 NL', 'NL', 'Netherlands'],
+        'FI': ['🇫🇮 FI', 'FI', 'Finland'],
+        'GB': ['🇬🇧 GB', 'GB', 'United Kingdom'],
+        'FR': ['🇫🇷 FR', 'FR', 'France'],
+        'CA': ['🇨🇦 CA', 'CA', 'Canada'],
+        'AU': ['🇦🇺 AU', 'AU', 'Australia'],
+        'HK': ['🇭🇰 HK', 'HK', 'Hong Kong'],
+        'TW': ['🇹🇼 TW', 'TW', 'Taiwan'],
+        'IN': ['🇮🇳 IN', 'IN', 'India'],
+        'BR': ['🇧🇷 BR', 'BR', 'Brazil'],
+        'PL': ['🇵🇱 PL', 'PL', 'Poland'],
+        'RU': ['🇷🇺 RU', 'RU', 'Russia'],
+        'IR': ['🇮🇷 IR', 'IR', 'Iran'],
+        'Oracle': ['Oracle', 'Oracle'],
+        'DigitalOcean': ['DigitalOcean', 'DigitalOcean'],
         'Vultr': ['Vultr', 'Vultr'],
         'Multacom': ['Multacom', 'Multacom']
     };
@@ -79,6 +85,11 @@
         { domain: 'ProxyIP.AU.CMLiussss.net', region: 'AU', regionCode: 'AU', port: 443 },
         { domain: 'ProxyIP.HK.CMLiussss.net', region: 'HK', regionCode: 'HK', port: 443 },
         { domain: 'ProxyIP.TW.CMLiussss.net', region: 'TW', regionCode: 'TW', port: 443 },
+        { domain: 'ProxyIP.IN.CMLiussss.net', region: 'IN', regionCode: 'IN', port: 443 },
+        { domain: 'ProxyIP.BR.CMLiussss.net', region: 'BR', regionCode: 'BR', port: 443 },
+        { domain: 'ProxyIP.PL.CMLiussss.net', region: 'PL', regionCode: 'PL', port: 443 },
+        { domain: 'ProxyIP.RU.CMLiussss.net', region: 'RU', regionCode: 'RU', port: 443 },
+        { domain: 'ProxyIP.IR.CMLiussss.net', region: 'IR', regionCode: 'IR', port: 443 },
         { domain: 'ProxyIP.Oracle.cmliussss.net', region: 'Oracle', regionCode: 'Oracle', port: 443 },
         { domain: 'ProxyIP.DigitalOcean.CMLiussss.net', region: 'DigitalOcean', regionCode: 'DigitalOcean', port: 443 },
         { domain: 'ProxyIP.Vultr.CMLiussss.net', region: 'Vultr', regionCode: 'Vultr', port: 443 },
@@ -199,11 +210,16 @@
                     'US': 'US', 'SG': 'SG', 'JP': 'JP', 'KR': 'KR',
                     'DE': 'DE', 'SE': 'SE', 'NL': 'NL', 'FI': 'FI', 'GB': 'GB',
                     'FR': 'FR', 'CA': 'CA', 'AU': 'AU', 'HK': 'HK', 'TW': 'TW',
+                    'IN': 'IN', 'BR': 'BR', 'PL': 'PL', 'RU': 'RU',
                     'CN': 'SG',
                     'IT': 'DE', 'ES': 'DE', 'CH': 'DE', 'AT': 'DE', // Europe fallbacks
                     'BE': 'NL', 'DK': 'SE', 'NO': 'SE', 'IE': 'GB',
                     'NZ': 'AU', 'MY': 'SG', 'ID': 'SG', 'TH': 'SG', // APAC fallbacks
-                    'VN': 'SG', 'PH': 'SG'
+                    'VN': 'SG', 'PH': 'SG',
+                    'BD': 'IN', 'LK': 'IN', 'NP': 'IN', 'PK': 'IN', // South Asia -> IN
+                    'AR': 'BR', 'CL': 'BR', 'CO': 'BR', 'PE': 'BR', // South America -> BR
+                    'CZ': 'PL', 'SK': 'PL', 'HU': 'PL', 'UA': 'PL', 'BY': 'PL', // Eastern Europe -> PL
+                    'KZ': 'RU', 'UZ': 'RU' // Central Asia -> RU
                 };
 
                 if (countryToRegion[cfCountry]) {
@@ -260,15 +276,20 @@
 
     function getNearbyRegions(region) {
         const nearbyMap = {
-            'US': ['SG', 'JP', 'KR'],
-            'SG': ['JP', 'KR', 'US'],
+            'US': ['SG', 'JP', 'KR', 'BR'],
+            'SG': ['JP', 'KR', 'US', 'IN'],
             'JP': ['SG', 'KR', 'US'],
             'KR': ['JP', 'SG', 'US'],
-            'DE': ['NL', 'GB', 'SE', 'FI'],
-            'SE': ['DE', 'NL', 'FI', 'GB'],
-            'NL': ['DE', 'GB', 'SE', 'FI'],
-            'FI': ['SE', 'DE', 'NL', 'GB'],
-            'GB': ['DE', 'NL', 'SE', 'FI']
+            'DE': ['NL', 'GB', 'SE', 'FI', 'PL', 'RU'],
+            'SE': ['DE', 'NL', 'FI', 'GB', 'PL', 'RU'],
+            'NL': ['DE', 'GB', 'SE', 'FI', 'PL'],
+            'FI': ['SE', 'DE', 'NL', 'GB', 'RU'],
+            'GB': ['DE', 'NL', 'SE', 'FI'],
+            'IN': ['SG'],
+            'BR': ['US'],
+            'PL': ['DE', 'SE', 'FI', 'NL', 'RU'],
+            'RU': ['FI', 'SE', 'DE', 'PL'],
+            'IR': ['DE', 'GB', 'FR', 'NL', 'SE', 'FI', 'PL', 'RU', 'US', 'CA', 'BR']
         };
 
         return nearbyMap[region] || [];
@@ -276,7 +297,7 @@
 
     function getAllRegionsByPriority(region) {
         const nearbyRegions = getNearbyRegions(region);
-        const allRegions = ['US', 'SG', 'JP', 'KR', 'DE', 'SE', 'NL', 'FI', 'GB'];
+        const allRegions = ['US', 'SG', 'JP', 'KR', 'DE', 'SE', 'NL', 'FI', 'GB', 'IN', 'BR', 'PL', 'RU', 'IR'];
 
         return [region, ...nearbyRegions, ...allRegions.filter(r => r !== region && !nearbyRegions.includes(r))];
     }
@@ -388,7 +409,7 @@
                             const { address, port } = parseAddressAndPort(addressPart);
 
                             if (!nodeName) {
-                                nodeName = '自定义优选-' + address + (port ? ':' + port : '');
+                                nodeName = 'CustomPreferred-' + address + (port ? ':' + port : '');
                             }
 
                             if (isValidIP(address)) {
@@ -485,12 +506,17 @@
                     egi = githubIPsControl !== 'no' && githubIPsControl !== false && githubIPsControl !== 'false';
                 }
 
+                const diverseProxiesControl = getConfigValue('edp', env.edp);
+                if (diverseProxiesControl !== undefined && diverseProxiesControl !== '') {
+                    enableDiverseProxies = diverseProxiesControl === 'yes' || diverseProxiesControl === true || diverseProxiesControl === 'true';
+                }
+
                 const echControl = getConfigValue('ech', env.ech);
                 if (echControl !== undefined && echControl !== '') {
                     enableECH = echControl === 'yes' || echControl === true || echControl === 'true';
                 }
 
-                // 加载自定义DNS和ECH域名配置
+                // Load custom DNS and ECH domain config
                 const customDNSValue = getConfigValue('customDNS', '');
                 if (customDNSValue && customDNSValue.trim()) {
                     customDNS = customDNSValue.trim();
@@ -501,11 +527,11 @@
                     customECHDomain = customECHDomainValue.trim();
                 }
 
-                // 如果启用了ECH，自动启用仅TLS模式（避免80端口干扰）
-                // ECH需要TLS才能工作，所以必须禁用非TLS节点
+                // If ECH is enabled, automatically enable TLS-only mode (avoid port 80 interference)
+                // ECH requires TLS to work, so non-TLS nodes must be disabled
                 if (enableECH) {
                     disableNonTLS = true;
-                    // 检查 KV 中是否有 dkby: yes，没有就直接写入
+                    // Check if dkby: yes exists in KV, if not, write it directly
                     const currentDkby = getConfigValue('dkby', '');
                     if (currentDkby !== 'yes') {
                         await setConfigValue('dkby', 'yes');
@@ -560,7 +586,7 @@
                         }
                     }
 
-                    return new Response(JSON.stringify({ error: '无效的API路径' }), {
+                    return new Response(JSON.stringify({ error: 'Invalid API Path' }), {
                         status: 404,
                         headers: { 'Content-Type': 'application/json' }
                     });
@@ -594,7 +620,7 @@
                         }
                     }
 
-                    return new Response(JSON.stringify({ error: '无效的API路径' }), {
+                    return new Response(JSON.stringify({ error: 'Invalid API Path' }), {
                         status: 404,
                         headers: { 'Content-Type': 'application/json' }
                     });
@@ -626,7 +652,7 @@
                 }
 
                 if (request.method === 'GET') {
-                    // 处理 /{UUID}/region 或 /{自定义路径}/region
+                    // Handle /{UUID}/region or /{CustomPath}/region
                     if (url.pathname.endsWith('/region')) {
                         const pathParts = url.pathname.split('/').filter(p => p);
 
@@ -635,11 +661,11 @@
                             let isValid = false;
 
                             if (cp && cp.trim()) {
-                                // 使用自定义路径
+                                // Use custom path
                                 const cleanCustomPath = cp.trim().startsWith('/') ? cp.trim().substring(1) : cp.trim();
                                 isValid = (pathIdentifier === cleanCustomPath);
                             } else {
-                                // 使用UUID路径
+                                // Use UUID path
                                 isValid = (isValidFormat(pathIdentifier) && pathIdentifier === at);
                             }
 
@@ -650,7 +676,7 @@
                                 if (manualRegion && manualRegion.trim()) {
                                     return new Response(JSON.stringify({
                                         region: manualRegion.trim().toUpperCase(),
-                                        detectionMethod: '手动指定地区',
+                                        detectionMethod: 'Manual Region',
                                         manualRegion: manualRegion.trim().toUpperCase(),
                                         timestamp: new Date().toISOString()
                                     }), {
@@ -659,7 +685,7 @@
                                 } else if (ci && ci.trim()) {
                                     return new Response(JSON.stringify({
                                         region: 'CUSTOM',
-                                        detectionMethod: '自定义ProxyIP模式', ci: ci,
+                                        detectionMethod: 'Custom ProxyIP Mode', ci: ci,
                                         timestamp: new Date().toISOString()
                                     }), {
                                         headers: { 'Content-Type': 'application/json' }
@@ -668,7 +694,7 @@
                                     const detectedRegion = await detectWorkerRegion(request);
                                     return new Response(JSON.stringify({
                                         region: detectedRegion,
-                                        detectionMethod: 'API检测',
+                                        detectionMethod: 'API Detection',
                                         timestamp: new Date().toISOString()
                                     }), {
                                         headers: { 'Content-Type': 'application/json' }
@@ -676,8 +702,8 @@
                                 }
                             } else {
                                 return new Response(JSON.stringify({
-                                    error: '访问被拒绝',
-                                    message: '路径验证失败'
+                                    error: 'Access Denied',
+                                    message: 'Path Validation Failed'
                                 }), {
                                     status: 403,
                                     headers: { 'Content-Type': 'application/json' }
@@ -686,7 +712,7 @@
                         }
                     }
 
-                    // 处理 /{UUID}/test-api 或 /{自定义路径}/test-api
+                    // Handle /{UUID}/test-api or /{CustomPath}/test-api
                     if (url.pathname.endsWith('/test-api')) {
                         const pathParts = url.pathname.split('/').filter(p => p);
 
@@ -695,11 +721,11 @@
                             let isValid = false;
 
                             if (cp && cp.trim()) {
-                                // 使用自定义路径
+                                // Use custom path
                                 const cleanCustomPath = cp.trim().startsWith('/') ? cp.trim().substring(1) : cp.trim();
                                 isValid = (pathIdentifier === cleanCustomPath);
                             } else {
-                                // 使用UUID路径
+                                // Use UUID path
                                 isValid = (isValidFormat(pathIdentifier) && pathIdentifier === at);
                             }
 
@@ -708,7 +734,7 @@
                                     const testRegion = await detectWorkerRegion(request);
                                     return new Response(JSON.stringify({
                                         detectedRegion: testRegion,
-                                        message: 'API测试完成',
+                                        message: 'API Test Completed',
                                         timestamp: new Date().toISOString()
                                     }), {
                                         headers: { 'Content-Type': 'application/json' }
@@ -716,7 +742,7 @@
                                 } catch (error) {
                                     return new Response(JSON.stringify({
                                         error: error.message,
-                                        message: 'API测试失败'
+                                        message: 'API Test Failed'
                                     }), {
                                         status: 500,
                                         headers: { 'Content-Type': 'application/json' }
@@ -724,8 +750,8 @@
                                 }
                             } else {
                                 return new Response(JSON.stringify({
-                                    error: '访问被拒绝',
-                                    message: '路径验证失败'
+                                    error: 'Access Denied',
+                                    message: 'Path Validation Failed'
                                 }), {
                                     status: 403,
                                     headers: { 'Content-Type': 'application/json' }
@@ -735,7 +761,7 @@
                     }
 
                     if (url.pathname === '/') {
-                        // 检查是否有自定义首页URL配置
+                        // Check for custom homepage URL configuration
                         const customHomepage = getConfigValue('homepage', env.homepage || env.HOMEPAGE);
                         if (customHomepage && customHomepage.trim()) {
                             try {
@@ -744,7 +770,7 @@
                     throw new Error('Invalid homepage URL protocol');
                 }
 
-                                // 从自定义URL获取内容
+                                // Fetch content from custom URL
                 const homepageResponse = await fetch(homepageUrl.toString(), {
                                     method: 'GET',
                                     headers: {
@@ -760,7 +786,7 @@
                                     const contentType = homepageResponse.headers.get('Content-Type') || 'text/html; charset=utf-8';
                                     const content = await homepageResponse.text();
 
-                                    // 返回自定义首页内容
+                                    // Return custom homepage content
                                     return new Response(content, {
                                         status: homepageResponse.status,
                                         headers: {
@@ -770,11 +796,11 @@
                                     });
                                 }
                             } catch (error) {
-                                // 如果获取失败，继续使用默认终端页面
-                                console.error('获取自定义首页失败:', error);
+                                // If fetch fails, continue using default terminal page
+                                console.error('Failed to fetch custom homepage:', error);
                             }
                         }
-                        // 优先检查Cookie中的语言设置
+                        // Prioritize language settings from Cookie
                         const cookieHeader = request.headers.get('Cookie') || '';
                         let langFromCookie = null;
                         if (cookieHeader) {
@@ -791,36 +817,191 @@
 
                         if (langFromCookie === 'fa' || langFromCookie === 'fa-IR') {
                             isFarsi = true;
-                        } else if (langFromCookie === 'zh' || langFromCookie === 'zh-CN') {
+                        } else if (langFromCookie === 'en' || langFromCookie === 'en-US') {
                             isFarsi = false;
                         } else {
-                            // 如果没有Cookie，使用浏览器语言检测
+                            // If no Cookie, use browser language detection
                             const acceptLanguage = request.headers.get('Accept-Language') || '';
                             const browserLang = acceptLanguage.split(',')[0].split('-')[0].toLowerCase();
                             isFarsi = browserLang === 'fa' || acceptLanguage.includes('fa-IR') || acceptLanguage.includes('fa');
                         }
 
-                            const lang = isFarsi ? 'fa' : 'zh-CN';
-                            const langAttr = isFarsi ? 'fa-IR' : 'zh-CN';
+                            const lang = isFarsi ? 'fa' : 'en-US';
+                            const langAttr = isFarsi ? 'fa-IR' : 'en-US';
 
                             const translations = {
-                                zh: {
-                                    title: '终端',
-                                    terminal: '终端',
-                                    congratulations: '恭喜你来到这',
-                                    enterU: '请输入你U变量的值',
-                                    enterD: '请输入你D变量的值',
-                                    command: '命令: connect [',
-                                    uuid: 'UUID',
-                                    path: 'PATH',
-                                    inputU: '输入U变量的内容并且回车...',
-                                    inputD: '输入D变量的内容并且回车...',
-                                    connecting: '正在连接...',
-                                    invading: '正在入侵...',
-                                    success: '连接成功！返回结果...',
-                                    error: '错误: 无效的UUID格式',
-                                    reenter: '请重新输入有效的UUID'
-                                },
+                                en: {
+                    title: 'Terminal',
+                    terminal: 'Terminal',
+                    congratulations: 'Congratulations, you made it!',
+                    enterU: 'Please enter the value of your U variable',
+                    enterD: 'Please enter the value of your D variable',
+                    command: 'Command: connect [',
+                    uuid: 'UUID',
+                    path: 'PATH',
+                    inputU: 'Enter content of U variable and press Enter...',
+                    inputD: 'Enter content of D variable and press Enter...',
+                    connecting: 'Connecting...',
+                    invading: 'Invading...',
+                    success: 'Connection successful! Returning result...',
+                    error: 'Error: Invalid UUID format',
+                    reenter: 'Please re-enter a valid UUID',
+
+                    // Subscription Page Translations
+                    subtitle: 'Multi-client Support • Smart Optimization • One-Click Generation',
+                    selectClient: '[ Select Client ]',
+                    systemStatus: '[ System Status ]',
+                    configManagement: '[ Config Management ]',
+                    relatedLinks: '[ Related Links ]',
+                    checking: 'Checking...',
+                    workerRegion: 'Worker Region: ',
+                    detectionMethod: 'Detection Method: ',
+                    proxyIPStatus: 'ProxyIP Status: ',
+                    currentIP: 'Current IP: ',
+                    regionMatch: 'Region Match: ',
+                    selectionLogic: 'Selection Logic: ',
+                    kvStatusChecking: 'Checking KV Status...',
+                    kvEnabled: '✅ KV Storage Enabled, Config Management Available',
+                    kvDisabled: '⚠️ KV Storage Disabled or Not Configured',
+                    specifyRegion: 'Specify Region (wk):',
+                    autoDetect: 'Auto Detect',
+                    saveRegion: 'Save Region Config',
+                    protocolSelection: 'Protocol Selection:',
+                    enableVLESS: 'Enable VLESS Protocol',
+                    enableVMess: 'Enable VMess Protocol',
+                    enableShadowsocks: 'Enable Shadowsocks Protocol',
+                    enableTrojan: 'Enable Trojan Protocol',
+                    enableXhttp: 'Enable xhttp Protocol',
+                    enableTUIC: 'Enable TUIC Protocol',
+                    enableHysteria2: 'Enable Hysteria 2 Protocol',
+                    enableVLESSgRPC: 'Enable VLESS gRPC Protocol',
+                    linkOnlyHint: 'Requires External Backend (Link-Only)',
+                    grpcHint: 'Requires Custom Domain (gRPC)',
+                    trojanPassword: 'Trojan Password (Optional):',
+                    customPath: 'Custom Path (d):',
+                    customPathPlaceholder: 'e.g., /secret-path',
+                    customIP: 'Custom ProxyIP (p):',
+                    customIPPlaceholder: 'e.g., 1.2.3.4 or proxy.example.com',
+                    preferredIPs: 'Preferred IP List (yx):',
+                    preferredIPsPlaceholder: 'e.g., 1.1.1.1:443#HongKong, 8.8.8.8:443#USA',
+                    preferredIPsURL: 'Preferred IP Source URL (yxURL):',
+                    latencyTest: 'Latency Test',
+                    latencyTestIP: 'Test IP/Domain:',
+                    latencyTestIPPlaceholder: 'Enter IP or Domain, comma separated',
+                    latencyTestPort: 'Port:',
+                    startTest: 'Start Test',
+                    stopTest: 'Stop Test',
+                    testResult: 'Test Result:',
+                    addToYx: 'Add to Preferred List',
+                    addSelectedToYx: 'Add Selected to Preferred List',
+                    selectAll: 'Select All',
+                    deselectAll: 'Deselect All',
+                    testingInProgress: 'Testing...',
+                    testComplete: 'Test Complete',
+                    latencyMs: 'Latency (HTTP Handshake)',
+                    timeout: 'Timeout',
+                    ipSource: 'IP Source:',
+                    manualInput: 'Manual Input',
+                    cfRandomIP: 'CF Random IP',
+                    urlFetch: 'URL Fetch',
+                    randomCount: 'Generate Count:',
+                    fetchURL: 'Fetch URL:',
+                    fetchURLPlaceholder: 'Enter URL of IP list',
+                    generateIP: 'Generate IP',
+                    fetchIP: 'Fetch IP',
+                    socks5Config: 'SOCKS5 Config (s):',
+                    customHomepage: 'Custom Homepage URL (homepage):',
+                    customHomepagePlaceholder: 'e.g., https://example.com',
+                    customHomepageHint: 'Set custom URL as homepage camouflage. Content of this URL will be shown when accessing root path /. Leave empty to show default terminal page.',
+                    customPathHint: 'Only accessible via this path if set. UUID access will be disabled. Suggest using complex path to prevent scanning.',
+                    customIPHint: 'Hide Worker real IP, or solve Cloudflare Loop issue. Supports IP:Port or Domain:Port.',
+                    preferredIPsHint: 'Manually specify preferred nodes. Highest priority. Format: IP:Port#Remark.',
+                    socks5ConfigHint: 'Format: user:pass@host:port. Worker will connect to target via this proxy.',
+                    saveConfig: 'Save Config',
+                    advancedControl: 'Advanced Control',
+                    subscriptionConverter: 'Sub Converter URL:',
+                    builtinPreferred: 'Built-in Preferred Type:',
+                    enablePreferredDomain: 'Enable Preferred Domain',
+                    enablePreferredIP: 'Enable Preferred IP',
+                    enableGitHubPreferred: 'Enable GitHub Default Preferred',
+                    enableDiverseProxies: 'Enable Diverse Proxies (Generate all ports)',
+                    enableDiverseProxiesHint: 'Generate nodes for all supported ports (80, 443, 2053, etc.) for each IP. Increases subscription size significantly.',
+                    allowAPIManagement: 'Allow API Management (ae):',
+                    regionMatching: 'Region Matching (rm):',
+                    downgradeControl: 'Downgrade Control (qj):',
+                    tlsControl: 'TLS Control (dkby):',
+                    preferredControl: 'Preferred Control (yxby):',
+                    saveAdvanced: 'Save Advanced Config',
+                    loading: 'Loading...',
+                    currentConfig: '📍 Current Path Config',
+                    refreshConfig: 'Refresh Config',
+                    resetConfig: 'Reset Config',
+                    subscriptionCopied: 'Subscription Link Copied',
+                    autoSubscriptionCopied: 'Auto-detected subscription link copied. Client will be recognized by User-Agent.',
+                    trojanPasswordPlaceholder: 'Leave empty to use UUID',
+                    trojanPasswordHint: 'Set custom Trojan password. Leave empty to use UUID. Client will auto-hash password with SHA224.',
+                    protocolHint: 'Multiple protocols can be enabled.<br>• VLESS WS: Standard WebSocket protocol<br>• VMess WS: WebSocket-based VMess (link generation)<br>• Shadowsocks: WebSocket-based SS (link generation)<br>• Trojan: Uses SHA224 password auth<br>• xhttp: HTTP POST camouflage (requires custom domain & gRPC)',
+                    enableECH: 'Enable ECH (Encrypted Client Hello)',
+                    enableECHHint: 'When enabled, ECH config is fetched from DoH and added to links on every sub refresh',
+                    customDNS: 'Custom DNS Server',
+                    customDNSPlaceholder: 'e.g., https://dns.joeyblog.eu.org/joeyblog',
+                    customDNSHint: 'DNS server for ECH config query (DoH format)',
+                    customECHDomain: 'Custom ECH Domain',
+                    customECHDomainPlaceholder: 'e.g., cloudflare-ech.com',
+                    customECHDomainHint: 'Domain used in ECH config, leave empty for default',
+                    saveProtocol: 'Save Protocol Config',
+                    subscriptionConverterPlaceholder: 'Default: https://url.v1.mk/sub',
+                    subscriptionConverterHint: 'Custom subscription converter API, leave empty for default',
+                    builtinPreferredHint: 'Control which built-in preferred nodes are included. Default all enabled.',
+                    apiEnabledDefault: 'Default (API Disabled)',
+                    apiEnabledYes: 'Enable API Management',
+                    apiEnabledHint: '⚠️ Security Warning: Enabling API allows dynamic preferred IP addition. Use only if needed.',
+                    regionMatchingDefault: 'Default (Enable Region Match)',
+                    regionMatchingNo: 'Disable Region Match',
+                    regionMatchingHint: 'Smart region matching disabled when set to "Disable"',
+                    downgradeControlDefault: 'Default (Disable Downgrade)',
+                    downgradeControlNo: 'Enable Downgrade Mode',
+                    downgradeControlHint: 'When enabled: CF Direct Fail -> SOCKS5 -> Fallback',
+                    tlsControlDefault: 'Default (Keep All Nodes)',
+                    tlsControlYes: 'TLS Nodes Only',
+                    tlsControlHint: 'When set to "TLS Nodes Only", non-TLS nodes (e.g., port 80) are not generated',
+                    preferredControlDefault: 'Default (Enable Preferred)',
+                    preferredControlYes: 'Disable Preferred',
+                    preferredControlHint: 'When set to "Disable Preferred", only native address is used',
+                    regionNames: {
+                        US: '🇺🇸 US', SG: '🇸🇬 Singapore', JP: '🇯🇵 Japan',
+                        KR: '🇰🇷 South Korea', DE: '🇩🇪 Germany', SE: '🇸🇪 Sweden', NL: '🇳🇱 Netherlands',
+                        FI: '🇫🇮 Finland', GB: '🇬🇧 UK', FR: '🇫🇷 France', CA: '🇨🇦 Canada',
+                        AU: '🇦🇺 Australia', HK: '🇭🇰 Hong Kong', TW: '🇹🇼 Taiwan'
+                    },
+                    terminal: 'Terminal v2.9.3',
+                    githubProject: 'GitHub Project',
+                    autoDetectClient: 'Auto Detect',
+                    selectionLogicText: 'Same Region -> Nearby Region -> Other Regions',
+                    customIPDisabledHint: 'Region selection disabled when using Custom ProxyIP',
+                    customIPMode: 'Custom ProxyIP Mode (p variable enabled)',
+                    customIPModeDesc: 'Custom IP Mode (Region match disabled)',
+                    usingCustomProxyIP: 'Using Custom ProxyIP: ',
+                    customIPConfig: ' (p variable config)',
+                    customIPModeDisabled: 'Custom IP Mode, region selection disabled',
+                    manualRegion: 'Manual Region',
+                    manualRegionDesc: ' (Manual)',
+                    proxyIPAvailable: '10/10 Available (ProxyIP Domain Pre-set)',
+                    smartSelection: 'Smart Nearby Selection',
+                    sameRegionIP: 'Same Region IP Available (1)',
+                    cloudflareDetection: 'Cloudflare Built-in Detection',
+                    detectionFailed: 'Detection Failed',
+                    apiTestResult: 'API Detection Result: ',
+                    apiTestTime: 'Detection Time: ',
+                    apiTestFailed: 'API Detection Failed: ',
+                    unknownError: 'Unknown Error',
+                    apiTestError: 'API Test Failed: ',
+                    kvNotConfigured: 'KV Storage not configured. Config management unavailable.\\n\\nPlease in Cloudflare Workers:\\n1. Create KV Namespace\\n2. Bind variable C\\n3. Redeploy',
+                    kvNotEnabled: 'KV Storage Not Configured',
+                    kvCheckFailed: 'KV Check Failed: Invalid Response',
+                    kvCheckFailedStatus: 'KV Check Failed - Status: ',
+                    kvCheckFailedError: 'KV Check Failed - Error: '
+                },
                                 fa: {
                                     title: 'ترمینال',
                                     terminal: 'ترمینال',
@@ -840,7 +1021,7 @@
                                 }
                             };
 
-                            const t = translations[isFarsi ? 'fa' : 'zh'];
+                            const t = translations[isFarsi ? 'fa' : 'en'];
 
                         const terminalHtml = `<!DOCTYPE html>
         <html lang="${langAttr}" dir="${isFarsi ? 'rtl' : 'ltr'}">
@@ -991,7 +1172,7 @@
             <div class="matrix-text">${t.terminal}</div>
             <div style="position: fixed; top: 20px; left: 20px; z-index: 1000;">
                 <select id="languageSelector" style="background: rgba(0, 20, 0, 0.9); border: 2px solid #00ff00; color: #00ff00; padding: 8px 12px; font-family: 'Courier New', monospace; font-size: 14px; cursor: pointer; text-shadow: 0 0 5px #00ff00; box-shadow: 0 0 15px rgba(0, 255, 0, 0.4);" onchange="changeLanguage(this.value)">
-                    <option value="zh" ${!isFarsi ? 'selected' : ''}>🇨🇳 中文</option>
+                    <option value="en" ${!isFarsi ? 'selected' : ''}>🇺🇸 English</option>
                     <option value="fa" ${isFarsi ? 'selected' : ''}>🇮🇷 فارسی</option>
                 </select>
             </div>
@@ -1101,13 +1282,176 @@
                     addTerminalLine(atob('Y29ubmVjdCA=') + inputValue, 'output');
 
                         const translations = {
-                            zh: {
-                                connecting: '正在连接...',
-                                invading: '正在入侵...',
-                                success: '连接成功！返回结果...',
-                                error: '错误: 无效的UUID格式',
-                                reenter: '请重新输入有效的UUID'
-                            },
+                            en: {
+                    title: 'Terminal',
+                    terminal: 'Terminal',
+                    congratulations: 'Congratulations, you made it!',
+                    enterU: 'Please enter the value of your U variable',
+                    enterD: 'Please enter the value of your D variable',
+                    command: 'Command: connect [',
+                    uuid: 'UUID',
+                    path: 'PATH',
+                    inputU: 'Enter content of U variable and press Enter...',
+                    inputD: 'Enter content of D variable and press Enter...',
+                    connecting: 'Connecting...',
+                    invading: 'Invading...',
+                    success: 'Connection successful! Returning result...',
+                    error: 'Error: Invalid UUID format',
+                    reenter: 'Please re-enter a valid UUID',
+
+                    // Subscription Page Translations
+                    subtitle: 'Multi-client Support • Smart Optimization • One-Click Generation',
+                    selectClient: '[ Select Client ]',
+                    systemStatus: '[ System Status ]',
+                    configManagement: '[ Config Management ]',
+                    relatedLinks: '[ Related Links ]',
+                    checking: 'Checking...',
+                    workerRegion: 'Worker Region: ',
+                    detectionMethod: 'Detection Method: ',
+                    proxyIPStatus: 'ProxyIP Status: ',
+                    currentIP: 'Current IP: ',
+                    regionMatch: 'Region Match: ',
+                    selectionLogic: 'Selection Logic: ',
+                    kvStatusChecking: 'Checking KV Status...',
+                    kvEnabled: '✅ KV Storage Enabled, Config Management Available',
+                    kvDisabled: '⚠️ KV Storage Disabled or Not Configured',
+                    specifyRegion: 'Specify Region (wk):',
+                    autoDetect: 'Auto Detect',
+                    saveRegion: 'Save Region Config',
+                    protocolSelection: 'Protocol Selection:',
+                    enableVLESS: 'Enable VLESS Protocol',
+                    enableVMess: 'Enable VMess Protocol',
+                    enableShadowsocks: 'Enable Shadowsocks Protocol',
+                    enableTrojan: 'Enable Trojan Protocol',
+                    enableXhttp: 'Enable xhttp Protocol',
+                    enableTUIC: 'Enable TUIC Protocol',
+                    enableHysteria2: 'Enable Hysteria 2 Protocol',
+                    enableVLESSgRPC: 'Enable VLESS gRPC Protocol',
+                    linkOnlyHint: 'Requires External Backend (Link-Only)',
+                    grpcHint: 'Requires Custom Domain (gRPC)',
+                    trojanPassword: 'Trojan Password (Optional):',
+                    customPath: 'Custom Path (d):',
+                    customPathPlaceholder: 'e.g., /secret-path',
+                    customIP: 'Custom ProxyIP (p):',
+                    customIPPlaceholder: 'e.g., 1.2.3.4 or proxy.example.com',
+                    preferredIPs: 'Preferred IP List (yx):',
+                    preferredIPsPlaceholder: 'e.g., 1.1.1.1:443#HongKong, 8.8.8.8:443#USA',
+                    preferredIPsURL: 'Preferred IP Source URL (yxURL):',
+                    latencyTest: 'Latency Test',
+                    latencyTestIP: 'Test IP/Domain:',
+                    latencyTestIPPlaceholder: 'Enter IP or Domain, comma separated',
+                    latencyTestPort: 'Port:',
+                    startTest: 'Start Test',
+                    stopTest: 'Stop Test',
+                    testResult: 'Test Result:',
+                    addToYx: 'Add to Preferred List',
+                    addSelectedToYx: 'Add Selected to Preferred List',
+                    selectAll: 'Select All',
+                    deselectAll: 'Deselect All',
+                    testingInProgress: 'Testing...',
+                    testComplete: 'Test Complete',
+                    latencyMs: 'Latency (HTTP Handshake)',
+                    timeout: 'Timeout',
+                    ipSource: 'IP Source:',
+                    manualInput: 'Manual Input',
+                    cfRandomIP: 'CF Random IP',
+                    urlFetch: 'URL Fetch',
+                    randomCount: 'Generate Count:',
+                    fetchURL: 'Fetch URL:',
+                    fetchURLPlaceholder: 'Enter URL of IP list',
+                    generateIP: 'Generate IP',
+                    fetchIP: 'Fetch IP',
+                    socks5Config: 'SOCKS5 Config (s):',
+                    customHomepage: 'Custom Homepage URL (homepage):',
+                    customHomepagePlaceholder: 'e.g., https://example.com',
+                    customHomepageHint: 'Set custom URL as homepage camouflage. Content of this URL will be shown when accessing root path /. Leave empty to show default terminal page.',
+                    customPathHint: 'Only accessible via this path if set. UUID access will be disabled. Suggest using complex path to prevent scanning.',
+                    customIPHint: 'Hide Worker real IP, or solve Cloudflare Loop issue. Supports IP:Port or Domain:Port.',
+                    preferredIPsHint: 'Manually specify preferred nodes. Highest priority. Format: IP:Port#Remark.',
+                    socks5ConfigHint: 'Format: user:pass@host:port. Worker will connect to target via this proxy.',
+                    saveConfig: 'Save Config',
+                    advancedControl: 'Advanced Control',
+                    subscriptionConverter: 'Sub Converter URL:',
+                    builtinPreferred: 'Built-in Preferred Type:',
+                    enablePreferredDomain: 'Enable Preferred Domain',
+                    enablePreferredIP: 'Enable Preferred IP',
+                    enableGitHubPreferred: 'Enable GitHub Default Preferred',
+                    allowAPIManagement: 'Allow API Management (ae):',
+                    regionMatching: 'Region Matching (rm):',
+                    downgradeControl: 'Downgrade Control (qj):',
+                    tlsControl: 'TLS Control (dkby):',
+                    preferredControl: 'Preferred Control (yxby):',
+                    saveAdvanced: 'Save Advanced Config',
+                    loading: 'Loading...',
+                    currentConfig: '📍 Current Path Config',
+                    refreshConfig: 'Refresh Config',
+                    resetConfig: 'Reset Config',
+                    subscriptionCopied: 'Subscription Link Copied',
+                    autoSubscriptionCopied: 'Auto-detected subscription link copied. Client will be recognized by User-Agent.',
+                    trojanPasswordPlaceholder: 'Leave empty to use UUID',
+                    trojanPasswordHint: 'Set custom Trojan password. Leave empty to use UUID. Client will auto-hash password with SHA224.',
+                    protocolHint: 'Multiple protocols can be enabled.<br>• VLESS WS: Standard WebSocket protocol<br>• VMess WS: WebSocket-based VMess (link generation)<br>• Shadowsocks: WebSocket-based SS (link generation)<br>• Trojan: Uses SHA224 password auth<br>• xhttp: HTTP POST camouflage (requires custom domain & gRPC)',
+                    enableECH: 'Enable ECH (Encrypted Client Hello)',
+                    enableECHHint: 'When enabled, ECH config is fetched from DoH and added to links on every sub refresh',
+                    customDNS: 'Custom DNS Server',
+                    customDNSPlaceholder: 'e.g., https://dns.joeyblog.eu.org/joeyblog',
+                    customDNSHint: 'DNS server for ECH config query (DoH format)',
+                    customECHDomain: 'Custom ECH Domain',
+                    customECHDomainPlaceholder: 'e.g., cloudflare-ech.com',
+                    customECHDomainHint: 'Domain used in ECH config, leave empty for default',
+                    saveProtocol: 'Save Protocol Config',
+                    subscriptionConverterPlaceholder: 'Default: https://url.v1.mk/sub',
+                    subscriptionConverterHint: 'Custom subscription converter API, leave empty for default',
+                    builtinPreferredHint: 'Control which built-in preferred nodes are included. Default all enabled.',
+                    apiEnabledDefault: 'Default (API Disabled)',
+                    apiEnabledYes: 'Enable API Management',
+                    apiEnabledHint: '⚠️ Security Warning: Enabling API allows dynamic preferred IP addition. Use only if needed.',
+                    regionMatchingDefault: 'Default (Enable Region Match)',
+                    regionMatchingNo: 'Disable Region Match',
+                    regionMatchingHint: 'Smart region matching disabled when set to "Disable"',
+                    downgradeControlDefault: 'Default (Disable Downgrade)',
+                    downgradeControlNo: 'Enable Downgrade Mode',
+                    downgradeControlHint: 'When enabled: CF Direct Fail -> SOCKS5 -> Fallback',
+                    tlsControlDefault: 'Default (Keep All Nodes)',
+                    tlsControlYes: 'TLS Nodes Only',
+                    tlsControlHint: 'When set to "TLS Nodes Only", non-TLS nodes (e.g., port 80) are not generated',
+                    preferredControlDefault: 'Default (Enable Preferred)',
+                    preferredControlYes: 'Disable Preferred',
+                    preferredControlHint: 'When set to "Disable Preferred", only native address is used',
+                    regionNames: {
+                        US: '🇺🇸 US', SG: '🇸🇬 Singapore', JP: '🇯🇵 Japan',
+                        KR: '🇰🇷 South Korea', DE: '🇩🇪 Germany', SE: '🇸🇪 Sweden', NL: '🇳🇱 Netherlands',
+                        FI: '🇫🇮 Finland', GB: '🇬🇧 UK', FR: '🇫🇷 France', CA: '🇨🇦 Canada',
+                        AU: '🇦🇺 Australia', HK: '🇭🇰 Hong Kong', TW: '🇹🇼 Taiwan'
+                    },
+                    terminal: 'Terminal v2.9.3',
+                    githubProject: 'GitHub Project',
+                    autoDetectClient: 'Auto Detect',
+                    selectionLogicText: 'Same Region -> Nearby Region -> Other Regions',
+                    customIPDisabledHint: 'Region selection disabled when using Custom ProxyIP',
+                    customIPMode: 'Custom ProxyIP Mode (p variable enabled)',
+                    customIPModeDesc: 'Custom IP Mode (Region match disabled)',
+                    usingCustomProxyIP: 'Using Custom ProxyIP: ',
+                    customIPConfig: ' (p variable config)',
+                    customIPModeDisabled: 'Custom IP Mode, region selection disabled',
+                    manualRegion: 'Manual Region',
+                    manualRegionDesc: ' (Manual)',
+                    proxyIPAvailable: '10/10 Available (ProxyIP Domain Pre-set)',
+                    smartSelection: 'Smart Nearby Selection',
+                    sameRegionIP: 'Same Region IP Available (1)',
+                    cloudflareDetection: 'Cloudflare Built-in Detection',
+                    detectionFailed: 'Detection Failed',
+                    apiTestResult: 'API Detection Result: ',
+                    apiTestTime: 'Detection Time: ',
+                    apiTestFailed: 'API Detection Failed: ',
+                    unknownError: 'Unknown Error',
+                    apiTestError: 'API Test Failed: ',
+                    kvNotConfigured: 'KV Storage not configured. Config management unavailable.\n\nPlease in Cloudflare Workers:\n1. Create KV Namespace\n2. Bind variable C\n3. Redeploy',
+                    kvNotEnabled: 'KV Storage Not Configured',
+                    kvCheckFailed: 'KV Check Failed: Invalid Response',
+                    kvCheckFailedStatus: 'KV Check Failed - Status: ',
+                    kvCheckFailedError: 'KV Check Failed - Error: '
+                },
                             fa: {
                                 connecting: 'در حال اتصال...',
                                 invading: 'در حال نفوذ...',
@@ -1118,7 +1462,7 @@
                         };
                         const browserLang = navigator.language || navigator.userLanguage || '';
                         const isFarsi = browserLang.includes('fa') || browserLang.includes('fa-IR');
-                        const t = translations[isFarsi ? 'fa' : 'zh'];
+                        const t = translations[isFarsi ? 'fa' : 'en'];
 
                     if (cp) {
                         const cleanInput = inputValue.startsWith('/') ? inputValue : '/' + inputValue;
@@ -1150,15 +1494,15 @@
 
                 function changeLanguage(lang) {
                     localStorage.setItem('preferredLanguage', lang);
-                    // 设置Cookie（有效期1年）
+                    // Set Cookie (valid for 1 year)
                     const expiryDate = new Date();
                     expiryDate.setFullYear(expiryDate.getFullYear() + 1);
                     document.cookie = 'preferredLanguage=' + lang + '; path=/; expires=' + expiryDate.toUTCString() + '; SameSite=Lax';
-                    // 刷新页面，不使用URL参数
+                    // Reload page, do not use URL parameters
                     window.location.reload();
                 }
 
-                // 页面加载时检查 localStorage 和 Cookie，并清理URL参数
+                // Check localStorage and Cookie on page load, and clean up URL parameters
                 window.addEventListener('DOMContentLoaded', function() {
                     function getCookie(name) {
                         const value = '; ' + document.cookie;
@@ -1171,7 +1515,7 @@
                     const urlParams = new URLSearchParams(window.location.search);
                     const urlLang = urlParams.get('lang');
 
-                    // 如果URL中有语言参数，移除它并设置Cookie
+                    // If URL has language parameter, remove it and set Cookie
                     if (urlLang) {
                         const currentUrl = new URL(window.location.href);
                         currentUrl.searchParams.delete('lang');
@@ -1183,10 +1527,10 @@
                         document.cookie = 'preferredLanguage=' + urlLang + '; path=/; expires=' + expiryDate.toUTCString() + '; SameSite=Lax';
                         localStorage.setItem('preferredLanguage', urlLang);
 
-                        // 使用history API移除URL参数，不刷新页面
+                        // Use history API to remove URL parameter, do not reload page
                         window.history.replaceState({}, '', newUrl);
                     } else if (savedLang) {
-                        // 如果localStorage中有但Cookie中没有，同步到Cookie
+                        // If present in localStorage but not in Cookie, sync to Cookie
                         const expiryDate = new Date();
                         expiryDate.setFullYear(expiryDate.getFullYear() + 1);
                         document.cookie = 'preferredLanguage=' + savedLang + '; path=/; expires=' + expiryDate.toUTCString() + '; SameSite=Lax';
@@ -1225,8 +1569,8 @@
                         const user = url.pathname.replace(/\/$/, '').replace('/sub', '').substring(1);
                         if (isValidFormat(user)) {
                             return new Response(JSON.stringify({
-                                error: '访问被拒绝',
-                                message: '当前 Worker 已启用自定义路径模式，UUID 访问已禁用'
+                                error: 'Access Denied',
+                                message: 'Custom path mode enabled, UUID access disabled'
                             }), {
                                 status: 403,
                                 headers: { 'Content-Type': 'application/json' }
@@ -1241,7 +1585,7 @@
                             if (user === at) {
                                 return await handleSubscriptionPage(request, user);
                             } else {
-                                return new Response(JSON.stringify({ error: 'UUID错误 请注意变量名称是u不是uuid' }), {
+                                return new Response(JSON.stringify({ error: 'UUID Error: Please note the variable name is u, not uuid' }), {
                                     status: 403,
                                     headers: { 'Content-Type': 'application/json' }
                                 });
@@ -1256,7 +1600,7 @@
                                 if (user === at) {
                                     return await handleSubscriptionRequest(request, user, url);
                                 } else {
-                                    return new Response(JSON.stringify({ error: 'UUID错误' }), {
+                                    return new Response(JSON.stringify({ error: 'UUID Error' }), {
                                         status: 403,
                                         headers: { 'Content-Type': 'application/json' }
                                     });
@@ -1285,10 +1629,10 @@
         return btoa(links.join('\n'));
     }
 
-    // 解析 VLESS/Trojan 链接并生成 Clash 节点配置
+    // Parse VLESS/Trojan links and generate Clash node config
     function parseLinkToClashNode(link) {
         try {
-            // 解析 VLESS 链接
+            // Parse VLESS link
             if (link.startsWith('vless://')) {
                 const url = new URL(link);
                 const name = decodeURIComponent(url.hash.substring(1));
@@ -1343,7 +1687,7 @@
                 return node;
             }
 
-            // 解析 Trojan 链接
+            // Parse Trojan link
             if (link.startsWith('trojan://')) {
                 const url = new URL(link);
                 const name = decodeURIComponent(url.hash.substring(1));
@@ -1396,9 +1740,9 @@
         return null;
     }
 
-    // 生成 Clash 配置
+    // Generate Clash config
     async function generateClashConfig(links, request, user) {
-        // 先通过订阅转换服务获取 Clash 配置
+        // Get Clash config via subscription converter
         const subscriptionUrl = new URL(request.url);
         subscriptionUrl.pathname = subscriptionUrl.pathname.replace(/\/sub$/, '') + '/sub';
         subscriptionUrl.searchParams.set('target', 'base64');
@@ -1413,25 +1757,25 @@
 
             let clashConfig = await response.text();
 
-            // 如果 ECH 开启，为所有节点添加 ECH 参数
+            // If ECH is enabled, add ECH parameters to all nodes
             if (enableECH) {
-                // 处理单行格式的节点：  - {name: ..., server: ..., ...}
-                // 需要正确处理嵌套的花括号（如 ws-opts: {path: "...", headers: {Host: ...}}）
+                // Handle single-line format nodes: - {name: ..., server: ..., ...}
+                // Correctly handle nested braces (e.g., ws-opts: {path: "...", headers: {Host: ...}})
                 clashConfig = clashConfig.split('\n').map(line => {
-                    // 检查是否是节点行（以 "  - {" 开头，且包含 name: 和 server:）
+                    // Check if it is a node line (starts with "  - {" and contains name: and server:)
                     if (/^\s*-\s*\{/.test(line) && line.includes('name:') && line.includes('server:')) {
-                        // 检查是否已经有 ech-opts
+                        // Check if ech-opts already exists
                         if (line.includes('ech-opts')) {
                             return line; // 已有 ech-opts，不修改
                         }
-                        // 找到最后一个 } 的位置（从右往左查找，处理嵌套花括号）
+                        // Find the position of the last } (search from right to left, handle nested braces)
                         const lastBraceIndex = line.lastIndexOf('}');
                         if (lastBraceIndex > 0) {
-                            // 检查最后一个 } 之前是否有内容，确保格式正确
+                            // Check if there is content before the last }, ensure correct format
                             const beforeBrace = line.substring(0, lastBraceIndex).trim();
                             if (beforeBrace.length > 0) {
-                                // 在最后一个 } 之前添加 , ech-opts: {enable: true, query-server-name: ...}
-                                // 确保在逗号前有空格
+                                // Add , ech-opts: {enable: true, query-server-name: ...} before the last }
+                                // Ensure there is a space before the comma
                                 const echDomain = customECHDomain || 'cloudflare-ech.com';
                                 const needsComma = !beforeBrace.endsWith(',') && !beforeBrace.endsWith('{');
                                 return line.substring(0, lastBraceIndex) + (needsComma ? ', ' : ' ') + `ech-opts: {enable: true, query-server-name: ${echDomain}}` + line.substring(lastBraceIndex);
@@ -1441,26 +1785,26 @@
                     return line;
                 }).join('\n');
 
-                // 处理多行格式的节点（如果存在）
-                // 只处理单行格式，多行格式由订阅转换服务处理，不需要额外修改
-                // 如果订阅转换服务返回多行格式，通常已经是正确的格式
+                // Handle multi-line format nodes (if any)
+                // Only handle single-line format, multi-line format is handled by subscription converter, no extra modification needed
+                // If subscription converter returns multi-line format, it is usually already correct
             }
 
-            // 替换 DNS nameserver 为阿里的加密 DNS
+            // Replace DNS nameserver with AliDNS DoH
             clashConfig = clashConfig.replace(/^(\s*nameserver:\s*\n)((?:\s*-\s*[^\n]+\n)*)/m, (match, header, items) => {
-                // 替换所有 nameserver 项为阿里的加密 DNS
+                // Replace all nameserver items with AliDNS DoH
                 const dnsServer = customDNS || 'https://dns.joeyblog.eu.org/joeyblog';
                 return header + `    - ${dnsServer}\n`;
             });
 
             return clashConfig;
         } catch (e) {
-            // 如果订阅转换失败，返回错误
+            // If subscription conversion fails, return error
             throw new Error('无法获取 Clash 配置: ' + e.message);
         }
     }
 
-    // 全局变量存储ECH调试信息
+    // Global variable to store ECH debug info
     let echDebugInfo = '';
 
     async function fetchECHConfig(domain) {
@@ -1473,7 +1817,7 @@
         const debugSteps = [];
 
         try {
-            // 优先使用 Google DNS 查询 cloudflare-ech.com 的 ECH 配置
+            // Prioritize using Google DNS to query ECH config for cloudflare-ech.com
             debugSteps.push('尝试使用 Google DNS 查询 cloudflare-ech.com...');
             const echDomainUrl = `https://v.recipes/dns/dns.google/dns-query?name=cloudflare-ech.com&type=65`;
             const echResponse = await fetch(echDomainUrl, {
@@ -1500,7 +1844,7 @@
                                 echDebugInfo = debugSteps.join('\\n') + '\\n✅ 成功从 Google DNS 获取 ECH 配置';
                                 return echMatch[1];
                             }
-                            // 如果没有找到，尝试直接使用 data（可能是 base64 编码的）
+                            // If not found, try using data directly (might be base64 encoded)
                             if (answer.data && !dataStr.includes('ech=')) {
                                 try {
                                     const decoded = atob(answer.data);
@@ -1523,7 +1867,7 @@
                 debugSteps.push(`Google DNS 请求失败: ${echResponse.status}`);
             }
 
-            // 如果 cloudflare-ech.com 查询失败，尝试使用 Google DNS 查询目标域名的 HTTPS 记录
+            // If cloudflare-ech.com query fails, try using Google DNS to query HTTPS record of target domain
             debugSteps.push(`尝试使用 Google DNS 查询目标域名 ${domain}...`);
             const dohUrl = `https://v.recipes/dns/dns.google/dns-query?name=${encodeURIComponent(domain)}&type=65`;
             const response = await fetch(dohUrl, {
@@ -1548,7 +1892,7 @@
                                 echDebugInfo = debugSteps.join('\\n') + '\\n✅ 成功从 Google DNS (目标域名) 获取 ECH 配置';
                                 return echMatch[1];
                             }
-                            // 尝试 base64 解码
+                            // Try base64 decoding
                             try {
                                 const decoded = atob(answer.data);
                                 const decodedMatch = decoded.match(/ech=([^\s"']+)/);
@@ -1568,7 +1912,7 @@
                 debugSteps.push(`Google DNS (目标域名) 请求失败: ${response.status}`);
             }
 
-            // 如果 Google DNS 失败，尝试使用 Cloudflare DNS 作为备选
+            // If Google DNS fails, try Cloudflare DNS as fallback
             debugSteps.push('尝试使用 Cloudflare DNS 作为备选...');
             const cfEchUrl = `https://cloudflare-dns.com/dns-query?name=cloudflare-ech.com&type=65`;
             const cfResponse = await fetch(cfEchUrl, {
@@ -1616,7 +1960,7 @@
         const workerDomain = url.hostname;
         const target = url.searchParams.get('target') || 'base64';
 
-        // 如果启用了ECH，使用自定义值
+        // If ECH is enabled, use custom value
         let echConfig = null;
         if (enableECH) {
             const dnsServer = customDNS || 'https://dns.joeyblog.eu.org/joeyblog';
@@ -1652,11 +1996,11 @@
         }
 
         if (currentWorkerRegion === 'CUSTOM') {
-            const nativeList = [{ ip: workerDomain, isp: '原生地址' }];
+            const nativeList = [{ ip: workerDomain, isp: 'Native Address' }];
             await addNodesFromList(nativeList);
         } else {
             try {
-                const nativeList = [{ ip: workerDomain, isp: '原生地址' }];
+                const nativeList = [{ ip: workerDomain, isp: 'Native Address' }];
                 await addNodesFromList(nativeList);
             } catch (error) {
                 if (!currentWorkerRegion) {
@@ -1669,7 +2013,7 @@
                     const backupList = [{ ip: bestBackupIP.domain, isp: 'ProxyIP-' + currentWorkerRegion }];
                     await addNodesFromList(backupList);
                 } else {
-                    const nativeList = [{ ip: workerDomain, isp: '原生地址' }];
+                    const nativeList = [{ ip: workerDomain, isp: 'Native Address' }];
                     await addNodesFromList(nativeList);
                 }
             }
@@ -1840,30 +2184,35 @@
 
             let portsToGenerate = [];
 
-            if (item.port) {
-
-                const port = item.port;
-
-                if (CF_HTTPS_PORTS.includes(port)) {
-
+            if (enableDiverseProxies) {
+                CF_HTTPS_PORTS.forEach(port => {
                     portsToGenerate.push({ port: port, tls: true });
-                } else if (CF_HTTP_PORTS.includes(port)) {
-
-                    if (!disableNonTLS) {
+                });
+                if (!disableNonTLS) {
+                    CF_HTTP_PORTS.forEach(port => {
                         portsToGenerate.push({ port: port, tls: false });
-                    }
-                } else {
-
-                    portsToGenerate.push({ port: port, tls: true });
+                    });
                 }
             } else {
-
-                defaultHttpsPorts.forEach(port => {
-                    portsToGenerate.push({ port: port, tls: true });
-                });
-                defaultHttpPorts.forEach(port => {
-                    portsToGenerate.push({ port: port, tls: false });
-                });
+                if (item.port) {
+                    const port = item.port;
+                    if (CF_HTTPS_PORTS.includes(port)) {
+                        portsToGenerate.push({ port: port, tls: true });
+                    } else if (CF_HTTP_PORTS.includes(port)) {
+                        if (!disableNonTLS) {
+                            portsToGenerate.push({ port: port, tls: false });
+                        }
+                    } else {
+                        portsToGenerate.push({ port: port, tls: true });
+                    }
+                } else {
+                    defaultHttpsPorts.forEach(port => {
+                        portsToGenerate.push({ port: port, tls: true });
+                    });
+                    defaultHttpPorts.forEach(port => {
+                        portsToGenerate.push({ port: port, tls: false });
+                    });
+                }
             }
 
             portsToGenerate.forEach(({ port, tls }) => {
@@ -1880,7 +2229,7 @@
                         path: wsPath
                     });
 
-                    // 如果启用了ECH，添加ech参数（ECH需要伪装成Chrome浏览器）
+                    // If ECH is enabled, add ech parameter (ECH requires masquerading as Chrome browser)
                     if (enableECH) {
                         const dnsServer = customDNS || 'https://dns.joeyblog.eu.org/joeyblog';
                         const echDomain = customECHDomain || 'cloudflare-ech.com';
@@ -2059,7 +2408,7 @@
                         path: wsPath
                     });
 
-                    // 如果启用了ECH，添加ech参数（ECH需要伪装成Chrome浏览器）
+                    // If ECH is enabled, add ech parameter (ECH requires masquerading as Chrome browser)
                     if (enableECH) {
                         const dnsServer = customDNS || 'https://dns.joeyblog.eu.org/joeyblog';
                         const echDomain = customECHDomain || 'cloudflare-ech.com';
@@ -2089,7 +2438,7 @@
         const v6Url1 = "https://www.wetest.vip/page/cloudflare/address_v6.html";
         let results = [];
 
-        // 读取筛选配置（默认全部启用）
+        // Read filter config (default all enabled)
         const ipv4Enabled = getConfigValue('ipv4', '') === '' || getConfigValue('ipv4', 'yes') !== 'no';
         const ipv6Enabled = getConfigValue('ipv6', '') === '' || getConfigValue('ipv6', 'yes') !== 'no';
         const ispMobile = getConfigValue('ispMobile', '') === '' || getConfigValue('ispMobile', 'yes') !== 'no';
@@ -2112,7 +2461,7 @@
             const [ipv4List, ipv6List] = await Promise.all(fetchPromises);
             results = [...ipv4List, ...ipv6List];
 
-            // 按运营商筛选
+            // Filter by ISP
             if (results.length > 0) {
                 results = results.filter(item => {
                     const isp = item.isp || '';
@@ -2149,8 +2498,12 @@
                 const cellMatch = rowHtml.match(cellRegex);
                 if (cellMatch && cellMatch[1] && cellMatch[2]) {
                     const colo = cellMatch[3] ? cellMatch[3].trim().replace(/<.*?>/g, '') : '';
+                    let isp = cellMatch[1].trim().replace(/<.*?>/g, '');
+                    if (isp === '移动') isp = 'Mobile';
+                    if (isp === '联通') isp = 'Unicom';
+                    if (isp === '电信') isp = 'Telecom';
                     results.push({
-                        isp: cellMatch[1].trim().replace(/<.*?>/g, ''),
+                        isp: isp,
                         ip: cellMatch[2].trim(),
                         colo: colo
                     });
@@ -2167,7 +2520,7 @@
     }
 
     async function handleWsRequest(request) {
-        // 检测并设置当前Worker地区，确保WebSocket请求能正确进行就近匹配
+        // Detect and set current Worker region, ensure WebSocket requests are correctly matched to nearest region
         if (!currentWorkerRegion || currentWorkerRegion === '') {
             if (manualWorkerRegion && manualWorkerRegion.trim()) {
                 currentWorkerRegion = manualWorkerRegion.trim().toUpperCase();
@@ -2200,8 +2553,8 @@
 
                 if (!protocolType) {
 
-                    // VMess 和 Shadowsocks 回退处理 (Reverse Proxy Mode)
-                    // 如果启用了 EVM/ESS 且路径匹配，直接转发流量到 fallbackAddress
+                    // VMess and Shadowsocks fallback handling (Reverse Proxy Mode)
+                    // If EVM/ESS is enabled and path matches, forward traffic directly to fallbackAddress
                     const isVMess = evm && url.pathname.startsWith('/vm');
                     const isSS = ess && url.pathname.startsWith('/ss');
 
@@ -2209,7 +2562,7 @@
                         protocolType = isVMess ? 'vmess' : 'shadowsocks';
 
                         let targetAddress = fallbackAddress;
-                        // 如果没有配置 fallbackAddress，尝试使用优选 IP (虽然可能不兼容，但作为最后手段)
+                        // If fallbackAddress is not configured, try using preferred IP (might be incompatible, but as a last resort)
                         if (!targetAddress && currentWorkerRegion) {
                             const best = await getBestBackupIP(currentWorkerRegion);
                             if (best) targetAddress = best.domain + ':' + best.port;
@@ -2217,7 +2570,7 @@
 
                         if (targetAddress) {
                             const { address, port } = parseAddressAndPort(targetAddress);
-                            // 使用 URL 类型 (2) 作为通用回退
+                            // Use URL type (2) as generic fallback
                             await forwardTCP(2, address, port || 80, chunk, serverSock, null, remoteConnWrapper);
                             return;
                         } else {
@@ -2456,7 +2809,7 @@
         if (!user) user = at;
 
         const url = new URL(request.url);
-        // 优先检查Cookie中的语言设置
+        // Prioritize language settings from Cookie
         const cookieHeader = request.headers.get('Cookie') || '';
         let langFromCookie = null;
         if (cookieHeader) {
@@ -2473,172 +2826,188 @@
 
         if (langFromCookie === 'fa' || langFromCookie === 'fa-IR') {
             isFarsi = true;
-        } else if (langFromCookie === 'zh' || langFromCookie === 'zh-CN') {
+        } else if (langFromCookie === 'en' || langFromCookie === 'en-US') {
             isFarsi = false;
         } else {
-            // 如果没有Cookie，使用浏览器语言检测
+            // If no Cookie, use browser language detection
             const acceptLanguage = request.headers.get('Accept-Language') || '';
             const browserLang = acceptLanguage.split(',')[0].split('-')[0].toLowerCase();
             isFarsi = browserLang === 'fa' || acceptLanguage.includes('fa-IR') || acceptLanguage.includes('fa');
         }
 
-            const langAttr = isFarsi ? 'fa-IR' : 'zh-CN';
+            const langAttr = isFarsi ? 'fa-IR' : 'en-US';
 
             const translations = {
-                zh: {
-                    title: '订阅中心',
-                    subtitle: '多客户端支持 • 智能优选 • 一键生成',
-                    selectClient: '[ 选择客户端 ]',
-                    systemStatus: '[ 系统状态 ]',
-                    configManagement: '[ 配置管理 ]',
-                    relatedLinks: '[ 相关链接 ]',
-                    checking: '检测中...',
-                    workerRegion: 'Worker地区: ',
-                    detectionMethod: '检测方式: ',
-                    proxyIPStatus: 'ProxyIP状态: ',
-                    currentIP: '当前使用IP: ',
-                    regionMatch: '地区匹配: ',
-                    selectionLogic: '选择逻辑: ',
-                    kvStatusChecking: '检测KV状态中...',
-                    kvEnabled: '✅ KV存储已启用，可以使用配置管理功能',
-                    kvDisabled: '⚠️ KV存储未启用或未配置',
-                    specifyRegion: '指定地区 (wk):',
-                    autoDetect: '自动检测',
-                    saveRegion: '保存地区配置',
-                    protocolSelection: '协议选择:',
-                    enableVLESS: '启用 VLESS 协议',
-                    enableVMess: '启用 VMess 协议',
-                    enableShadowsocks: '启用 Shadowsocks 协议',
-                    enableTrojan: '启用 Trojan 协议',
-                    enableXhttp: '启用 xhttp 协议',
-                    enableTUIC: '启用 TUIC 协议',
-                    enableHysteria2: '启用 Hysteria 2 协议',
-                    enableVLESSgRPC: '启用 VLESS gRPC 协议',
-                    linkOnlyHint: '需外置后端 (Link-Only)',
-                    grpcHint: '需配合自定义域名 (gRPC)',
-                    trojanPassword: 'Trojan 密码 (可选):',
-                    customPath: '自定义路径 (d):',
-                    customPathPlaceholder: '例如: /secret-path',
-                    customIP: '自定义ProxyIP (p):',
-                    customIPPlaceholder: '例如: 1.2.3.4 或 proxy.example.com',
-                    preferredIPs: '优选IP列表 (yx):',
-                    preferredIPsPlaceholder: '例如: 1.1.1.1:443#香港, 8.8.8.8:443#美国',
-                    preferredIPsURL: '优选IP来源URL (yxURL):',
-                    latencyTest: '延迟测试',
-                    latencyTestIP: '测试IP/域名:',
-                    latencyTestIPPlaceholder: '输入IP或域名，多个用逗号分隔',
-                    latencyTestPort: '端口:',
-                    startTest: '开始测试',
-                    stopTest: '停止测试',
-                    testResult: '测试结果:',
-                    addToYx: '添加到优选列表',
-                    addSelectedToYx: '添加选中项到优选列表',
-                    selectAll: '全选',
-                    deselectAll: '取消全选',
-                    testingInProgress: '测试中...',
-                    testComplete: '测试完成',
-                    latencyMs: '延迟 (HTTP握手)',
-                    timeout: '超时',
-                    ipSource: 'IP来源:',
-                    manualInput: '手动输入',
-                    cfRandomIP: 'CF随机IP',
-                    urlFetch: 'URL获取',
-                    randomCount: '生成数量:',
-                    fetchURL: '获取URL:',
-                    fetchURLPlaceholder: '输入优选IP的URL地址',
-                    generateIP: '生成IP',
-                    fetchIP: '获取IP',
-                    socks5Config: 'SOCKS5配置 (s):',
-                    customHomepage: '自定义首页URL (homepage):',
-                    customHomepagePlaceholder: '例如: https://example.com',
-                    customHomepageHint: '设置自定义URL作为首页伪装。访问根路径 / 时将显示该URL的内容。留空则显示默认终端页面。',
-                    customPathHint: '设置后仅能通过此路径访问，UUID 路径将失效。建议使用复杂路径以防止扫描。',
-                    customIPHint: '隐藏 Worker 真实 IP，或解决 Cloudflare Loop 问题。支持 IP:Port 或 Domain:Port。',
-                    preferredIPsHint: '手动指定优选节点。优先级最高。格式：IP:Port#备注。',
-                    socks5ConfigHint: '格式: user:pass@host:port。Worker 将通过此代理连接目标。',
-                    saveConfig: '保存配置',
-                    advancedControl: '高级控制',
-                    subscriptionConverter: '订阅转换地址:',
-                    builtinPreferred: '内置优选类型:',
-                    enablePreferredDomain: '启用优选域名',
-                    enablePreferredIP: '启用优选 IP',
-                    enableGitHubPreferred: '启用 GitHub 默认优选',
-                    allowAPIManagement: '允许API管理 (ae):',
-                    regionMatching: '地区匹配 (rm):',
-                    downgradeControl: '降级控制 (qj):',
-                    tlsControl: 'TLS控制 (dkby):',
-                    preferredControl: '优选控制 (yxby):',
-                    saveAdvanced: '保存高级配置',
-                    loading: '加载中...',
-                    currentConfig: '📍 当前路径配置',
-                    refreshConfig: '刷新配置',
-                    resetConfig: '重置配置',
-                    subscriptionCopied: '订阅链接已复制',
-                    autoSubscriptionCopied: '自动识别订阅链接已复制，客户端访问时会根据User-Agent自动识别并返回对应格式',
-                    trojanPasswordPlaceholder: '留空则自动使用 UUID',
-                    trojanPasswordHint: '设置自定义 Trojan 密码。留空则使用 UUID。客户端会自动对密码进行 SHA224 哈希。',
-                    protocolHint: '可以同时启用多个协议。订阅将生成选中协议的节点。<br>• VLESS WS: 基于 WebSocket 的标准协议<br>• VMess WS: 基于 WebSocket 的 VMess 协议 (生成链接)<br>• Shadowsocks: 基于 WebSocket 的 SS 协议 (生成链接)<br>• Trojan: 使用 SHA224 密码认证<br>• xhttp: 基于 HTTP POST 的伪装协议（需要绑定自定义域名并开启 gRPC）',
-                    enableECH: '启用 ECH (Encrypted Client Hello)',
-                    enableECHHint: '启用后，每次刷新订阅时会自动从 DoH 获取最新的 ECH 配置并添加到链接中',
-                    customDNS: '自定义 DNS 服务器',
-                    customDNSPlaceholder: '例如: https://dns.joeyblog.eu.org/joeyblog',
-                    customDNSHint: '用于ECH配置查询的DNS服务器地址（DoH格式）',
-                    customECHDomain: '自定义 ECH 域名',
-                    customECHDomainPlaceholder: '例如: cloudflare-ech.com',
-                    customECHDomainHint: 'ECH配置中使用的域名，留空则使用默认值',
-                    saveProtocol: '保存协议配置',
-                    subscriptionConverterPlaceholder: '默认: https://url.v1.mk/sub',
-                    subscriptionConverterHint: '自定义订阅转换API地址，留空则使用默认地址',
-                    builtinPreferredHint: '控制订阅中包含哪些内置优选节点。默认全部启用。',
-                    apiEnabledDefault: '默认（关闭API）',
-                    apiEnabledYes: '开启API管理',
-                    apiEnabledHint: '⚠️ 安全提醒：开启后允许通过API动态添加优选IP。建议仅在需要时开启。',
-                    regionMatchingDefault: '默认（启用地区匹配）',
-                    regionMatchingNo: '关闭地区匹配',
-                    regionMatchingHint: '设置为"关闭"时不进行地区智能匹配',
-                    downgradeControlDefault: '默认（不启用降级）',
-                    downgradeControlNo: '启用降级模式',
-                    downgradeControlHint: '设置为"启用"时：CF直连失败→SOCKS5连接→fallback地址',
-                    tlsControlDefault: '默认（保留所有节点）',
-                    tlsControlYes: '仅TLS节点',
-                    tlsControlHint: '设置为"仅TLS节点"时只生成带TLS的节点，不生成非TLS节点（如80端口）',
-                    preferredControlDefault: '默认（启用优选）',
-                    preferredControlYes: '关闭优选',
-                    preferredControlHint: '设置为"关闭优选"时只使用原生地址，不生成优选IP和域名节点',
+                en: {
+                    title: 'Terminal',
+                    terminal: 'Terminal',
+                    congratulations: 'Congratulations, you made it!',
+                    enterU: 'Please enter the value of your U variable',
+                    enterD: 'Please enter the value of your D variable',
+                    command: 'Command: connect [',
+                    uuid: 'UUID',
+                    path: 'PATH',
+                    inputU: 'Enter content of U variable and press Enter...',
+                    inputD: 'Enter content of D variable and press Enter...',
+                    connecting: 'Connecting...',
+                    invading: 'Invading...',
+                    success: 'Connection successful! Returning result...',
+                    error: 'Error: Invalid UUID format',
+                    reenter: 'Please re-enter a valid UUID',
+
+                    // Subscription Page Translations
+                    subtitle: 'Multi-client Support • Smart Optimization • One-Click Generation',
+                    selectClient: '[ Select Client ]',
+                    systemStatus: '[ System Status ]',
+                    configManagement: '[ Config Management ]',
+                    relatedLinks: '[ Related Links ]',
+                    checking: 'Checking...',
+                    workerRegion: 'Worker Region: ',
+                    detectionMethod: 'Detection Method: ',
+                    proxyIPStatus: 'ProxyIP Status: ',
+                    currentIP: 'Current IP: ',
+                    regionMatch: 'Region Match: ',
+                    selectionLogic: 'Selection Logic: ',
+                    kvStatusChecking: 'Checking KV Status...',
+                    kvEnabled: '✅ KV Storage Enabled, Config Management Available',
+                    kvDisabled: '⚠️ KV Storage Disabled or Not Configured',
+                    specifyRegion: 'Specify Region (wk):',
+                    autoDetect: 'Auto Detect',
+                    saveRegion: 'Save Region Config',
+                    protocolSelection: 'Protocol Selection:',
+                    enableVLESS: 'Enable VLESS Protocol',
+                    enableVMess: 'Enable VMess Protocol',
+                    enableShadowsocks: 'Enable Shadowsocks Protocol',
+                    enableTrojan: 'Enable Trojan Protocol',
+                    enableXhttp: 'Enable xhttp Protocol',
+                    enableTUIC: 'Enable TUIC Protocol',
+                    enableHysteria2: 'Enable Hysteria 2 Protocol',
+                    enableVLESSgRPC: 'Enable VLESS gRPC Protocol',
+                    linkOnlyHint: 'Requires External Backend (Link-Only)',
+                    grpcHint: 'Requires Custom Domain (gRPC)',
+                    trojanPassword: 'Trojan Password (Optional):',
+                    customPath: 'Custom Path (d):',
+                    customPathPlaceholder: 'e.g., /secret-path',
+                    customIP: 'Custom ProxyIP (p):',
+                    customIPPlaceholder: 'e.g., 1.2.3.4 or proxy.example.com',
+                    preferredIPs: 'Preferred IP List (yx):',
+                    preferredIPsPlaceholder: 'e.g., 1.1.1.1:443#HongKong, 8.8.8.8:443#USA',
+                    preferredIPsURL: 'Preferred IP Source URL (yxURL):',
+                    latencyTest: 'Latency Test',
+                    latencyTestIP: 'Test IP/Domain:',
+                    latencyTestIPPlaceholder: 'Enter IP or Domain, comma separated',
+                    latencyTestPort: 'Port:',
+                    startTest: 'Start Test',
+                    stopTest: 'Stop Test',
+                    testResult: 'Test Result:',
+                    addToYx: 'Add to Preferred List',
+                    addSelectedToYx: 'Add Selected to Preferred List',
+                    selectAll: 'Select All',
+                    deselectAll: 'Deselect All',
+                    testingInProgress: 'Testing...',
+                    testComplete: 'Test Complete',
+                    latencyMs: 'Latency (HTTP Handshake)',
+                    timeout: 'Timeout',
+                    ipSource: 'IP Source:',
+                    manualInput: 'Manual Input',
+                    cfRandomIP: 'CF Random IP',
+                    urlFetch: 'URL Fetch',
+                    randomCount: 'Generate Count:',
+                    fetchURL: 'Fetch URL:',
+                    fetchURLPlaceholder: 'Enter URL of IP list',
+                    generateIP: 'Generate IP',
+                    fetchIP: 'Fetch IP',
+                    socks5Config: 'SOCKS5 Config (s):',
+                    customHomepage: 'Custom Homepage URL (homepage):',
+                    customHomepagePlaceholder: 'e.g., https://example.com',
+                    customHomepageHint: 'Set custom URL as homepage camouflage. Content of this URL will be shown when accessing root path /. Leave empty to show default terminal page.',
+                    customPathHint: 'Only accessible via this path if set. UUID access will be disabled. Suggest using complex path to prevent scanning.',
+                    customIPHint: 'Hide Worker real IP, or solve Cloudflare Loop issue. Supports IP:Port or Domain:Port.',
+                    preferredIPsHint: 'Manually specify preferred nodes. Highest priority. Format: IP:Port#Remark.',
+                    socks5ConfigHint: 'Format: user:pass@host:port. Worker will connect to target via this proxy.',
+                    saveConfig: 'Save Config',
+                    advancedControl: 'Advanced Control',
+                    subscriptionConverter: 'Sub Converter URL:',
+                    builtinPreferred: 'Built-in Preferred Type:',
+                    enablePreferredDomain: 'Enable Preferred Domain',
+                    enablePreferredIP: 'Enable Preferred IP',
+                    enableGitHubPreferred: 'Enable GitHub Default Preferred',
+                    allowAPIManagement: 'Allow API Management (ae):',
+                    regionMatching: 'Region Matching (rm):',
+                    downgradeControl: 'Downgrade Control (qj):',
+                    tlsControl: 'TLS Control (dkby):',
+                    preferredControl: 'Preferred Control (yxby):',
+                    saveAdvanced: 'Save Advanced Config',
+                    loading: 'Loading...',
+                    currentConfig: '📍 Current Path Config',
+                    refreshConfig: 'Refresh Config',
+                    resetConfig: 'Reset Config',
+                    subscriptionCopied: 'Subscription Link Copied',
+                    autoSubscriptionCopied: 'Auto-detected subscription link copied. Client will be recognized by User-Agent.',
+                    trojanPasswordPlaceholder: 'Leave empty to use UUID',
+                    trojanPasswordHint: 'Set custom Trojan password. Leave empty to use UUID. Client will auto-hash password with SHA224.',
+                    protocolHint: 'Multiple protocols can be enabled.<br>• VLESS WS: Standard WebSocket protocol<br>• VMess WS: WebSocket-based VMess (link generation)<br>• Shadowsocks: WebSocket-based SS (link generation)<br>• Trojan: Uses SHA224 password auth<br>• xhttp: HTTP POST camouflage (requires custom domain & gRPC)',
+                    enableECH: 'Enable ECH (Encrypted Client Hello)',
+                    enableECHHint: 'When enabled, ECH config is fetched from DoH and added to links on every sub refresh',
+                    customDNS: 'Custom DNS Server',
+                    customDNSPlaceholder: 'e.g., https://dns.joeyblog.eu.org/joeyblog',
+                    customDNSHint: 'DNS server for ECH config query (DoH format)',
+                    customECHDomain: 'Custom ECH Domain',
+                    customECHDomainPlaceholder: 'e.g., cloudflare-ech.com',
+                    customECHDomainHint: 'Domain used in ECH config, leave empty for default',
+                    saveProtocol: 'Save Protocol Config',
+                    subscriptionConverterPlaceholder: 'Default: https://url.v1.mk/sub',
+                    subscriptionConverterHint: 'Custom subscription converter API, leave empty for default',
+                    builtinPreferredHint: 'Control which built-in preferred nodes are included. Default all enabled.',
+                    apiEnabledDefault: 'Default (API Disabled)',
+                    apiEnabledYes: 'Enable API Management',
+                    apiEnabledHint: '⚠️ Security Warning: Enabling API allows dynamic preferred IP addition. Use only if needed.',
+                    regionMatchingDefault: 'Default (Enable Region Match)',
+                    regionMatchingNo: 'Disable Region Match',
+                    regionMatchingHint: 'Smart region matching disabled when set to "Disable"',
+                    downgradeControlDefault: 'Default (Disable Downgrade)',
+                    downgradeControlNo: 'Enable Downgrade Mode',
+                    downgradeControlHint: 'When enabled: CF Direct Fail -> SOCKS5 -> Fallback',
+                    tlsControlDefault: 'Default (Keep All Nodes)',
+                    tlsControlYes: 'TLS Nodes Only',
+                    tlsControlHint: 'When set to "TLS Nodes Only", non-TLS nodes (e.g., port 80) are not generated',
+                    preferredControlDefault: 'Default (Enable Preferred)',
+                    preferredControlYes: 'Disable Preferred',
+                    preferredControlHint: 'When set to "Disable Preferred", only native address is used',
                     regionNames: {
-                        US: '🇺🇸 美国', SG: '🇸🇬 新加坡', JP: '🇯🇵 日本',
-                        KR: '🇰🇷 韩国', DE: '🇩🇪 德国', SE: '🇸🇪 瑞典', NL: '🇳🇱 荷兰',
-                        FI: '🇫🇮 芬兰', GB: '🇬🇧 英国', FR: '🇫🇷 法国', CA: '🇨🇦 加拿大',
-                        AU: '🇦🇺 澳大利亚', HK: '🇭🇰 香港', TW: '🇹🇼 台湾'
+                        US: '🇺🇸 US', SG: '🇸🇬 Singapore', JP: '🇯🇵 Japan',
+                        KR: '🇰🇷 South Korea', DE: '🇩🇪 Germany', SE: '🇸🇪 Sweden', NL: '🇳🇱 Netherlands',
+                        FI: '🇫🇮 Finland', GB: '🇬🇧 UK', FR: '🇫🇷 France', CA: '🇨🇦 Canada',
+                        AU: '🇦🇺 Australia', HK: '🇭🇰 Hong Kong', TW: '🇹🇼 Taiwan'
                     },
-                    terminal: '终端 v2.9.3',
-                    githubProject: 'GitHub 项目',
-                    autoDetectClient: '自动识别',
-                selectionLogicText: '同地区 → 邻近地区 → 其他地区',
-                customIPDisabledHint: '使用自定义ProxyIP时，地区选择已禁用',
-                customIPMode: '自定义ProxyIP模式 (p变量启用)',
-                customIPModeDesc: '自定义IP模式 (已禁用地区匹配)',
-                usingCustomProxyIP: '使用自定义ProxyIP: ',
-                customIPConfig: ' (p变量配置)',
-                customIPModeDisabled: '自定义IP模式，地区选择已禁用',
-                manualRegion: '手动指定地区',
-                manualRegionDesc: ' (手动指定)',
-                proxyIPAvailable: '10/10 可用 (ProxyIP域名预设可用)',
-                smartSelection: '智能就近选择中',
-                sameRegionIP: '同地区IP可用 (1个)',
-                cloudflareDetection: 'Cloudflare内置检测',
-                detectionFailed: '检测失败',
-                apiTestResult: 'API检测结果: ',
-                apiTestTime: '检测时间: ',
-                apiTestFailed: 'API检测失败: ',
-                unknownError: '未知错误',
-                apiTestError: 'API测试失败: ',
-                kvNotConfigured: 'KV存储未配置，无法使用配置管理功能。\\n\\n请在Cloudflare Workers中:\\n1. 创建KV命名空间\\n2. 绑定环境变量 C\\n3. 重新部署代码',
-                kvNotEnabled: 'KV存储未配置',
-                kvCheckFailed: 'KV存储检测失败: 响应格式错误',
-                kvCheckFailedStatus: 'KV存储检测失败 - 状态码: ',
-                kvCheckFailedError: 'KV存储检测失败 - 错误: '
-            },
+                    terminal: 'Terminal v2.9.3',
+                    githubProject: 'GitHub Project',
+                    autoDetectClient: 'Auto Detect',
+                    selectionLogicText: 'Same Region -> Nearby Region -> Other Regions',
+                    customIPDisabledHint: 'Region selection disabled when using Custom ProxyIP',
+                    customIPMode: 'Custom ProxyIP Mode (p variable enabled)',
+                    customIPModeDesc: 'Custom IP Mode (Region match disabled)',
+                    usingCustomProxyIP: 'Using Custom ProxyIP: ',
+                    customIPConfig: ' (p variable config)',
+                    customIPModeDisabled: 'Custom IP Mode, region selection disabled',
+                    manualRegion: 'Manual Region',
+                    manualRegionDesc: ' (Manual)',
+                    proxyIPAvailable: '10/10 Available (ProxyIP Domain Pre-set)',
+                    smartSelection: 'Smart Nearby Selection',
+                    sameRegionIP: 'Same Region IP Available (1)',
+                    cloudflareDetection: 'Cloudflare Built-in Detection',
+                    detectionFailed: 'Detection Failed',
+                    apiTestResult: 'API Detection Result: ',
+                    apiTestTime: 'Detection Time: ',
+                    apiTestFailed: 'API Detection Failed: ',
+                    unknownError: 'Unknown Error',
+                    apiTestError: 'API Test Failed: ',
+                    kvNotConfigured: 'KV Storage not configured. Config management unavailable.\n\nPlease in Cloudflare Workers:\n1. Create KV Namespace\n2. Bind variable C\n3. Redeploy',
+                    kvNotEnabled: 'KV Storage Not Configured',
+                    kvCheckFailed: 'KV Check Failed: Invalid Response',
+                    kvCheckFailedStatus: 'KV Check Failed - Status: ',
+                    kvCheckFailedError: 'KV Check Failed - Error: '
+                },
                 fa: {
                     title: 'مرکز اشتراک',
                     subtitle: 'پشتیبانی چند کلاینت • انتخاب هوشمند • تولید یک کلیکی',
@@ -2725,6 +3094,8 @@
                     enablePreferredDomain: 'فعال‌سازی دامنه ترجیحی',
                     enablePreferredIP: 'فعال‌سازی IP ترجیحی',
                     enableGitHubPreferred: 'فعال‌سازی ترجیح پیش‌فرض GitHub',
+                    enableDiverseProxies: 'Enable Diverse Proxies (Generate all ports)',
+                    enableDiverseProxiesHint: 'Generate nodes for all supported ports (80, 443, 2053, etc.) for each IP.',
                     allowAPIManagement: 'اجازه مدیریت API (ae):',
                     regionMatching: 'تطبیق منطقه (rm):',
                     downgradeControl: 'کنترل کاهش سطح (qj):',
@@ -2795,7 +3166,7 @@
             }
         };
 
-            const t = translations[isFarsi ? 'fa' : 'zh'];
+            const t = translations[isFarsi ? 'fa' : 'en'];
 
         const pageHtml = `<!DOCTYPE html>
         <html lang="${langAttr}" dir="${isFarsi ? 'rtl' : 'ltr'}">
@@ -3010,7 +3381,7 @@
             <div class="matrix-text">${t.terminal}</div>
             <div style="position: fixed; top: 20px; left: 20px; z-index: 1000;">
                 <select id="languageSelector" style="background: rgba(0, 20, 0, 0.9); border: 2px solid #00ff00; color: #00ff00; padding: 8px 12px; font-family: 'Courier New', monospace; font-size: 14px; cursor: pointer; text-shadow: 0 0 5px #00ff00; box-shadow: 0 0 15px rgba(0, 255, 0, 0.4);" onchange="changeLanguage(this.value)">
-                    <option value="zh" ${!isFarsi ? 'selected' : ''}>🇨🇳 中文</option>
+                    <option value="en" ${!isFarsi ? 'selected' : ''}>🇺🇸 English</option>
                     <option value="fa" ${isFarsi ? 'selected' : ''}>🇮🇷 فارسی</option>
                 </select>
             </div>
@@ -3279,6 +3650,15 @@
                                             <span style="font-size: 1.1rem;">${t.enableGitHubPreferred}</span>
                                     </label>
                                 </div>
+
+                                <div style="margin-bottom: 10px;">
+                                    <label style="display: inline-flex; align-items: center; cursor: pointer; color: #00ff00;">
+                                        <input type="checkbox" id="enableDiverseProxies" style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;">
+                                            <span style="font-size: 1.1rem;">${t.enableDiverseProxies}</span>
+                                    </label>
+                                    <small style="color: #00aa00; font-size: 0.85rem; display: block; margin-top: 5px;">${t.enableDiverseProxiesHint}</small>
+                                </div>
+
                                     <small style="color: #00aa00; font-size: 0.85rem; display: block; margin-top: 10px;">${t.builtinPreferredHint}</small>
                             </div>
                         </div>
@@ -3384,15 +3764,181 @@
         <script>
             // 订阅转换地址（从服务器配置注入）
             var SUB_CONVERTER_URL = "${ scu }";
-            // 远程配置URL（硬编码）
+            // Remote config URL (Hardcoded)
             var REMOTE_CONFIG_URL = "${ remoteConfigUrl }";
 
                 // 翻译对象
                 const translations = {
-                    zh: {
-                        subscriptionCopied: '订阅链接已复制',
-                        autoSubscriptionCopied: '自动识别订阅链接已复制，客户端访问时会根据User-Agent自动识别并返回对应格式'
+                    en: {
+                    title: 'Terminal',
+                    terminal: 'Terminal',
+                    congratulations: 'Congratulations, you made it!',
+                    enterU: 'Please enter the value of your U variable',
+                    enterD: 'Please enter the value of your D variable',
+                    command: 'Command: connect [',
+                    uuid: 'UUID',
+                    path: 'PATH',
+                    inputU: 'Enter content of U variable and press Enter...',
+                    inputD: 'Enter content of D variable and press Enter...',
+                    connecting: 'Connecting...',
+                    invading: 'Invading...',
+                    success: 'Connection successful! Returning result...',
+                    error: 'Error: Invalid UUID format',
+                    reenter: 'Please re-enter a valid UUID',
+
+                    // Subscription Page Translations
+                    subtitle: 'Multi-client Support • Smart Optimization • One-Click Generation',
+                    selectClient: '[ Select Client ]',
+                    systemStatus: '[ System Status ]',
+                    configManagement: '[ Config Management ]',
+                    relatedLinks: '[ Related Links ]',
+                    checking: 'Checking...',
+                    workerRegion: 'Worker Region: ',
+                    detectionMethod: 'Detection Method: ',
+                    proxyIPStatus: 'ProxyIP Status: ',
+                    currentIP: 'Current IP: ',
+                    regionMatch: 'Region Match: ',
+                    selectionLogic: 'Selection Logic: ',
+                    kvStatusChecking: 'Checking KV Status...',
+                    kvEnabled: '✅ KV Storage Enabled, Config Management Available',
+                    kvDisabled: '⚠️ KV Storage Disabled or Not Configured',
+                    specifyRegion: 'Specify Region (wk):',
+                    autoDetect: 'Auto Detect',
+                    saveRegion: 'Save Region Config',
+                    protocolSelection: 'Protocol Selection:',
+                    enableVLESS: 'Enable VLESS Protocol',
+                    enableVMess: 'Enable VMess Protocol',
+                    enableShadowsocks: 'Enable Shadowsocks Protocol',
+                    enableTrojan: 'Enable Trojan Protocol',
+                    enableXhttp: 'Enable xhttp Protocol',
+                    enableTUIC: 'Enable TUIC Protocol',
+                    enableHysteria2: 'Enable Hysteria 2 Protocol',
+                    enableVLESSgRPC: 'Enable VLESS gRPC Protocol',
+                    linkOnlyHint: 'Requires External Backend (Link-Only)',
+                    grpcHint: 'Requires Custom Domain (gRPC)',
+                    trojanPassword: 'Trojan Password (Optional):',
+                    customPath: 'Custom Path (d):',
+                    customPathPlaceholder: 'e.g., /secret-path',
+                    customIP: 'Custom ProxyIP (p):',
+                    customIPPlaceholder: 'e.g., 1.2.3.4 or proxy.example.com',
+                    preferredIPs: 'Preferred IP List (yx):',
+                    preferredIPsPlaceholder: 'e.g., 1.1.1.1:443#HongKong, 8.8.8.8:443#USA',
+                    preferredIPsURL: 'Preferred IP Source URL (yxURL):',
+                    latencyTest: 'Latency Test',
+                    latencyTestIP: 'Test IP/Domain:',
+                    latencyTestIPPlaceholder: 'Enter IP or Domain, comma separated',
+                    latencyTestPort: 'Port:',
+                    startTest: 'Start Test',
+                    stopTest: 'Stop Test',
+                    testResult: 'Test Result:',
+                    addToYx: 'Add to Preferred List',
+                    addSelectedToYx: 'Add Selected to Preferred List',
+                    selectAll: 'Select All',
+                    deselectAll: 'Deselect All',
+                    testingInProgress: 'Testing...',
+                    testComplete: 'Test Complete',
+                    latencyMs: 'Latency (HTTP Handshake)',
+                    timeout: 'Timeout',
+                    ipSource: 'IP Source:',
+                    manualInput: 'Manual Input',
+                    cfRandomIP: 'CF Random IP',
+                    urlFetch: 'URL Fetch',
+                    randomCount: 'Generate Count:',
+                    fetchURL: 'Fetch URL:',
+                    fetchURLPlaceholder: 'Enter URL of IP list',
+                    generateIP: 'Generate IP',
+                    fetchIP: 'Fetch IP',
+                    socks5Config: 'SOCKS5 Config (s):',
+                    customHomepage: 'Custom Homepage URL (homepage):',
+                    customHomepagePlaceholder: 'e.g., https://example.com',
+                    customHomepageHint: 'Set custom URL as homepage camouflage. Content of this URL will be shown when accessing root path /. Leave empty to show default terminal page.',
+                    customPathHint: 'Only accessible via this path if set. UUID access will be disabled. Suggest using complex path to prevent scanning.',
+                    customIPHint: 'Hide Worker real IP, or solve Cloudflare Loop issue. Supports IP:Port or Domain:Port.',
+                    preferredIPsHint: 'Manually specify preferred nodes. Highest priority. Format: IP:Port#Remark.',
+                    socks5ConfigHint: 'Format: user:pass@host:port. Worker will connect to target via this proxy.',
+                    saveConfig: 'Save Config',
+                    advancedControl: 'Advanced Control',
+                    subscriptionConverter: 'Sub Converter URL:',
+                    builtinPreferred: 'Built-in Preferred Type:',
+                    enablePreferredDomain: 'Enable Preferred Domain',
+                    enablePreferredIP: 'Enable Preferred IP',
+                    enableGitHubPreferred: 'Enable GitHub Default Preferred',
+                    allowAPIManagement: 'Allow API Management (ae):',
+                    regionMatching: 'Region Matching (rm):',
+                    downgradeControl: 'Downgrade Control (qj):',
+                    tlsControl: 'TLS Control (dkby):',
+                    preferredControl: 'Preferred Control (yxby):',
+                    saveAdvanced: 'Save Advanced Config',
+                    loading: 'Loading...',
+                    currentConfig: '📍 Current Path Config',
+                    refreshConfig: 'Refresh Config',
+                    resetConfig: 'Reset Config',
+                    subscriptionCopied: 'Subscription Link Copied',
+                    autoSubscriptionCopied: 'Auto-detected subscription link copied. Client will be recognized by User-Agent.',
+                    trojanPasswordPlaceholder: 'Leave empty to use UUID',
+                    trojanPasswordHint: 'Set custom Trojan password. Leave empty to use UUID. Client will auto-hash password with SHA224.',
+                    protocolHint: 'Multiple protocols can be enabled.<br>• VLESS WS: Standard WebSocket protocol<br>• VMess WS: WebSocket-based VMess (link generation)<br>• Shadowsocks: WebSocket-based SS (link generation)<br>• Trojan: Uses SHA224 password auth<br>• xhttp: HTTP POST camouflage (requires custom domain & gRPC)',
+                    enableECH: 'Enable ECH (Encrypted Client Hello)',
+                    enableECHHint: 'When enabled, ECH config is fetched from DoH and added to links on every sub refresh',
+                    customDNS: 'Custom DNS Server',
+                    customDNSPlaceholder: 'e.g., https://dns.joeyblog.eu.org/joeyblog',
+                    customDNSHint: 'DNS server for ECH config query (DoH format)',
+                    customECHDomain: 'Custom ECH Domain',
+                    customECHDomainPlaceholder: 'e.g., cloudflare-ech.com',
+                    customECHDomainHint: 'Domain used in ECH config, leave empty for default',
+                    saveProtocol: 'Save Protocol Config',
+                    subscriptionConverterPlaceholder: 'Default: https://url.v1.mk/sub',
+                    subscriptionConverterHint: 'Custom subscription converter API, leave empty for default',
+                    builtinPreferredHint: 'Control which built-in preferred nodes are included. Default all enabled.',
+                    apiEnabledDefault: 'Default (API Disabled)',
+                    apiEnabledYes: 'Enable API Management',
+                    apiEnabledHint: '⚠️ Security Warning: Enabling API allows dynamic preferred IP addition. Use only if needed.',
+                    regionMatchingDefault: 'Default (Enable Region Match)',
+                    regionMatchingNo: 'Disable Region Match',
+                    regionMatchingHint: 'Smart region matching disabled when set to "Disable"',
+                    downgradeControlDefault: 'Default (Disable Downgrade)',
+                    downgradeControlNo: 'Enable Downgrade Mode',
+                    downgradeControlHint: 'When enabled: CF Direct Fail -> SOCKS5 -> Fallback',
+                    tlsControlDefault: 'Default (Keep All Nodes)',
+                    tlsControlYes: 'TLS Nodes Only',
+                    tlsControlHint: 'When set to "TLS Nodes Only", non-TLS nodes (e.g., port 80) are not generated',
+                    preferredControlDefault: 'Default (Enable Preferred)',
+                    preferredControlYes: 'Disable Preferred',
+                    preferredControlHint: 'When set to "Disable Preferred", only native address is used',
+                    regionNames: {
+                        US: '🇺🇸 US', SG: '🇸🇬 Singapore', JP: '🇯🇵 Japan',
+                        KR: '🇰🇷 South Korea', DE: '🇩🇪 Germany', SE: '🇸🇪 Sweden', NL: '🇳🇱 Netherlands',
+                        FI: '🇫🇮 Finland', GB: '🇬🇧 UK', FR: '🇫🇷 France', CA: '🇨🇦 Canada',
+                        AU: '🇦🇺 Australia', HK: '🇭🇰 Hong Kong', TW: '🇹🇼 Taiwan'
                     },
+                    terminal: 'Terminal v2.9.3',
+                    githubProject: 'GitHub Project',
+                    autoDetectClient: 'Auto Detect',
+                    selectionLogicText: 'Same Region -> Nearby Region -> Other Regions',
+                    customIPDisabledHint: 'Region selection disabled when using Custom ProxyIP',
+                    customIPMode: 'Custom ProxyIP Mode (p variable enabled)',
+                    customIPModeDesc: 'Custom IP Mode (Region match disabled)',
+                    usingCustomProxyIP: 'Using Custom ProxyIP: ',
+                    customIPConfig: ' (p variable config)',
+                    customIPModeDisabled: 'Custom IP Mode, region selection disabled',
+                    manualRegion: 'Manual Region',
+                    manualRegionDesc: ' (Manual)',
+                    proxyIPAvailable: '10/10 Available (ProxyIP Domain Pre-set)',
+                    smartSelection: 'Smart Nearby Selection',
+                    sameRegionIP: 'Same Region IP Available (1)',
+                    cloudflareDetection: 'Cloudflare Built-in Detection',
+                    detectionFailed: 'Detection Failed',
+                    apiTestResult: 'API Detection Result: ',
+                    apiTestTime: 'Detection Time: ',
+                    apiTestFailed: 'API Detection Failed: ',
+                    unknownError: 'Unknown Error',
+                    apiTestError: 'API Test Failed: ',
+                    kvNotConfigured: 'KV Storage not configured. Config management unavailable.\n\nPlease in Cloudflare Workers:\n1. Create KV Namespace\n2. Bind variable C\n3. Redeploy',
+                    kvNotEnabled: 'KV Storage Not Configured',
+                    kvCheckFailed: 'KV Check Failed: Invalid Response',
+                    kvCheckFailedStatus: 'KV Check Failed - Status: ',
+                    kvCheckFailedError: 'KV Check Failed - Error: '
+                },
                     fa: {
                         subscriptionCopied: 'لینک اشتراک کپی شد',
                         autoSubscriptionCopied: 'لینک اشتراک تشخیص خودکار کپی شد، کلاینت هنگام دسترسی بر اساس User-Agent به طور خودکار تشخیص داده و قالب مربوطه را برمی‌گرداند'
@@ -3412,31 +3958,31 @@
 
                 if (savedLang === 'fa' || savedLang === 'fa-IR') {
                     isFarsi = true;
-                } else if (savedLang === 'zh' || savedLang === 'zh-CN') {
+                } else if (savedLang === 'zh' || savedLang === 'en-US') {
                     isFarsi = false;
                 } else {
                     isFarsi = browserLang.includes('fa') || browserLang.includes('fa-IR');
                 }
 
-                const t = translations[isFarsi ? 'fa' : 'zh'];
+                const t = translations[isFarsi ? 'fa' : 'en'];
 
                 function changeLanguage(lang) {
                     localStorage.setItem('preferredLanguage', lang);
-                    // 设置Cookie（有效期1年）
+                    // Set Cookie (valid for 1 year)
                     const expiryDate = new Date();
                     expiryDate.setFullYear(expiryDate.getFullYear() + 1);
                     document.cookie = 'preferredLanguage=' + lang + '; path=/; expires=' + expiryDate.toUTCString() + '; SameSite=Lax';
-                    // 刷新页面，不使用URL参数
+                    // Reload page, do not use URL parameters
                     window.location.reload();
                 }
 
-                // 页面加载时检查 localStorage 和 Cookie，并清理URL参数
+                // Check localStorage and Cookie on page load, and clean up URL parameters
                 window.addEventListener('DOMContentLoaded', function() {
                     const savedLang = localStorage.getItem('preferredLanguage') || getCookie('preferredLanguage');
                     const urlParams = new URLSearchParams(window.location.search);
                     const urlLang = urlParams.get('lang');
 
-                    // 如果URL中有语言参数，移除它并设置Cookie
+                    // If URL has language parameter, remove it and set Cookie
                     if (urlLang) {
                         const currentUrl = new URL(window.location.href);
                         currentUrl.searchParams.delete('lang');
@@ -3448,10 +3994,10 @@
                         document.cookie = 'preferredLanguage=' + urlLang + '; path=/; expires=' + expiryDate.toUTCString() + '; SameSite=Lax';
                         localStorage.setItem('preferredLanguage', urlLang);
 
-                        // 使用history API移除URL参数，不刷新页面
+                        // Use history API to remove URL parameter, do not reload page
                         window.history.replaceState({}, '', newUrl);
                     } else if (savedLang) {
-                        // 如果localStorage中有但Cookie中没有，同步到Cookie
+                        // If present in localStorage but not in Cookie, sync to Cookie
                         const expiryDate = new Date();
                         expiryDate.setFullYear(expiryDate.getFullYear() + 1);
                         document.cookie = 'preferredLanguage=' + savedLang + '; path=/; expires=' + expiryDate.toUTCString() + '; SameSite=Lax';
@@ -3697,24 +4243,183 @@
 
                         if (savedLang === 'fa' || savedLang === 'fa-IR') {
                             isFarsi = true;
-                        } else if (savedLang === 'zh' || savedLang === 'zh-CN') {
+                        } else if (savedLang === 'zh' || savedLang === 'en-US') {
                             isFarsi = false;
                         } else {
                             isFarsi = browserLang.includes('fa') || browserLang.includes('fa-IR');
                         }
 
                         const translations = {
-                            zh: {
-                                workerRegion: 'Worker地区: ',
-                                detectionMethod: '检测方式: ',
-                                proxyIPStatus: 'ProxyIP状态: ',
-                                currentIP: '当前使用IP: ',
-                                regionMatch: '地区匹配: ',
-                                regionNames: {
-                        'US': '🇺🇸 美国', 'SG': '🇸🇬 新加坡', 'JP': '🇯🇵 日本',
-                        'KR': '🇰🇷 韩国', 'DE': '🇩🇪 德国', 'SE': '🇸🇪 瑞典', 'NL': '🇳🇱 荷兰',
-                        'FI': '🇫🇮 芬兰', 'GB': '🇬🇧 英国'
-                                },
+                            en: {
+                    title: 'Terminal',
+                    terminal: 'Terminal',
+                    congratulations: 'Congratulations, you made it!',
+                    enterU: 'Please enter the value of your U variable',
+                    enterD: 'Please enter the value of your D variable',
+                    command: 'Command: connect [',
+                    uuid: 'UUID',
+                    path: 'PATH',
+                    inputU: 'Enter content of U variable and press Enter...',
+                    inputD: 'Enter content of D variable and press Enter...',
+                    connecting: 'Connecting...',
+                    invading: 'Invading...',
+                    success: 'Connection successful! Returning result...',
+                    error: 'Error: Invalid UUID format',
+                    reenter: 'Please re-enter a valid UUID',
+
+                    // Subscription Page Translations
+                    subtitle: 'Multi-client Support • Smart Optimization • One-Click Generation',
+                    selectClient: '[ Select Client ]',
+                    systemStatus: '[ System Status ]',
+                    configManagement: '[ Config Management ]',
+                    relatedLinks: '[ Related Links ]',
+                    checking: 'Checking...',
+                    workerRegion: 'Worker Region: ',
+                    detectionMethod: 'Detection Method: ',
+                    proxyIPStatus: 'ProxyIP Status: ',
+                    currentIP: 'Current IP: ',
+                    regionMatch: 'Region Match: ',
+                    selectionLogic: 'Selection Logic: ',
+                    kvStatusChecking: 'Checking KV Status...',
+                    kvEnabled: '✅ KV Storage Enabled, Config Management Available',
+                    kvDisabled: '⚠️ KV Storage Disabled or Not Configured',
+                    specifyRegion: 'Specify Region (wk):',
+                    autoDetect: 'Auto Detect',
+                    saveRegion: 'Save Region Config',
+                    protocolSelection: 'Protocol Selection:',
+                    enableVLESS: 'Enable VLESS Protocol',
+                    enableVMess: 'Enable VMess Protocol',
+                    enableShadowsocks: 'Enable Shadowsocks Protocol',
+                    enableTrojan: 'Enable Trojan Protocol',
+                    enableXhttp: 'Enable xhttp Protocol',
+                    enableTUIC: 'Enable TUIC Protocol',
+                    enableHysteria2: 'Enable Hysteria 2 Protocol',
+                    enableVLESSgRPC: 'Enable VLESS gRPC Protocol',
+                    linkOnlyHint: 'Requires External Backend (Link-Only)',
+                    grpcHint: 'Requires Custom Domain (gRPC)',
+                    trojanPassword: 'Trojan Password (Optional):',
+                    customPath: 'Custom Path (d):',
+                    customPathPlaceholder: 'e.g., /secret-path',
+                    customIP: 'Custom ProxyIP (p):',
+                    customIPPlaceholder: 'e.g., 1.2.3.4 or proxy.example.com',
+                    preferredIPs: 'Preferred IP List (yx):',
+                    preferredIPsPlaceholder: 'e.g., 1.1.1.1:443#HongKong, 8.8.8.8:443#USA',
+                    preferredIPsURL: 'Preferred IP Source URL (yxURL):',
+                    latencyTest: 'Latency Test',
+                    latencyTestIP: 'Test IP/Domain:',
+                    latencyTestIPPlaceholder: 'Enter IP or Domain, comma separated',
+                    latencyTestPort: 'Port:',
+                    startTest: 'Start Test',
+                    stopTest: 'Stop Test',
+                    testResult: 'Test Result:',
+                    addToYx: 'Add to Preferred List',
+                    addSelectedToYx: 'Add Selected to Preferred List',
+                    selectAll: 'Select All',
+                    deselectAll: 'Deselect All',
+                    testingInProgress: 'Testing...',
+                    testComplete: 'Test Complete',
+                    latencyMs: 'Latency (HTTP Handshake)',
+                    timeout: 'Timeout',
+                    ipSource: 'IP Source:',
+                    manualInput: 'Manual Input',
+                    cfRandomIP: 'CF Random IP',
+                    urlFetch: 'URL Fetch',
+                    randomCount: 'Generate Count:',
+                    fetchURL: 'Fetch URL:',
+                    fetchURLPlaceholder: 'Enter URL of IP list',
+                    generateIP: 'Generate IP',
+                    fetchIP: 'Fetch IP',
+                    socks5Config: 'SOCKS5 Config (s):',
+                    customHomepage: 'Custom Homepage URL (homepage):',
+                    customHomepagePlaceholder: 'e.g., https://example.com',
+                    customHomepageHint: 'Set custom URL as homepage camouflage. Content of this URL will be shown when accessing root path /. Leave empty to show default terminal page.',
+                    customPathHint: 'Only accessible via this path if set. UUID access will be disabled. Suggest using complex path to prevent scanning.',
+                    customIPHint: 'Hide Worker real IP, or solve Cloudflare Loop issue. Supports IP:Port or Domain:Port.',
+                    preferredIPsHint: 'Manually specify preferred nodes. Highest priority. Format: IP:Port#Remark.',
+                    socks5ConfigHint: 'Format: user:pass@host:port. Worker will connect to target via this proxy.',
+                    saveConfig: 'Save Config',
+                    advancedControl: 'Advanced Control',
+                    subscriptionConverter: 'Sub Converter URL:',
+                    builtinPreferred: 'Built-in Preferred Type:',
+                    enablePreferredDomain: 'Enable Preferred Domain',
+                    enablePreferredIP: 'Enable Preferred IP',
+                    enableGitHubPreferred: 'Enable GitHub Default Preferred',
+                    allowAPIManagement: 'Allow API Management (ae):',
+                    regionMatching: 'Region Matching (rm):',
+                    downgradeControl: 'Downgrade Control (qj):',
+                    tlsControl: 'TLS Control (dkby):',
+                    preferredControl: 'Preferred Control (yxby):',
+                    saveAdvanced: 'Save Advanced Config',
+                    loading: 'Loading...',
+                    currentConfig: '📍 Current Path Config',
+                    refreshConfig: 'Refresh Config',
+                    resetConfig: 'Reset Config',
+                    subscriptionCopied: 'Subscription Link Copied',
+                    autoSubscriptionCopied: 'Auto-detected subscription link copied. Client will be recognized by User-Agent.',
+                    trojanPasswordPlaceholder: 'Leave empty to use UUID',
+                    trojanPasswordHint: 'Set custom Trojan password. Leave empty to use UUID. Client will auto-hash password with SHA224.',
+                    protocolHint: 'Multiple protocols can be enabled.<br>• VLESS WS: Standard WebSocket protocol<br>• VMess WS: WebSocket-based VMess (link generation)<br>• Shadowsocks: WebSocket-based SS (link generation)<br>• Trojan: Uses SHA224 password auth<br>• xhttp: HTTP POST camouflage (requires custom domain & gRPC)',
+                    enableECH: 'Enable ECH (Encrypted Client Hello)',
+                    enableECHHint: 'When enabled, ECH config is fetched from DoH and added to links on every sub refresh',
+                    customDNS: 'Custom DNS Server',
+                    customDNSPlaceholder: 'e.g., https://dns.joeyblog.eu.org/joeyblog',
+                    customDNSHint: 'DNS server for ECH config query (DoH format)',
+                    customECHDomain: 'Custom ECH Domain',
+                    customECHDomainPlaceholder: 'e.g., cloudflare-ech.com',
+                    customECHDomainHint: 'Domain used in ECH config, leave empty for default',
+                    saveProtocol: 'Save Protocol Config',
+                    subscriptionConverterPlaceholder: 'Default: https://url.v1.mk/sub',
+                    subscriptionConverterHint: 'Custom subscription converter API, leave empty for default',
+                    builtinPreferredHint: 'Control which built-in preferred nodes are included. Default all enabled.',
+                    apiEnabledDefault: 'Default (API Disabled)',
+                    apiEnabledYes: 'Enable API Management',
+                    apiEnabledHint: '⚠️ Security Warning: Enabling API allows dynamic preferred IP addition. Use only if needed.',
+                    regionMatchingDefault: 'Default (Enable Region Match)',
+                    regionMatchingNo: 'Disable Region Match',
+                    regionMatchingHint: 'Smart region matching disabled when set to "Disable"',
+                    downgradeControlDefault: 'Default (Disable Downgrade)',
+                    downgradeControlNo: 'Enable Downgrade Mode',
+                    downgradeControlHint: 'When enabled: CF Direct Fail -> SOCKS5 -> Fallback',
+                    tlsControlDefault: 'Default (Keep All Nodes)',
+                    tlsControlYes: 'TLS Nodes Only',
+                    tlsControlHint: 'When set to "TLS Nodes Only", non-TLS nodes (e.g., port 80) are not generated',
+                    preferredControlDefault: 'Default (Enable Preferred)',
+                    preferredControlYes: 'Disable Preferred',
+                    preferredControlHint: 'When set to "Disable Preferred", only native address is used',
+                    regionNames: {
+                        US: '🇺🇸 US', SG: '🇸🇬 Singapore', JP: '🇯🇵 Japan',
+                        KR: '🇰🇷 South Korea', DE: '🇩🇪 Germany', SE: '🇸🇪 Sweden', NL: '🇳🇱 Netherlands',
+                        FI: '🇫🇮 Finland', GB: '🇬🇧 UK', FR: '🇫🇷 France', CA: '🇨🇦 Canada',
+                        AU: '🇦🇺 Australia', HK: '🇭🇰 Hong Kong', TW: '🇹🇼 Taiwan'
+                    },
+                    terminal: 'Terminal v2.9.3',
+                    githubProject: 'GitHub Project',
+                    autoDetectClient: 'Auto Detect',
+                    selectionLogicText: 'Same Region -> Nearby Region -> Other Regions',
+                    customIPDisabledHint: 'Region selection disabled when using Custom ProxyIP',
+                    customIPMode: 'Custom ProxyIP Mode (p variable enabled)',
+                    customIPModeDesc: 'Custom IP Mode (Region match disabled)',
+                    usingCustomProxyIP: 'Using Custom ProxyIP: ',
+                    customIPConfig: ' (p variable config)',
+                    customIPModeDisabled: 'Custom IP Mode, region selection disabled',
+                    manualRegion: 'Manual Region',
+                    manualRegionDesc: ' (Manual)',
+                    proxyIPAvailable: '10/10 Available (ProxyIP Domain Pre-set)',
+                    smartSelection: 'Smart Nearby Selection',
+                    sameRegionIP: 'Same Region IP Available (1)',
+                    cloudflareDetection: 'Cloudflare Built-in Detection',
+                    detectionFailed: 'Detection Failed',
+                    apiTestResult: 'API Detection Result: ',
+                    apiTestTime: 'Detection Time: ',
+                    apiTestFailed: 'API Detection Failed: ',
+                    unknownError: 'Unknown Error',
+                    apiTestError: 'API Test Failed: ',
+                    kvNotConfigured: 'KV Storage not configured. Config management unavailable.\n\nPlease in Cloudflare Workers:\n1. Create KV Namespace\n2. Bind variable C\n3. Redeploy',
+                    kvNotEnabled: 'KV Storage Not Configured',
+                    kvCheckFailed: 'KV Check Failed: Invalid Response',
+                    kvCheckFailedStatus: 'KV Check Failed - Status: ',
+                    kvCheckFailedError: 'KV Check Failed - Error: '
+                },
                                 customIPMode: '自定义ProxyIP模式 (p变量启用)',
                                 customIPModeDesc: '自定义IP模式 (已禁用地区匹配)',
                                 usingCustomProxyIP: '使用自定义ProxyIP: ',
@@ -3727,7 +4432,7 @@
                                 sameRegionIP: '同地区IP可用 (1个)',
                                 cloudflareDetection: 'Cloudflare内置检测',
                                 detectionFailed: '检测失败',
-                                unknown: '未知'
+                                unknown: 'Unknown'
                             },
                             fa: {
                                 workerRegion: 'منطقه Worker: ',
@@ -3756,7 +4461,7 @@
                             }
                         };
 
-                        const t = translations[isFarsi ? 'fa' : 'zh'];
+                        const t = translations[isFarsi ? 'fa' : 'en'];
 
                     let detectedRegion = 'US'; // 默认值
                     let isCustomIPMode = false;
@@ -3838,14 +4543,176 @@
                         }
 
                         const translations = {
-                            zh: {
-                                workerRegion: 'Worker地区: ',
-                                detectionMethod: '检测方式: ',
-                                proxyIPStatus: 'ProxyIP状态: ',
-                                currentIP: '当前使用IP: ',
-                                regionMatch: '地区匹配: ',
-                                detectionFailed: '检测失败'
-                            },
+                            en: {
+                    title: 'Terminal',
+                    terminal: 'Terminal',
+                    congratulations: 'Congratulations, you made it!',
+                    enterU: 'Please enter the value of your U variable',
+                    enterD: 'Please enter the value of your D variable',
+                    command: 'Command: connect [',
+                    uuid: 'UUID',
+                    path: 'PATH',
+                    inputU: 'Enter content of U variable and press Enter...',
+                    inputD: 'Enter content of D variable and press Enter...',
+                    connecting: 'Connecting...',
+                    invading: 'Invading...',
+                    success: 'Connection successful! Returning result...',
+                    error: 'Error: Invalid UUID format',
+                    reenter: 'Please re-enter a valid UUID',
+
+                    // Subscription Page Translations
+                    subtitle: 'Multi-client Support • Smart Optimization • One-Click Generation',
+                    selectClient: '[ Select Client ]',
+                    systemStatus: '[ System Status ]',
+                    configManagement: '[ Config Management ]',
+                    relatedLinks: '[ Related Links ]',
+                    checking: 'Checking...',
+                    workerRegion: 'Worker Region: ',
+                    detectionMethod: 'Detection Method: ',
+                    proxyIPStatus: 'ProxyIP Status: ',
+                    currentIP: 'Current IP: ',
+                    regionMatch: 'Region Match: ',
+                    selectionLogic: 'Selection Logic: ',
+                    kvStatusChecking: 'Checking KV Status...',
+                    kvEnabled: '✅ KV Storage Enabled, Config Management Available',
+                    kvDisabled: '⚠️ KV Storage Disabled or Not Configured',
+                    specifyRegion: 'Specify Region (wk):',
+                    autoDetect: 'Auto Detect',
+                    saveRegion: 'Save Region Config',
+                    protocolSelection: 'Protocol Selection:',
+                    enableVLESS: 'Enable VLESS Protocol',
+                    enableVMess: 'Enable VMess Protocol',
+                    enableShadowsocks: 'Enable Shadowsocks Protocol',
+                    enableTrojan: 'Enable Trojan Protocol',
+                    enableXhttp: 'Enable xhttp Protocol',
+                    enableTUIC: 'Enable TUIC Protocol',
+                    enableHysteria2: 'Enable Hysteria 2 Protocol',
+                    enableVLESSgRPC: 'Enable VLESS gRPC Protocol',
+                    linkOnlyHint: 'Requires External Backend (Link-Only)',
+                    grpcHint: 'Requires Custom Domain (gRPC)',
+                    trojanPassword: 'Trojan Password (Optional):',
+                    customPath: 'Custom Path (d):',
+                    customPathPlaceholder: 'e.g., /secret-path',
+                    customIP: 'Custom ProxyIP (p):',
+                    customIPPlaceholder: 'e.g., 1.2.3.4 or proxy.example.com',
+                    preferredIPs: 'Preferred IP List (yx):',
+                    preferredIPsPlaceholder: 'e.g., 1.1.1.1:443#HongKong, 8.8.8.8:443#USA',
+                    preferredIPsURL: 'Preferred IP Source URL (yxURL):',
+                    latencyTest: 'Latency Test',
+                    latencyTestIP: 'Test IP/Domain:',
+                    latencyTestIPPlaceholder: 'Enter IP or Domain, comma separated',
+                    latencyTestPort: 'Port:',
+                    startTest: 'Start Test',
+                    stopTest: 'Stop Test',
+                    testResult: 'Test Result:',
+                    addToYx: 'Add to Preferred List',
+                    addSelectedToYx: 'Add Selected to Preferred List',
+                    selectAll: 'Select All',
+                    deselectAll: 'Deselect All',
+                    testingInProgress: 'Testing...',
+                    testComplete: 'Test Complete',
+                    latencyMs: 'Latency (HTTP Handshake)',
+                    timeout: 'Timeout',
+                    ipSource: 'IP Source:',
+                    manualInput: 'Manual Input',
+                    cfRandomIP: 'CF Random IP',
+                    urlFetch: 'URL Fetch',
+                    randomCount: 'Generate Count:',
+                    fetchURL: 'Fetch URL:',
+                    fetchURLPlaceholder: 'Enter URL of IP list',
+                    generateIP: 'Generate IP',
+                    fetchIP: 'Fetch IP',
+                    socks5Config: 'SOCKS5 Config (s):',
+                    customHomepage: 'Custom Homepage URL (homepage):',
+                    customHomepagePlaceholder: 'e.g., https://example.com',
+                    customHomepageHint: 'Set custom URL as homepage camouflage. Content of this URL will be shown when accessing root path /. Leave empty to show default terminal page.',
+                    customPathHint: 'Only accessible via this path if set. UUID access will be disabled. Suggest using complex path to prevent scanning.',
+                    customIPHint: 'Hide Worker real IP, or solve Cloudflare Loop issue. Supports IP:Port or Domain:Port.',
+                    preferredIPsHint: 'Manually specify preferred nodes. Highest priority. Format: IP:Port#Remark.',
+                    socks5ConfigHint: 'Format: user:pass@host:port. Worker will connect to target via this proxy.',
+                    saveConfig: 'Save Config',
+                    advancedControl: 'Advanced Control',
+                    subscriptionConverter: 'Sub Converter URL:',
+                    builtinPreferred: 'Built-in Preferred Type:',
+                    enablePreferredDomain: 'Enable Preferred Domain',
+                    enablePreferredIP: 'Enable Preferred IP',
+                    enableGitHubPreferred: 'Enable GitHub Default Preferred',
+                    allowAPIManagement: 'Allow API Management (ae):',
+                    regionMatching: 'Region Matching (rm):',
+                    downgradeControl: 'Downgrade Control (qj):',
+                    tlsControl: 'TLS Control (dkby):',
+                    preferredControl: 'Preferred Control (yxby):',
+                    saveAdvanced: 'Save Advanced Config',
+                    loading: 'Loading...',
+                    currentConfig: '📍 Current Path Config',
+                    refreshConfig: 'Refresh Config',
+                    resetConfig: 'Reset Config',
+                    subscriptionCopied: 'Subscription Link Copied',
+                    autoSubscriptionCopied: 'Auto-detected subscription link copied. Client will be recognized by User-Agent.',
+                    trojanPasswordPlaceholder: 'Leave empty to use UUID',
+                    trojanPasswordHint: 'Set custom Trojan password. Leave empty to use UUID. Client will auto-hash password with SHA224.',
+                    protocolHint: 'Multiple protocols can be enabled.<br>• VLESS WS: Standard WebSocket protocol<br>• VMess WS: WebSocket-based VMess (link generation)<br>• Shadowsocks: WebSocket-based SS (link generation)<br>• Trojan: Uses SHA224 password auth<br>• xhttp: HTTP POST camouflage (requires custom domain & gRPC)',
+                    enableECH: 'Enable ECH (Encrypted Client Hello)',
+                    enableECHHint: 'When enabled, ECH config is fetched from DoH and added to links on every sub refresh',
+                    customDNS: 'Custom DNS Server',
+                    customDNSPlaceholder: 'e.g., https://dns.joeyblog.eu.org/joeyblog',
+                    customDNSHint: 'DNS server for ECH config query (DoH format)',
+                    customECHDomain: 'Custom ECH Domain',
+                    customECHDomainPlaceholder: 'e.g., cloudflare-ech.com',
+                    customECHDomainHint: 'Domain used in ECH config, leave empty for default',
+                    saveProtocol: 'Save Protocol Config',
+                    subscriptionConverterPlaceholder: 'Default: https://url.v1.mk/sub',
+                    subscriptionConverterHint: 'Custom subscription converter API, leave empty for default',
+                    builtinPreferredHint: 'Control which built-in preferred nodes are included. Default all enabled.',
+                    apiEnabledDefault: 'Default (API Disabled)',
+                    apiEnabledYes: 'Enable API Management',
+                    apiEnabledHint: '⚠️ Security Warning: Enabling API allows dynamic preferred IP addition. Use only if needed.',
+                    regionMatchingDefault: 'Default (Enable Region Match)',
+                    regionMatchingNo: 'Disable Region Match',
+                    regionMatchingHint: 'Smart region matching disabled when set to "Disable"',
+                    downgradeControlDefault: 'Default (Disable Downgrade)',
+                    downgradeControlNo: 'Enable Downgrade Mode',
+                    downgradeControlHint: 'When enabled: CF Direct Fail -> SOCKS5 -> Fallback',
+                    tlsControlDefault: 'Default (Keep All Nodes)',
+                    tlsControlYes: 'TLS Nodes Only',
+                    tlsControlHint: 'When set to "TLS Nodes Only", non-TLS nodes (e.g., port 80) are not generated',
+                    preferredControlDefault: 'Default (Enable Preferred)',
+                    preferredControlYes: 'Disable Preferred',
+                    preferredControlHint: 'When set to "Disable Preferred", only native address is used',
+                    regionNames: {
+                        US: '🇺🇸 US', SG: '🇸🇬 Singapore', JP: '🇯🇵 Japan',
+                        KR: '🇰🇷 South Korea', DE: '🇩🇪 Germany', SE: '🇸🇪 Sweden', NL: '🇳🇱 Netherlands',
+                        FI: '🇫🇮 Finland', GB: '🇬🇧 UK', FR: '🇫🇷 France', CA: '🇨🇦 Canada',
+                        AU: '🇦🇺 Australia', HK: '🇭🇰 Hong Kong', TW: '🇹🇼 Taiwan'
+                    },
+                    terminal: 'Terminal v2.9.3',
+                    githubProject: 'GitHub Project',
+                    autoDetectClient: 'Auto Detect',
+                    selectionLogicText: 'Same Region -> Nearby Region -> Other Regions',
+                    customIPDisabledHint: 'Region selection disabled when using Custom ProxyIP',
+                    customIPMode: 'Custom ProxyIP Mode (p variable enabled)',
+                    customIPModeDesc: 'Custom IP Mode (Region match disabled)',
+                    usingCustomProxyIP: 'Using Custom ProxyIP: ',
+                    customIPConfig: ' (p variable config)',
+                    customIPModeDisabled: 'Custom IP Mode, region selection disabled',
+                    manualRegion: 'Manual Region',
+                    manualRegionDesc: ' (Manual)',
+                    proxyIPAvailable: '10/10 Available (ProxyIP Domain Pre-set)',
+                    smartSelection: 'Smart Nearby Selection',
+                    sameRegionIP: 'Same Region IP Available (1)',
+                    cloudflareDetection: 'Cloudflare Built-in Detection',
+                    detectionFailed: 'Detection Failed',
+                    apiTestResult: 'API Detection Result: ',
+                    apiTestTime: 'Detection Time: ',
+                    apiTestFailed: 'API Detection Failed: ',
+                    unknownError: 'Unknown Error',
+                    apiTestError: 'API Test Failed: ',
+                    kvNotConfigured: 'KV Storage not configured. Config management unavailable.\n\nPlease in Cloudflare Workers:\n1. Create KV Namespace\n2. Bind variable C\n3. Redeploy',
+                    kvNotEnabled: 'KV Storage Not Configured',
+                    kvCheckFailed: 'KV Check Failed: Invalid Response',
+                    kvCheckFailedStatus: 'KV Check Failed - Status: ',
+                    kvCheckFailedError: 'KV Check Failed - Error: '
+                },
                             fa: {
                                 workerRegion: 'منطقه Worker: ',
                                 detectionMethod: 'روش تشخیص: ',
@@ -3856,7 +4723,7 @@
                             }
                         };
 
-                        const t = translations[isFarsi ? 'fa' : 'zh'];
+                        const t = translations[isFarsi ? 'fa' : 'en'];
 
                         document.getElementById('regionStatus').innerHTML = t.workerRegion + '<span style="color: #ff4444;">❌ ' + t.detectionFailed + '</span>';
                         document.getElementById('geoInfo').innerHTML = t.detectionMethod + '<span style="color: #ff4444;">❌ ' + t.detectionFailed + '</span>';
@@ -3886,13 +4753,176 @@
                         }
 
                         const translations = {
-                            zh: {
-                                apiTestResult: 'API检测结果: ',
-                                apiTestTime: '检测时间: ',
-                                apiTestFailed: 'API检测失败: ',
-                                unknownError: '未知错误',
-                                apiTestError: 'API测试失败: '
-                            },
+                            en: {
+                    title: 'Terminal',
+                    terminal: 'Terminal',
+                    congratulations: 'Congratulations, you made it!',
+                    enterU: 'Please enter the value of your U variable',
+                    enterD: 'Please enter the value of your D variable',
+                    command: 'Command: connect [',
+                    uuid: 'UUID',
+                    path: 'PATH',
+                    inputU: 'Enter content of U variable and press Enter...',
+                    inputD: 'Enter content of D variable and press Enter...',
+                    connecting: 'Connecting...',
+                    invading: 'Invading...',
+                    success: 'Connection successful! Returning result...',
+                    error: 'Error: Invalid UUID format',
+                    reenter: 'Please re-enter a valid UUID',
+
+                    // Subscription Page Translations
+                    subtitle: 'Multi-client Support • Smart Optimization • One-Click Generation',
+                    selectClient: '[ Select Client ]',
+                    systemStatus: '[ System Status ]',
+                    configManagement: '[ Config Management ]',
+                    relatedLinks: '[ Related Links ]',
+                    checking: 'Checking...',
+                    workerRegion: 'Worker Region: ',
+                    detectionMethod: 'Detection Method: ',
+                    proxyIPStatus: 'ProxyIP Status: ',
+                    currentIP: 'Current IP: ',
+                    regionMatch: 'Region Match: ',
+                    selectionLogic: 'Selection Logic: ',
+                    kvStatusChecking: 'Checking KV Status...',
+                    kvEnabled: '✅ KV Storage Enabled, Config Management Available',
+                    kvDisabled: '⚠️ KV Storage Disabled or Not Configured',
+                    specifyRegion: 'Specify Region (wk):',
+                    autoDetect: 'Auto Detect',
+                    saveRegion: 'Save Region Config',
+                    protocolSelection: 'Protocol Selection:',
+                    enableVLESS: 'Enable VLESS Protocol',
+                    enableVMess: 'Enable VMess Protocol',
+                    enableShadowsocks: 'Enable Shadowsocks Protocol',
+                    enableTrojan: 'Enable Trojan Protocol',
+                    enableXhttp: 'Enable xhttp Protocol',
+                    enableTUIC: 'Enable TUIC Protocol',
+                    enableHysteria2: 'Enable Hysteria 2 Protocol',
+                    enableVLESSgRPC: 'Enable VLESS gRPC Protocol',
+                    linkOnlyHint: 'Requires External Backend (Link-Only)',
+                    grpcHint: 'Requires Custom Domain (gRPC)',
+                    trojanPassword: 'Trojan Password (Optional):',
+                    customPath: 'Custom Path (d):',
+                    customPathPlaceholder: 'e.g., /secret-path',
+                    customIP: 'Custom ProxyIP (p):',
+                    customIPPlaceholder: 'e.g., 1.2.3.4 or proxy.example.com',
+                    preferredIPs: 'Preferred IP List (yx):',
+                    preferredIPsPlaceholder: 'e.g., 1.1.1.1:443#HongKong, 8.8.8.8:443#USA',
+                    preferredIPsURL: 'Preferred IP Source URL (yxURL):',
+                    latencyTest: 'Latency Test',
+                    latencyTestIP: 'Test IP/Domain:',
+                    latencyTestIPPlaceholder: 'Enter IP or Domain, comma separated',
+                    latencyTestPort: 'Port:',
+                    startTest: 'Start Test',
+                    stopTest: 'Stop Test',
+                    testResult: 'Test Result:',
+                    addToYx: 'Add to Preferred List',
+                    addSelectedToYx: 'Add Selected to Preferred List',
+                    selectAll: 'Select All',
+                    deselectAll: 'Deselect All',
+                    testingInProgress: 'Testing...',
+                    testComplete: 'Test Complete',
+                    latencyMs: 'Latency (HTTP Handshake)',
+                    timeout: 'Timeout',
+                    ipSource: 'IP Source:',
+                    manualInput: 'Manual Input',
+                    cfRandomIP: 'CF Random IP',
+                    urlFetch: 'URL Fetch',
+                    randomCount: 'Generate Count:',
+                    fetchURL: 'Fetch URL:',
+                    fetchURLPlaceholder: 'Enter URL of IP list',
+                    generateIP: 'Generate IP',
+                    fetchIP: 'Fetch IP',
+                    socks5Config: 'SOCKS5 Config (s):',
+                    customHomepage: 'Custom Homepage URL (homepage):',
+                    customHomepagePlaceholder: 'e.g., https://example.com',
+                    customHomepageHint: 'Set custom URL as homepage camouflage. Content of this URL will be shown when accessing root path /. Leave empty to show default terminal page.',
+                    customPathHint: 'Only accessible via this path if set. UUID access will be disabled. Suggest using complex path to prevent scanning.',
+                    customIPHint: 'Hide Worker real IP, or solve Cloudflare Loop issue. Supports IP:Port or Domain:Port.',
+                    preferredIPsHint: 'Manually specify preferred nodes. Highest priority. Format: IP:Port#Remark.',
+                    socks5ConfigHint: 'Format: user:pass@host:port. Worker will connect to target via this proxy.',
+                    saveConfig: 'Save Config',
+                    advancedControl: 'Advanced Control',
+                    subscriptionConverter: 'Sub Converter URL:',
+                    builtinPreferred: 'Built-in Preferred Type:',
+                    enablePreferredDomain: 'Enable Preferred Domain',
+                    enablePreferredIP: 'Enable Preferred IP',
+                    enableGitHubPreferred: 'Enable GitHub Default Preferred',
+                    allowAPIManagement: 'Allow API Management (ae):',
+                    regionMatching: 'Region Matching (rm):',
+                    downgradeControl: 'Downgrade Control (qj):',
+                    tlsControl: 'TLS Control (dkby):',
+                    preferredControl: 'Preferred Control (yxby):',
+                    saveAdvanced: 'Save Advanced Config',
+                    loading: 'Loading...',
+                    currentConfig: '📍 Current Path Config',
+                    refreshConfig: 'Refresh Config',
+                    resetConfig: 'Reset Config',
+                    subscriptionCopied: 'Subscription Link Copied',
+                    autoSubscriptionCopied: 'Auto-detected subscription link copied. Client will be recognized by User-Agent.',
+                    trojanPasswordPlaceholder: 'Leave empty to use UUID',
+                    trojanPasswordHint: 'Set custom Trojan password. Leave empty to use UUID. Client will auto-hash password with SHA224.',
+                    protocolHint: 'Multiple protocols can be enabled.<br>• VLESS WS: Standard WebSocket protocol<br>• VMess WS: WebSocket-based VMess (link generation)<br>• Shadowsocks: WebSocket-based SS (link generation)<br>• Trojan: Uses SHA224 password auth<br>• xhttp: HTTP POST camouflage (requires custom domain & gRPC)',
+                    enableECH: 'Enable ECH (Encrypted Client Hello)',
+                    enableECHHint: 'When enabled, ECH config is fetched from DoH and added to links on every sub refresh',
+                    customDNS: 'Custom DNS Server',
+                    customDNSPlaceholder: 'e.g., https://dns.joeyblog.eu.org/joeyblog',
+                    customDNSHint: 'DNS server for ECH config query (DoH format)',
+                    customECHDomain: 'Custom ECH Domain',
+                    customECHDomainPlaceholder: 'e.g., cloudflare-ech.com',
+                    customECHDomainHint: 'Domain used in ECH config, leave empty for default',
+                    saveProtocol: 'Save Protocol Config',
+                    subscriptionConverterPlaceholder: 'Default: https://url.v1.mk/sub',
+                    subscriptionConverterHint: 'Custom subscription converter API, leave empty for default',
+                    builtinPreferredHint: 'Control which built-in preferred nodes are included. Default all enabled.',
+                    apiEnabledDefault: 'Default (API Disabled)',
+                    apiEnabledYes: 'Enable API Management',
+                    apiEnabledHint: '⚠️ Security Warning: Enabling API allows dynamic preferred IP addition. Use only if needed.',
+                    regionMatchingDefault: 'Default (Enable Region Match)',
+                    regionMatchingNo: 'Disable Region Match',
+                    regionMatchingHint: 'Smart region matching disabled when set to "Disable"',
+                    downgradeControlDefault: 'Default (Disable Downgrade)',
+                    downgradeControlNo: 'Enable Downgrade Mode',
+                    downgradeControlHint: 'When enabled: CF Direct Fail -> SOCKS5 -> Fallback',
+                    tlsControlDefault: 'Default (Keep All Nodes)',
+                    tlsControlYes: 'TLS Nodes Only',
+                    tlsControlHint: 'When set to "TLS Nodes Only", non-TLS nodes (e.g., port 80) are not generated',
+                    preferredControlDefault: 'Default (Enable Preferred)',
+                    preferredControlYes: 'Disable Preferred',
+                    preferredControlHint: 'When set to "Disable Preferred", only native address is used',
+                    regionNames: {
+                        US: '🇺🇸 US', SG: '🇸🇬 Singapore', JP: '🇯🇵 Japan',
+                        KR: '🇰🇷 South Korea', DE: '🇩🇪 Germany', SE: '🇸🇪 Sweden', NL: '🇳🇱 Netherlands',
+                        FI: '🇫🇮 Finland', GB: '🇬🇧 UK', FR: '🇫🇷 France', CA: '🇨🇦 Canada',
+                        AU: '🇦🇺 Australia', HK: '🇭🇰 Hong Kong', TW: '🇹🇼 Taiwan'
+                    },
+                    terminal: 'Terminal v2.9.3',
+                    githubProject: 'GitHub Project',
+                    autoDetectClient: 'Auto Detect',
+                    selectionLogicText: 'Same Region -> Nearby Region -> Other Regions',
+                    customIPDisabledHint: 'Region selection disabled when using Custom ProxyIP',
+                    customIPMode: 'Custom ProxyIP Mode (p variable enabled)',
+                    customIPModeDesc: 'Custom IP Mode (Region match disabled)',
+                    usingCustomProxyIP: 'Using Custom ProxyIP: ',
+                    customIPConfig: ' (p variable config)',
+                    customIPModeDisabled: 'Custom IP Mode, region selection disabled',
+                    manualRegion: 'Manual Region',
+                    manualRegionDesc: ' (Manual)',
+                    proxyIPAvailable: '10/10 Available (ProxyIP Domain Pre-set)',
+                    smartSelection: 'Smart Nearby Selection',
+                    sameRegionIP: 'Same Region IP Available (1)',
+                    cloudflareDetection: 'Cloudflare Built-in Detection',
+                    detectionFailed: 'Detection Failed',
+                    apiTestResult: 'API Detection Result: ',
+                    apiTestTime: 'Detection Time: ',
+                    apiTestFailed: 'API Detection Failed: ',
+                    unknownError: 'Unknown Error',
+                    apiTestError: 'API Test Failed: ',
+                    kvNotConfigured: 'KV Storage not configured. Config management unavailable.\n\nPlease in Cloudflare Workers:\n1. Create KV Namespace\n2. Bind variable C\n3. Redeploy',
+                    kvNotEnabled: 'KV Storage Not Configured',
+                    kvCheckFailed: 'KV Check Failed: Invalid Response',
+                    kvCheckFailedStatus: 'KV Check Failed - Status: ',
+                    kvCheckFailedError: 'KV Check Failed - Error: '
+                },
                             fa: {
                                 apiTestResult: 'نتیجه تشخیص API: ',
                                 apiTestTime: 'زمان تشخیص: ',
@@ -3902,7 +4932,7 @@
                             }
                         };
 
-                        const t = translations[isFarsi ? 'fa' : 'zh'];
+                        const t = translations[isFarsi ? 'fa' : 'en'];
 
                     const response = await fetch(window.location.pathname + '/test-api');
                     const data = await response.json();
@@ -3931,11 +4961,180 @@
                         }
 
                         const translations = {
-                            zh: { apiTestError: 'API测试失败: ' },
+                            en: {
+                    title: 'Terminal',
+                    terminal: 'Terminal',
+                    congratulations: 'Congratulations, you made it!',
+                    enterU: 'Please enter the value of your U variable',
+                    enterD: 'Please enter the value of your D variable',
+                    command: 'Command: connect [',
+                    uuid: 'UUID',
+                    path: 'PATH',
+                    inputU: 'Enter content of U variable and press Enter...',
+                    inputD: 'Enter content of D variable and press Enter...',
+                    connecting: 'Connecting...',
+                    invading: 'Invading...',
+                    success: 'Connection successful! Returning result...',
+                    error: 'Error: Invalid UUID format',
+                    reenter: 'Please re-enter a valid UUID',
+
+                    // Subscription Page Translations
+                    subtitle: 'Multi-client Support • Smart Optimization • One-Click Generation',
+                    selectClient: '[ Select Client ]',
+                    systemStatus: '[ System Status ]',
+                    configManagement: '[ Config Management ]',
+                    relatedLinks: '[ Related Links ]',
+                    checking: 'Checking...',
+                    workerRegion: 'Worker Region: ',
+                    detectionMethod: 'Detection Method: ',
+                    proxyIPStatus: 'ProxyIP Status: ',
+                    currentIP: 'Current IP: ',
+                    regionMatch: 'Region Match: ',
+                    selectionLogic: 'Selection Logic: ',
+                    kvStatusChecking: 'Checking KV Status...',
+                    kvEnabled: '✅ KV Storage Enabled, Config Management Available',
+                    kvDisabled: '⚠️ KV Storage Disabled or Not Configured',
+                    specifyRegion: 'Specify Region (wk):',
+                    autoDetect: 'Auto Detect',
+                    saveRegion: 'Save Region Config',
+                    protocolSelection: 'Protocol Selection:',
+                    enableVLESS: 'Enable VLESS Protocol',
+                    enableVMess: 'Enable VMess Protocol',
+                    enableShadowsocks: 'Enable Shadowsocks Protocol',
+                    enableTrojan: 'Enable Trojan Protocol',
+                    enableXhttp: 'Enable xhttp Protocol',
+                    enableTUIC: 'Enable TUIC Protocol',
+                    enableHysteria2: 'Enable Hysteria 2 Protocol',
+                    enableVLESSgRPC: 'Enable VLESS gRPC Protocol',
+                    linkOnlyHint: 'Requires External Backend (Link-Only)',
+                    grpcHint: 'Requires Custom Domain (gRPC)',
+                    trojanPassword: 'Trojan Password (Optional):',
+                    customPath: 'Custom Path (d):',
+                    customPathPlaceholder: 'e.g., /secret-path',
+                    customIP: 'Custom ProxyIP (p):',
+                    customIPPlaceholder: 'e.g., 1.2.3.4 or proxy.example.com',
+                    preferredIPs: 'Preferred IP List (yx):',
+                    preferredIPsPlaceholder: 'e.g., 1.1.1.1:443#HongKong, 8.8.8.8:443#USA',
+                    preferredIPsURL: 'Preferred IP Source URL (yxURL):',
+                    latencyTest: 'Latency Test',
+                    latencyTestIP: 'Test IP/Domain:',
+                    latencyTestIPPlaceholder: 'Enter IP or Domain, comma separated',
+                    latencyTestPort: 'Port:',
+                    startTest: 'Start Test',
+                    stopTest: 'Stop Test',
+                    testResult: 'Test Result:',
+                    addToYx: 'Add to Preferred List',
+                    addSelectedToYx: 'Add Selected to Preferred List',
+                    selectAll: 'Select All',
+                    deselectAll: 'Deselect All',
+                    testingInProgress: 'Testing...',
+                    testComplete: 'Test Complete',
+                    latencyMs: 'Latency (HTTP Handshake)',
+                    timeout: 'Timeout',
+                    ipSource: 'IP Source:',
+                    manualInput: 'Manual Input',
+                    cfRandomIP: 'CF Random IP',
+                    urlFetch: 'URL Fetch',
+                    randomCount: 'Generate Count:',
+                    fetchURL: 'Fetch URL:',
+                    fetchURLPlaceholder: 'Enter URL of IP list',
+                    generateIP: 'Generate IP',
+                    fetchIP: 'Fetch IP',
+                    socks5Config: 'SOCKS5 Config (s):',
+                    customHomepage: 'Custom Homepage URL (homepage):',
+                    customHomepagePlaceholder: 'e.g., https://example.com',
+                    customHomepageHint: 'Set custom URL as homepage camouflage. Content of this URL will be shown when accessing root path /. Leave empty to show default terminal page.',
+                    customPathHint: 'Only accessible via this path if set. UUID access will be disabled. Suggest using complex path to prevent scanning.',
+                    customIPHint: 'Hide Worker real IP, or solve Cloudflare Loop issue. Supports IP:Port or Domain:Port.',
+                    preferredIPsHint: 'Manually specify preferred nodes. Highest priority. Format: IP:Port#Remark.',
+                    socks5ConfigHint: 'Format: user:pass@host:port. Worker will connect to target via this proxy.',
+                    saveConfig: 'Save Config',
+                    advancedControl: 'Advanced Control',
+                    subscriptionConverter: 'Sub Converter URL:',
+                    builtinPreferred: 'Built-in Preferred Type:',
+                    enablePreferredDomain: 'Enable Preferred Domain',
+                    enablePreferredIP: 'Enable Preferred IP',
+                    enableGitHubPreferred: 'Enable GitHub Default Preferred',
+                    allowAPIManagement: 'Allow API Management (ae):',
+                    regionMatching: 'Region Matching (rm):',
+                    downgradeControl: 'Downgrade Control (qj):',
+                    tlsControl: 'TLS Control (dkby):',
+                    preferredControl: 'Preferred Control (yxby):',
+                    saveAdvanced: 'Save Advanced Config',
+                    loading: 'Loading...',
+                    currentConfig: '📍 Current Path Config',
+                    refreshConfig: 'Refresh Config',
+                    resetConfig: 'Reset Config',
+                    subscriptionCopied: 'Subscription Link Copied',
+                    autoSubscriptionCopied: 'Auto-detected subscription link copied. Client will be recognized by User-Agent.',
+                    trojanPasswordPlaceholder: 'Leave empty to use UUID',
+                    trojanPasswordHint: 'Set custom Trojan password. Leave empty to use UUID. Client will auto-hash password with SHA224.',
+                    protocolHint: 'Multiple protocols can be enabled.<br>• VLESS WS: Standard WebSocket protocol<br>• VMess WS: WebSocket-based VMess (link generation)<br>• Shadowsocks: WebSocket-based SS (link generation)<br>• Trojan: Uses SHA224 password auth<br>• xhttp: HTTP POST camouflage (requires custom domain & gRPC)',
+                    enableECH: 'Enable ECH (Encrypted Client Hello)',
+                    enableECHHint: 'When enabled, ECH config is fetched from DoH and added to links on every sub refresh',
+                    customDNS: 'Custom DNS Server',
+                    customDNSPlaceholder: 'e.g., https://dns.joeyblog.eu.org/joeyblog',
+                    customDNSHint: 'DNS server for ECH config query (DoH format)',
+                    customECHDomain: 'Custom ECH Domain',
+                    customECHDomainPlaceholder: 'e.g., cloudflare-ech.com',
+                    customECHDomainHint: 'Domain used in ECH config, leave empty for default',
+                    saveProtocol: 'Save Protocol Config',
+                    subscriptionConverterPlaceholder: 'Default: https://url.v1.mk/sub',
+                    subscriptionConverterHint: 'Custom subscription converter API, leave empty for default',
+                    builtinPreferredHint: 'Control which built-in preferred nodes are included. Default all enabled.',
+                    apiEnabledDefault: 'Default (API Disabled)',
+                    apiEnabledYes: 'Enable API Management',
+                    apiEnabledHint: '⚠️ Security Warning: Enabling API allows dynamic preferred IP addition. Use only if needed.',
+                    regionMatchingDefault: 'Default (Enable Region Match)',
+                    regionMatchingNo: 'Disable Region Match',
+                    regionMatchingHint: 'Smart region matching disabled when set to "Disable"',
+                    downgradeControlDefault: 'Default (Disable Downgrade)',
+                    downgradeControlNo: 'Enable Downgrade Mode',
+                    downgradeControlHint: 'When enabled: CF Direct Fail -> SOCKS5 -> Fallback',
+                    tlsControlDefault: 'Default (Keep All Nodes)',
+                    tlsControlYes: 'TLS Nodes Only',
+                    tlsControlHint: 'When set to "TLS Nodes Only", non-TLS nodes (e.g., port 80) are not generated',
+                    preferredControlDefault: 'Default (Enable Preferred)',
+                    preferredControlYes: 'Disable Preferred',
+                    preferredControlHint: 'When set to "Disable Preferred", only native address is used',
+                    regionNames: {
+                        US: '🇺🇸 US', SG: '🇸🇬 Singapore', JP: '🇯🇵 Japan',
+                        KR: '🇰🇷 South Korea', DE: '🇩🇪 Germany', SE: '🇸🇪 Sweden', NL: '🇳🇱 Netherlands',
+                        FI: '🇫🇮 Finland', GB: '🇬🇧 UK', FR: '🇫🇷 France', CA: '🇨🇦 Canada',
+                        AU: '🇦🇺 Australia', HK: '🇭🇰 Hong Kong', TW: '🇹🇼 Taiwan'
+                    },
+                    terminal: 'Terminal v2.9.3',
+                    githubProject: 'GitHub Project',
+                    autoDetectClient: 'Auto Detect',
+                    selectionLogicText: 'Same Region -> Nearby Region -> Other Regions',
+                    customIPDisabledHint: 'Region selection disabled when using Custom ProxyIP',
+                    customIPMode: 'Custom ProxyIP Mode (p variable enabled)',
+                    customIPModeDesc: 'Custom IP Mode (Region match disabled)',
+                    usingCustomProxyIP: 'Using Custom ProxyIP: ',
+                    customIPConfig: ' (p variable config)',
+                    customIPModeDisabled: 'Custom IP Mode, region selection disabled',
+                    manualRegion: 'Manual Region',
+                    manualRegionDesc: ' (Manual)',
+                    proxyIPAvailable: '10/10 Available (ProxyIP Domain Pre-set)',
+                    smartSelection: 'Smart Nearby Selection',
+                    sameRegionIP: 'Same Region IP Available (1)',
+                    cloudflareDetection: 'Cloudflare Built-in Detection',
+                    detectionFailed: 'Detection Failed',
+                    apiTestResult: 'API Detection Result: ',
+                    apiTestTime: 'Detection Time: ',
+                    apiTestFailed: 'API Detection Failed: ',
+                    unknownError: 'Unknown Error',
+                    apiTestError: 'API Test Failed: ',
+                    kvNotConfigured: 'KV Storage not configured. Config management unavailable.\n\nPlease in Cloudflare Workers:\n1. Create KV Namespace\n2. Bind variable C\n3. Redeploy',
+                    kvNotEnabled: 'KV Storage Not Configured',
+                    kvCheckFailed: 'KV Check Failed: Invalid Response',
+                    kvCheckFailedStatus: 'KV Check Failed - Status: ',
+                    kvCheckFailedError: 'KV Check Failed - Error: '
+                },
                             fa: { apiTestError: 'تست API ناموفق: ' }
                         };
 
-                        const t = translations[isFarsi ? 'fa' : 'zh'];
+                        const t = translations[isFarsi ? 'fa' : 'en'];
                         alert(t.apiTestError + error.message);
                 }
             }
@@ -3965,16 +5164,176 @@
                         }
 
                         const translations = {
-                            zh: {
-                                kvDisabled: '⚠️ KV存储未启用或未配置',
-                                kvNotConfigured: '⚠️ KV存储未配置，无法使用图形化管理功能。\\n\\n🔧 修复步骤:\\n1. 访问 Cloudflare 面板 -> Workers & Pages -> KV。\\n2. 创建一个命名空间 (例如 CONFIG)。\\n3. 回到本 Worker -> Settings -> Variables -> KV Namespace Bindings。\\n4. 添加绑定: Variable name 填 "C" (大写)，Namespace 选择刚才创建的。\\n5. 保存并重新部署。',
-                                kvNotEnabled: 'KV存储未配置，请参照说明进行绑定',
-                                kvEnabled: '✅ KV存储已启用，可以使用配置管理功能',
-                                kvCheckFailed: '⚠️ KV存储检测失败',
-                                kvCheckFailedFormat: 'KV存储检测失败: 响应格式错误',
-                                kvCheckFailedStatus: 'KV存储检测失败 - 状态码: ',
-                                kvCheckFailedError: 'KV存储检测失败 - 错误: '
-                            },
+                            en: {
+                    title: 'Terminal',
+                    terminal: 'Terminal',
+                    congratulations: 'Congratulations, you made it!',
+                    enterU: 'Please enter the value of your U variable',
+                    enterD: 'Please enter the value of your D variable',
+                    command: 'Command: connect [',
+                    uuid: 'UUID',
+                    path: 'PATH',
+                    inputU: 'Enter content of U variable and press Enter...',
+                    inputD: 'Enter content of D variable and press Enter...',
+                    connecting: 'Connecting...',
+                    invading: 'Invading...',
+                    success: 'Connection successful! Returning result...',
+                    error: 'Error: Invalid UUID format',
+                    reenter: 'Please re-enter a valid UUID',
+
+                    // Subscription Page Translations
+                    subtitle: 'Multi-client Support • Smart Optimization • One-Click Generation',
+                    selectClient: '[ Select Client ]',
+                    systemStatus: '[ System Status ]',
+                    configManagement: '[ Config Management ]',
+                    relatedLinks: '[ Related Links ]',
+                    checking: 'Checking...',
+                    workerRegion: 'Worker Region: ',
+                    detectionMethod: 'Detection Method: ',
+                    proxyIPStatus: 'ProxyIP Status: ',
+                    currentIP: 'Current IP: ',
+                    regionMatch: 'Region Match: ',
+                    selectionLogic: 'Selection Logic: ',
+                    kvStatusChecking: 'Checking KV Status...',
+                    kvEnabled: '✅ KV Storage Enabled, Config Management Available',
+                    kvDisabled: '⚠️ KV Storage Disabled or Not Configured',
+                    specifyRegion: 'Specify Region (wk):',
+                    autoDetect: 'Auto Detect',
+                    saveRegion: 'Save Region Config',
+                    protocolSelection: 'Protocol Selection:',
+                    enableVLESS: 'Enable VLESS Protocol',
+                    enableVMess: 'Enable VMess Protocol',
+                    enableShadowsocks: 'Enable Shadowsocks Protocol',
+                    enableTrojan: 'Enable Trojan Protocol',
+                    enableXhttp: 'Enable xhttp Protocol',
+                    enableTUIC: 'Enable TUIC Protocol',
+                    enableHysteria2: 'Enable Hysteria 2 Protocol',
+                    enableVLESSgRPC: 'Enable VLESS gRPC Protocol',
+                    linkOnlyHint: 'Requires External Backend (Link-Only)',
+                    grpcHint: 'Requires Custom Domain (gRPC)',
+                    trojanPassword: 'Trojan Password (Optional):',
+                    customPath: 'Custom Path (d):',
+                    customPathPlaceholder: 'e.g., /secret-path',
+                    customIP: 'Custom ProxyIP (p):',
+                    customIPPlaceholder: 'e.g., 1.2.3.4 or proxy.example.com',
+                    preferredIPs: 'Preferred IP List (yx):',
+                    preferredIPsPlaceholder: 'e.g., 1.1.1.1:443#HongKong, 8.8.8.8:443#USA',
+                    preferredIPsURL: 'Preferred IP Source URL (yxURL):',
+                    latencyTest: 'Latency Test',
+                    latencyTestIP: 'Test IP/Domain:',
+                    latencyTestIPPlaceholder: 'Enter IP or Domain, comma separated',
+                    latencyTestPort: 'Port:',
+                    startTest: 'Start Test',
+                    stopTest: 'Stop Test',
+                    testResult: 'Test Result:',
+                    addToYx: 'Add to Preferred List',
+                    addSelectedToYx: 'Add Selected to Preferred List',
+                    selectAll: 'Select All',
+                    deselectAll: 'Deselect All',
+                    testingInProgress: 'Testing...',
+                    testComplete: 'Test Complete',
+                    latencyMs: 'Latency (HTTP Handshake)',
+                    timeout: 'Timeout',
+                    ipSource: 'IP Source:',
+                    manualInput: 'Manual Input',
+                    cfRandomIP: 'CF Random IP',
+                    urlFetch: 'URL Fetch',
+                    randomCount: 'Generate Count:',
+                    fetchURL: 'Fetch URL:',
+                    fetchURLPlaceholder: 'Enter URL of IP list',
+                    generateIP: 'Generate IP',
+                    fetchIP: 'Fetch IP',
+                    socks5Config: 'SOCKS5 Config (s):',
+                    customHomepage: 'Custom Homepage URL (homepage):',
+                    customHomepagePlaceholder: 'e.g., https://example.com',
+                    customHomepageHint: 'Set custom URL as homepage camouflage. Content of this URL will be shown when accessing root path /. Leave empty to show default terminal page.',
+                    customPathHint: 'Only accessible via this path if set. UUID access will be disabled. Suggest using complex path to prevent scanning.',
+                    customIPHint: 'Hide Worker real IP, or solve Cloudflare Loop issue. Supports IP:Port or Domain:Port.',
+                    preferredIPsHint: 'Manually specify preferred nodes. Highest priority. Format: IP:Port#Remark.',
+                    socks5ConfigHint: 'Format: user:pass@host:port. Worker will connect to target via this proxy.',
+                    saveConfig: 'Save Config',
+                    advancedControl: 'Advanced Control',
+                    subscriptionConverter: 'Sub Converter URL:',
+                    builtinPreferred: 'Built-in Preferred Type:',
+                    enablePreferredDomain: 'Enable Preferred Domain',
+                    enablePreferredIP: 'Enable Preferred IP',
+                    enableGitHubPreferred: 'Enable GitHub Default Preferred',
+                    allowAPIManagement: 'Allow API Management (ae):',
+                    regionMatching: 'Region Matching (rm):',
+                    downgradeControl: 'Downgrade Control (qj):',
+                    tlsControl: 'TLS Control (dkby):',
+                    preferredControl: 'Preferred Control (yxby):',
+                    saveAdvanced: 'Save Advanced Config',
+                    loading: 'Loading...',
+                    currentConfig: '📍 Current Path Config',
+                    refreshConfig: 'Refresh Config',
+                    resetConfig: 'Reset Config',
+                    subscriptionCopied: 'Subscription Link Copied',
+                    autoSubscriptionCopied: 'Auto-detected subscription link copied. Client will be recognized by User-Agent.',
+                    trojanPasswordPlaceholder: 'Leave empty to use UUID',
+                    trojanPasswordHint: 'Set custom Trojan password. Leave empty to use UUID. Client will auto-hash password with SHA224.',
+                    protocolHint: 'Multiple protocols can be enabled.<br>• VLESS WS: Standard WebSocket protocol<br>• VMess WS: WebSocket-based VMess (link generation)<br>• Shadowsocks: WebSocket-based SS (link generation)<br>• Trojan: Uses SHA224 password auth<br>• xhttp: HTTP POST camouflage (requires custom domain & gRPC)',
+                    enableECH: 'Enable ECH (Encrypted Client Hello)',
+                    enableECHHint: 'When enabled, ECH config is fetched from DoH and added to links on every sub refresh',
+                    customDNS: 'Custom DNS Server',
+                    customDNSPlaceholder: 'e.g., https://dns.joeyblog.eu.org/joeyblog',
+                    customDNSHint: 'DNS server for ECH config query (DoH format)',
+                    customECHDomain: 'Custom ECH Domain',
+                    customECHDomainPlaceholder: 'e.g., cloudflare-ech.com',
+                    customECHDomainHint: 'Domain used in ECH config, leave empty for default',
+                    saveProtocol: 'Save Protocol Config',
+                    subscriptionConverterPlaceholder: 'Default: https://url.v1.mk/sub',
+                    subscriptionConverterHint: 'Custom subscription converter API, leave empty for default',
+                    builtinPreferredHint: 'Control which built-in preferred nodes are included. Default all enabled.',
+                    apiEnabledDefault: 'Default (API Disabled)',
+                    apiEnabledYes: 'Enable API Management',
+                    apiEnabledHint: '⚠️ Security Warning: Enabling API allows dynamic preferred IP addition. Use only if needed.',
+                    regionMatchingDefault: 'Default (Enable Region Match)',
+                    regionMatchingNo: 'Disable Region Match',
+                    regionMatchingHint: 'Smart region matching disabled when set to "Disable"',
+                    downgradeControlDefault: 'Default (Disable Downgrade)',
+                    downgradeControlNo: 'Enable Downgrade Mode',
+                    downgradeControlHint: 'When enabled: CF Direct Fail -> SOCKS5 -> Fallback',
+                    tlsControlDefault: 'Default (Keep All Nodes)',
+                    tlsControlYes: 'TLS Nodes Only',
+                    tlsControlHint: 'When set to "TLS Nodes Only", non-TLS nodes (e.g., port 80) are not generated',
+                    preferredControlDefault: 'Default (Enable Preferred)',
+                    preferredControlYes: 'Disable Preferred',
+                    preferredControlHint: 'When set to "Disable Preferred", only native address is used',
+                    regionNames: {
+                        US: '🇺🇸 US', SG: '🇸🇬 Singapore', JP: '🇯🇵 Japan',
+                        KR: '🇰🇷 South Korea', DE: '🇩🇪 Germany', SE: '🇸🇪 Sweden', NL: '🇳🇱 Netherlands',
+                        FI: '🇫🇮 Finland', GB: '🇬🇧 UK', FR: '🇫🇷 France', CA: '🇨🇦 Canada',
+                        AU: '🇦🇺 Australia', HK: '🇭🇰 Hong Kong', TW: '🇹🇼 Taiwan'
+                    },
+                    terminal: 'Terminal v2.9.3',
+                    githubProject: 'GitHub Project',
+                    autoDetectClient: 'Auto Detect',
+                    selectionLogicText: 'Same Region -> Nearby Region -> Other Regions',
+                    customIPDisabledHint: 'Region selection disabled when using Custom ProxyIP',
+                    customIPMode: 'Custom ProxyIP Mode (p variable enabled)',
+                    customIPModeDesc: 'Custom IP Mode (Region match disabled)',
+                    usingCustomProxyIP: 'Using Custom ProxyIP: ',
+                    customIPConfig: ' (p variable config)',
+                    customIPModeDisabled: 'Custom IP Mode, region selection disabled',
+                    manualRegion: 'Manual Region',
+                    manualRegionDesc: ' (Manual)',
+                    proxyIPAvailable: '10/10 Available (ProxyIP Domain Pre-set)',
+                    smartSelection: 'Smart Nearby Selection',
+                    sameRegionIP: 'Same Region IP Available (1)',
+                    cloudflareDetection: 'Cloudflare Built-in Detection',
+                    detectionFailed: 'Detection Failed',
+                    apiTestResult: 'API Detection Result: ',
+                    apiTestTime: 'Detection Time: ',
+                    apiTestFailed: 'API Detection Failed: ',
+                    unknownError: 'Unknown Error',
+                    apiTestError: 'API Test Failed: ',
+                    kvNotConfigured: 'KV Storage not configured. Config management unavailable.\n\nPlease in Cloudflare Workers:\n1. Create KV Namespace\n2. Bind variable C\n3. Redeploy',
+                    kvNotEnabled: 'KV Storage Not Configured',
+                    kvCheckFailed: 'KV Check Failed: Invalid Response',
+                    kvCheckFailedStatus: 'KV Check Failed - Status: ',
+                    kvCheckFailedError: 'KV Check Failed - Error: '
+                },
                             fa: {
                                 kvDisabled: '⚠️ ذخیره‌سازی KV فعال نیست یا پیکربندی نشده است',
                                 kvNotConfigured: '⚠️ ذخیره‌سازی KV پیکربندی نشده است. پنل گرافیکی غیرفعال است.\\n\\n🔧 راهنمای تعمیر:\\n1. به پنل Cloudflare -> Workers -> KV بروید.\\n2. یک Namespace جدید بسازید.\\n3. در تنظیمات Worker -> Variables -> KV Bindings.\\n4. متغیری با نام "C" (بزرگ) اضافه کرده و به KV متصل کنید.\\n5. ذخیره و Deploy کنید.',
@@ -3987,7 +5346,7 @@
                             }
                         };
 
-                        const t = translations[isFarsi ? 'fa' : 'zh'];
+                        const t = translations[isFarsi ? 'fa' : 'en'];
 
                         if (response.status === 503) {
                             // KV未配置
@@ -4038,17 +5397,183 @@
                     }
 
                     const translations = {
-                        zh: {
-                            kvDisabled: '⚠️ KV存储未启用或未配置',
-                            kvCheckFailedError: 'KV存储检测失败 - 错误: '
-                        },
+                        en: {
+                    title: 'Terminal',
+                    terminal: 'Terminal',
+                    congratulations: 'Congratulations, you made it!',
+                    enterU: 'Please enter the value of your U variable',
+                    enterD: 'Please enter the value of your D variable',
+                    command: 'Command: connect [',
+                    uuid: 'UUID',
+                    path: 'PATH',
+                    inputU: 'Enter content of U variable and press Enter...',
+                    inputD: 'Enter content of D variable and press Enter...',
+                    connecting: 'Connecting...',
+                    invading: 'Invading...',
+                    success: 'Connection successful! Returning result...',
+                    error: 'Error: Invalid UUID format',
+                    reenter: 'Please re-enter a valid UUID',
+
+                    // Subscription Page Translations
+                    subtitle: 'Multi-client Support • Smart Optimization • One-Click Generation',
+                    selectClient: '[ Select Client ]',
+                    systemStatus: '[ System Status ]',
+                    configManagement: '[ Config Management ]',
+                    relatedLinks: '[ Related Links ]',
+                    checking: 'Checking...',
+                    workerRegion: 'Worker Region: ',
+                    detectionMethod: 'Detection Method: ',
+                    proxyIPStatus: 'ProxyIP Status: ',
+                    currentIP: 'Current IP: ',
+                    regionMatch: 'Region Match: ',
+                    selectionLogic: 'Selection Logic: ',
+                    kvStatusChecking: 'Checking KV Status...',
+                    kvEnabled: '✅ KV Storage Enabled, Config Management Available',
+                    kvDisabled: '⚠️ KV Storage Disabled or Not Configured',
+                    specifyRegion: 'Specify Region (wk):',
+                    autoDetect: 'Auto Detect',
+                    saveRegion: 'Save Region Config',
+                    protocolSelection: 'Protocol Selection:',
+                    enableVLESS: 'Enable VLESS Protocol',
+                    enableVMess: 'Enable VMess Protocol',
+                    enableShadowsocks: 'Enable Shadowsocks Protocol',
+                    enableTrojan: 'Enable Trojan Protocol',
+                    enableXhttp: 'Enable xhttp Protocol',
+                    enableTUIC: 'Enable TUIC Protocol',
+                    enableHysteria2: 'Enable Hysteria 2 Protocol',
+                    enableVLESSgRPC: 'Enable VLESS gRPC Protocol',
+                    linkOnlyHint: 'Requires External Backend (Link-Only)',
+                    grpcHint: 'Requires Custom Domain (gRPC)',
+                    trojanPassword: 'Trojan Password (Optional):',
+                    customPath: 'Custom Path (d):',
+                    customPathPlaceholder: 'e.g., /secret-path',
+                    customIP: 'Custom ProxyIP (p):',
+                    customIPPlaceholder: 'e.g., 1.2.3.4 or proxy.example.com',
+                    preferredIPs: 'Preferred IP List (yx):',
+                    preferredIPsPlaceholder: 'e.g., 1.1.1.1:443#HongKong, 8.8.8.8:443#USA',
+                    preferredIPsURL: 'Preferred IP Source URL (yxURL):',
+                    latencyTest: 'Latency Test',
+                    latencyTestIP: 'Test IP/Domain:',
+                    latencyTestIPPlaceholder: 'Enter IP or Domain, comma separated',
+                    latencyTestPort: 'Port:',
+                    startTest: 'Start Test',
+                    stopTest: 'Stop Test',
+                    testResult: 'Test Result:',
+                    addToYx: 'Add to Preferred List',
+                    addSelectedToYx: 'Add Selected to Preferred List',
+                    selectAll: 'Select All',
+                    deselectAll: 'Deselect All',
+                    testingInProgress: 'Testing...',
+                    testComplete: 'Test Complete',
+                    latencyMs: 'Latency (HTTP Handshake)',
+                    timeout: 'Timeout',
+                    ipSource: 'IP Source:',
+                    manualInput: 'Manual Input',
+                    cfRandomIP: 'CF Random IP',
+                    urlFetch: 'URL Fetch',
+                    randomCount: 'Generate Count:',
+                    fetchURL: 'Fetch URL:',
+                    fetchURLPlaceholder: 'Enter URL of IP list',
+                    generateIP: 'Generate IP',
+                    fetchIP: 'Fetch IP',
+                    socks5Config: 'SOCKS5 Config (s):',
+                    customHomepage: 'Custom Homepage URL (homepage):',
+                    customHomepagePlaceholder: 'e.g., https://example.com',
+                    customHomepageHint: 'Set custom URL as homepage camouflage. Content of this URL will be shown when accessing root path /. Leave empty to show default terminal page.',
+                    customPathHint: 'Only accessible via this path if set. UUID access will be disabled. Suggest using complex path to prevent scanning.',
+                    customIPHint: 'Hide Worker real IP, or solve Cloudflare Loop issue. Supports IP:Port or Domain:Port.',
+                    preferredIPsHint: 'Manually specify preferred nodes. Highest priority. Format: IP:Port#Remark.',
+                    socks5ConfigHint: 'Format: user:pass@host:port. Worker will connect to target via this proxy.',
+                    saveConfig: 'Save Config',
+                    advancedControl: 'Advanced Control',
+                    subscriptionConverter: 'Sub Converter URL:',
+                    builtinPreferred: 'Built-in Preferred Type:',
+                    enablePreferredDomain: 'Enable Preferred Domain',
+                    enablePreferredIP: 'Enable Preferred IP',
+                    enableGitHubPreferred: 'Enable GitHub Default Preferred',
+                    allowAPIManagement: 'Allow API Management (ae):',
+                    regionMatching: 'Region Matching (rm):',
+                    downgradeControl: 'Downgrade Control (qj):',
+                    tlsControl: 'TLS Control (dkby):',
+                    preferredControl: 'Preferred Control (yxby):',
+                    saveAdvanced: 'Save Advanced Config',
+                    loading: 'Loading...',
+                    currentConfig: '📍 Current Path Config',
+                    refreshConfig: 'Refresh Config',
+                    resetConfig: 'Reset Config',
+                    subscriptionCopied: 'Subscription Link Copied',
+                    autoSubscriptionCopied: 'Auto-detected subscription link copied. Client will be recognized by User-Agent.',
+                    trojanPasswordPlaceholder: 'Leave empty to use UUID',
+                    trojanPasswordHint: 'Set custom Trojan password. Leave empty to use UUID. Client will auto-hash password with SHA224.',
+                    protocolHint: 'Multiple protocols can be enabled.<br>• VLESS WS: Standard WebSocket protocol<br>• VMess WS: WebSocket-based VMess (link generation)<br>• Shadowsocks: WebSocket-based SS (link generation)<br>• Trojan: Uses SHA224 password auth<br>• xhttp: HTTP POST camouflage (requires custom domain & gRPC)',
+                    enableECH: 'Enable ECH (Encrypted Client Hello)',
+                    enableECHHint: 'When enabled, ECH config is fetched from DoH and added to links on every sub refresh',
+                    customDNS: 'Custom DNS Server',
+                    customDNSPlaceholder: 'e.g., https://dns.joeyblog.eu.org/joeyblog',
+                    customDNSHint: 'DNS server for ECH config query (DoH format)',
+                    customECHDomain: 'Custom ECH Domain',
+                    customECHDomainPlaceholder: 'e.g., cloudflare-ech.com',
+                    customECHDomainHint: 'Domain used in ECH config, leave empty for default',
+                    saveProtocol: 'Save Protocol Config',
+                    subscriptionConverterPlaceholder: 'Default: https://url.v1.mk/sub',
+                    subscriptionConverterHint: 'Custom subscription converter API, leave empty for default',
+                    builtinPreferredHint: 'Control which built-in preferred nodes are included. Default all enabled.',
+                    apiEnabledDefault: 'Default (API Disabled)',
+                    apiEnabledYes: 'Enable API Management',
+                    apiEnabledHint: '⚠️ Security Warning: Enabling API allows dynamic preferred IP addition. Use only if needed.',
+                    regionMatchingDefault: 'Default (Enable Region Match)',
+                    regionMatchingNo: 'Disable Region Match',
+                    regionMatchingHint: 'Smart region matching disabled when set to "Disable"',
+                    downgradeControlDefault: 'Default (Disable Downgrade)',
+                    downgradeControlNo: 'Enable Downgrade Mode',
+                    downgradeControlHint: 'When enabled: CF Direct Fail -> SOCKS5 -> Fallback',
+                    tlsControlDefault: 'Default (Keep All Nodes)',
+                    tlsControlYes: 'TLS Nodes Only',
+                    tlsControlHint: 'When set to "TLS Nodes Only", non-TLS nodes (e.g., port 80) are not generated',
+                    preferredControlDefault: 'Default (Enable Preferred)',
+                    preferredControlYes: 'Disable Preferred',
+                    preferredControlHint: 'When set to "Disable Preferred", only native address is used',
+                    regionNames: {
+                        US: '🇺🇸 US', SG: '🇸🇬 Singapore', JP: '🇯🇵 Japan',
+                        KR: '🇰🇷 South Korea', DE: '🇩🇪 Germany', SE: '🇸🇪 Sweden', NL: '🇳🇱 Netherlands',
+                        FI: '🇫🇮 Finland', GB: '🇬🇧 UK', FR: '🇫🇷 France', CA: '🇨🇦 Canada',
+                        AU: '🇦🇺 Australia', HK: '🇭🇰 Hong Kong', TW: '🇹🇼 Taiwan'
+                    },
+                    terminal: 'Terminal v2.9.3',
+                    githubProject: 'GitHub Project',
+                    autoDetectClient: 'Auto Detect',
+                    selectionLogicText: 'Same Region -> Nearby Region -> Other Regions',
+                    customIPDisabledHint: 'Region selection disabled when using Custom ProxyIP',
+                    customIPMode: 'Custom ProxyIP Mode (p variable enabled)',
+                    customIPModeDesc: 'Custom IP Mode (Region match disabled)',
+                    usingCustomProxyIP: 'Using Custom ProxyIP: ',
+                    customIPConfig: ' (p variable config)',
+                    customIPModeDisabled: 'Custom IP Mode, region selection disabled',
+                    manualRegion: 'Manual Region',
+                    manualRegionDesc: ' (Manual)',
+                    proxyIPAvailable: '10/10 Available (ProxyIP Domain Pre-set)',
+                    smartSelection: 'Smart Nearby Selection',
+                    sameRegionIP: 'Same Region IP Available (1)',
+                    cloudflareDetection: 'Cloudflare Built-in Detection',
+                    detectionFailed: 'Detection Failed',
+                    apiTestResult: 'API Detection Result: ',
+                    apiTestTime: 'Detection Time: ',
+                    apiTestFailed: 'API Detection Failed: ',
+                    unknownError: 'Unknown Error',
+                    apiTestError: 'API Test Failed: ',
+                    kvNotConfigured: 'KV Storage not configured. Config management unavailable.\n\nPlease in Cloudflare Workers:\n1. Create KV Namespace\n2. Bind variable C\n3. Redeploy',
+                    kvNotEnabled: 'KV Storage Not Configured',
+                    kvCheckFailed: 'KV Check Failed: Invalid Response',
+                    kvCheckFailedStatus: 'KV Check Failed - Status: ',
+                    kvCheckFailedError: 'KV Check Failed - Error: '
+                },
                         fa: {
                             kvDisabled: '⚠️ ذخیره‌سازی KV فعال نیست یا پیکربندی نشده است',
                             kvCheckFailedError: 'بررسی ذخیره‌سازی KV ناموفق - خطا: '
                         }
                     };
 
-                    const t = translations[isFarsi ? 'fa' : 'zh'];
+                    const t = translations[isFarsi ? 'fa' : 'en'];
 
                     document.getElementById('kvStatus').innerHTML = '<span style="color: #ffaa00;">' + t.kvDisabled + '</span>';
                     document.getElementById('configCard').style.display = 'block';
@@ -4109,6 +5634,7 @@
                     document.getElementById('epd').checked = config.epd !== 'no';
                     document.getElementById('epi').checked = config.epi !== 'no';
                     document.getElementById('egi').checked = config.egi !== 'no';
+                    document.getElementById('enableDiverseProxies').checked = config.edp === 'yes' || config.edp === true;
                     if (document.getElementById('ipv4Enabled')) document.getElementById('ipv4Enabled').checked = config.ipv4 !== 'no';
                     if (document.getElementById('ipv6Enabled')) document.getElementById('ipv6Enabled').checked = config.ipv6 !== 'no';
                     if (document.getElementById('ispMobile')) document.getElementById('ispMobile').checked = config.ispMobile !== 'no';
@@ -4126,10 +5652,10 @@
                     document.getElementById('portControl').value = config.dkby || '';
                     document.getElementById('preferredControl').value = config.yxby || '';
 
-                    // 更新路径类型显示
+                    // Update path type display
                     updatePathTypeStatus(config.d);
 
-                    // 检查p变量，如果有值则禁用wk地区选择
+                    // Check p variable, if it has value, disable wk region selection
                     updateWkRegionState();
 
                 } catch (error) {
@@ -4137,7 +5663,7 @@
                 }
             }
 
-            // 更新路径类型显示
+            // Update path type display
             function updatePathTypeStatus(cp) {
                 const pathTypeStatus = document.getElementById('pathTypeStatus');
                 const currentUrl = window.location.href;
@@ -4145,20 +5671,20 @@
                 const currentPath = pathParts.length > 0 ? pathParts[0] : '';
 
                 if (cp && cp.trim()) {
-                    // 使用自定义路径 (d)
+                    // Use custom path (d)
                     pathTypeStatus.innerHTML = '<div style="color: #44ff44;">使用类型: <strong>自定义路径 (d)</strong></div>' +
                         '<div style="margin-top: 5px; color: #00ff00;">当前路径: <span style="color: #ffaa00;">' + cp + '</span></div>' +
                         '<div style="margin-top: 5px; font-size: 0.9rem; color: #00aa00;">访问地址: ' +
                         (currentUrl.split('/')[0] + '//' + currentUrl.split('/')[2]) + cp + '/sub</div>';
                 } else {
-                    // 使用 UUID (u)
+                    // Use UUID (u)
                     pathTypeStatus.innerHTML = '<div style="color: #44ff44;">使用类型: <strong>UUID 路径 (u)</strong></div>' +
                         '<div style="margin-top: 5px; color: #00ff00;">当前路径: <span style="color: #ffaa00;">' + (currentPath || '(UUID)') + '</span></div>' +
                         '<div style="margin-top: 5px; font-size: 0.9rem; color: #00aa00;">访问地址: ' + currentUrl.split('/sub')[0] + '/sub</div>';
                 }
             }
 
-            // 更新wk地区选择的启用/禁用状态
+            // Update wk region selection enabled/disabled state
             function updateWkRegionState() {
                 const customIPInput = document.getElementById('customIP');
                 const wkRegion = document.getElementById('wkRegion');
@@ -4168,12 +5694,12 @@
                     const hasCustomIP = customIPInput.value.trim() !== '';
                     wkRegion.disabled = hasCustomIP;
 
-                    // 添加视觉反馈
+                    // Add visual feedback
                     if (hasCustomIP) {
                         wkRegion.style.opacity = '0.5';
                         wkRegion.style.cursor = 'not-allowed';
                         wkRegion.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-                        // 显示提示信息
+                        // Show hint message
                         if (wkRegionHint) {
                             wkRegionHint.style.display = 'block';
                             wkRegionHint.style.color = '#ffaa00';
@@ -4182,7 +5708,7 @@
                         wkRegion.style.opacity = '1';
                         wkRegion.style.cursor = 'pointer';
                         wkRegion.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-                        // 隐藏提示信息
+                        // Hide hint message
                         if (wkRegionHint) {
                             wkRegionHint.style.display = 'none';
                         }
@@ -4202,20 +5728,20 @@
 
 
                     if (response.status === 503) {
-                        showStatus('KV存储未配置，无法保存配置。请先在Cloudflare Workers中配置KV存储。', 'error');
+                        showStatus('KV not configured, cannot save. Please configure KV in Cloudflare Workers.', 'error');
                         return;
                     }
 
                     if (!response.ok) {
                         const errorText = await response.text();
 
-                        // 尝试解析 JSON 错误信息
+                        // Try parsing JSON error message
                         try {
                             const errorData = JSON.parse(errorText);
-                            showStatus(errorData.message || '保存失败', 'error');
+                            showStatus(errorData.message || 'Save failed', 'error');
                         } catch (parseError) {
-                            // 如果不是 JSON，直接显示文本
-                            showStatus('保存失败: ' + errorText, 'error');
+                            // If not JSON, display text directly
+                            showStatus('Save failed: ' + errorText, 'error');
                         }
                         return;
                     }
@@ -4228,14 +5754,14 @@
                         await loadCurrentConfig();
                         // 更新wk地区选择状态
                         updateWkRegionState();
-                        // 保存成功后刷新页面以更新系统状态
+                        // Reload page after successful save to update system status
                         setTimeout(function() {
                             window.location.reload();
                         }, 1500);
                     } else {
                     }
                 } catch (error) {
-                    showStatus('保存失败: ' + error.message, 'error');
+                    showStatus('Save failed: ' + error.message, 'error');
                 }
             }
 
@@ -4252,7 +5778,7 @@
             }
 
             async function resetAllConfig() {
-                if (confirm('确定要重置所有配置吗？这将清空所有KV配置，恢复为环境变量设置。')) {
+                if (confirm('Are you sure to reset all config? This will clear KV config and revert to env vars.')) {
                     try {
                         const response = await fetch(window.location.pathname + '/api/config', {
                             method: 'POST',
@@ -4274,38 +5800,38 @@
                         });
 
                         if (response.status === 503) {
-                            showStatus('KV存储未配置，无法重置配置。', 'error');
+                            showStatus('KV not configured, cannot reset.', 'error');
                             return;
                         }
 
                         if (!response.ok) {
                             const errorText = await response.text();
 
-                            // 尝试解析 JSON 错误信息
+                            // Try parsing JSON error message
                             try {
                                 const errorData = JSON.parse(errorText);
-                                showStatus(errorData.message || '重置失败', 'error');
+                                showStatus(errorData.message || 'Reset failed', 'error');
                             } catch (parseError) {
-                                // 如果不是 JSON，直接显示文本
-                                showStatus('重置失败: ' + errorText, 'error');
+                                // If not JSON, display text directly
+                                showStatus('Reset failed: ' + errorText, 'error');
                             }
                             return;
                         }
 
                         const result = await response.json();
-                        showStatus(result.message || '配置已重置', result.success ? 'success' : 'error');
+                        showStatus(result.message || 'Config reset', result.success ? 'success' : 'error');
 
                         if (result.success) {
                             await loadCurrentConfig();
                             // 更新wk地区选择状态
                             updateWkRegionState();
-                            // 刷新页面以更新系统状态
+                            // Reload page to update system status
                             setTimeout(function() {
                                 window.location.reload();
                             }, 1500);
                         }
                     } catch (error) {
-                        showStatus('重置失败: ' + error.message, 'error');
+                        showStatus('Reset failed: ' + error.message, 'error');
                     }
                 }
             }
@@ -4319,7 +5845,7 @@
                     const currentUrl = window.location.href;
                     const subscriptionUrl = currentUrl + '/sub';
 
-                    echStatusEl.innerHTML = 'ECH状态: <span style="color: #ffaa00;">检测中...</span>';
+                    echStatusEl.innerHTML = 'ECH Status: <span style="color: #ffaa00;">Checking...</span>';
 
                     const response = await fetch(subscriptionUrl, {
                         method: 'GET',
@@ -4332,12 +5858,12 @@
                     const echConfigLength = response.headers.get('X-ECH-Config-Length');
 
                     if (echStatusHeader === 'ENABLED') {
-                        echStatusEl.innerHTML = 'ECH状态: <span style="color: #44ff44;">✅ 已启用' + (echConfigLength ? ' (配置长度: ' + echConfigLength + ')' : '') + '</span>';
+                        echStatusEl.innerHTML = 'ECH Status: <span style="color: #44ff44;">✅ Enabled' + (echConfigLength ? ' (配置长度: ' + echConfigLength + ')' : '') + '</span>';
                     } else {
-                        echStatusEl.innerHTML = 'ECH状态: <span style="color: #ffaa00;">⚠️ 未启用</span>';
+                        echStatusEl.innerHTML = 'ECH Status: <span style="color: #ffaa00;">⚠️ Disabled</span>';
                     }
                 } catch (error) {
-                    echStatusEl.innerHTML = 'ECH状态: <span style="color: #ff4444;">❌ 检测失败: ' + error.message + '</span>';
+                    echStatusEl.innerHTML = 'ECH Status: <span style="color: #ff4444;">❌ Check Failed: ' + error.message + '</span>';
                 }
             }
 
@@ -4347,24 +5873,24 @@
                 checkKVStatus();
                 checkECHStatus();
 
-                // ECH 开启时自动联动开启仅TLS
+                // Automatically enable TLS-only when ECH is enabled
                 const echCheckbox = document.getElementById('ech');
                 const portControl = document.getElementById('portControl');
                 if (echCheckbox && portControl) {
                     echCheckbox.addEventListener('change', function() {
                         if (this.checked) {
-                            // ECH 开启时，自动设置仅TLS为 yes
+                            // When ECH is enabled, automatically set TLS-only to yes
                             portControl.value = 'yes';
                         }
                     });
 
-                    // 页面加载时，如果 ECH 已勾选，也自动设置仅TLS
+                    // On page load, if ECH is checked, also automatically set TLS-only
                     if (echCheckbox.checked) {
                         portControl.value = 'yes';
                     }
                 }
 
-                // 监听customIP输入框变化，实时更新wk地区选择状态
+                // Listen for customIP input changes, update wk region selection state in real-time
                 const customIPInput = document.getElementById('customIP');
                 if (customIPInput) {
                     customIPInput.addEventListener('input', function() {
@@ -4372,7 +5898,7 @@
                     });
                 }
 
-                // 绑定表单事件
+                // Bind form events
                 const regionForm = document.getElementById('regionForm');
                 if (regionForm) {
                     regionForm.addEventListener('submit', async function(e) {
@@ -4406,7 +5932,7 @@
                             !document.getElementById('ess').checked &&
                             !document.getElementById('et').checked &&
                             !document.getElementById('ex').checked) {
-                            alert('至少需要启用一个协议！');
+                            alert('At least one protocol must be enabled!');
                             return;
                         }
 
@@ -4439,13 +5965,13 @@
                             customECHDomain: document.getElementById('customECHDomain').value
                         };
 
-                        // 确保至少选择一个协议
+                        // Ensure at least one protocol is selected
                         if (!document.getElementById('ev').checked &&
                             !document.getElementById('evm').checked &&
                             !document.getElementById('ess').checked &&
                             !document.getElementById('et').checked &&
                             !document.getElementById('ex').checked) {
-                            alert('至少需要启用一个协议！');
+                            alert('At least one protocol must be enabled!');
                             return;
                         }
 
@@ -4457,7 +5983,7 @@
                 if (advancedConfigForm) {
                     advancedConfigForm.addEventListener('submit', async function(e) {
                         e.preventDefault();
-                        const configData = { scu: document.getElementById('scu').value, epd: document.getElementById('epd').checked ? 'yes' : 'no', epi: document.getElementById('epi').checked ? 'yes' : 'no', egi: document.getElementById('egi').checked ? 'yes' : 'no', ae: document.getElementById('apiEnabled').value,
+                        const configData = { scu: document.getElementById('scu').value, epd: document.getElementById('epd').checked ? 'yes' : 'no', epi: document.getElementById('epi').checked ? 'yes' : 'no', egi: document.getElementById('egi').checked ? 'yes' : 'no', edp: document.getElementById('enableDiverseProxies').checked ? 'yes' : 'no', ae: document.getElementById('apiEnabled').value,
                             rm: document.getElementById('regionMatching').value,
                             qj: document.getElementById('downgradeControl').value,
                             dkby: document.getElementById('portControl').value,
@@ -4523,7 +6049,7 @@
                     randomIPCount.addEventListener('input', function() {
                         localStorage.setItem('randomIPCount', this.value);
                     });
-                    // 初始化时，如果默认是隐藏的，则禁用输入框
+                    // On init, if hidden by default, disable input box
                     if (randomCountDiv && randomCountDiv.style.display === 'none') {
                         randomIPCount.disabled = true;
                     }
@@ -4546,7 +6072,7 @@
                     urlFetchDiv.style.display = currentSource === 'urlFetch' ? 'block' : 'none';
                     cfRandomDiv.style.display = currentSource === 'cfRandom' ? 'block' : 'none';
                     randomCountDiv.style.display = currentSource === 'cfRandom' ? 'block' : 'none';
-                    // 当隐藏时禁用输入框，避免表单验证错误
+                    // When hidden, disable input box to avoid form validation errors
                     if (randomIPCount) {
                         randomIPCount.disabled = currentSource !== 'cfRandom';
                     }
@@ -4589,7 +6115,7 @@
                         urlFetchDiv.style.display = value === 'urlFetch' ? 'block' : 'none';
                         cfRandomDiv.style.display = value === 'cfRandom' ? 'block' : 'none';
                         randomCountDiv.style.display = value === 'cfRandom' ? 'block' : 'none';
-                        // 当隐藏时禁用输入框，避免表单验证错误
+                        // When hidden, disable input box to avoid form validation errors
                         if (randomIPCount) {
                             randomIPCount.disabled = value !== 'cfRandom';
                         }
@@ -4603,7 +6129,7 @@
                         const ips = generateCFRandomIPs(count, port);
                         document.getElementById('latencyTestInput').value = ips.join(',');
                         manualInputDiv.style.display = 'block';
-                        showStatus('${isFarsi ? 'تولید شد' : '已生成'} ' + count + ' ${isFarsi ? 'IP تصادفی CF' : '个CF随机IP'}', 'success');
+                        showStatus('${isFarsi ? 'تولید شد' : 'Generated'} ' + count + ' ${isFarsi ? 'IP تصادفی CF' : ' CF Random IPs'}', 'success');
                     });
                 }
 
@@ -4612,15 +6138,15 @@
                         const urlInput = document.getElementById('fetchURLInput');
                         const fetchUrl = urlInput.value.trim();
                         if (!fetchUrl) {
-                            alert('${isFarsi ? 'لطفا URL را وارد کنید' : '请输入URL'}');
+                            alert('${isFarsi ? 'لطفا URL را وارد کنید' : 'Please enter URL'}');
                             return;
                         }
 
                         fetchIPBtn.disabled = true;
-                        fetchIPBtn.textContent = '${isFarsi ? 'در حال دریافت...' : '获取中...'}';
+                        fetchIPBtn.textContent = '${isFarsi ? 'در حال دریافت...' : 'Fetching...'}';
 
                         try {
-                            // 支持多个 URL（逗号分隔）以及返回内容中逗号分隔的多个 IP/节点
+                            // Support multiple URLs (comma separated) and multiple IPs/nodes (comma separated) in response
                             const urlList = Array.from(new Set(
                                 fetchUrl.split(',').map(u => u.trim()).filter(u => u)
                             ));
@@ -4634,7 +6160,7 @@
                                 }
                                 const text = await response.text();
 
-                                // 先按行分割，再在每行内按逗号分割，兼容“多行 + 逗号分隔”两种格式
+                                // Split by line first, then by comma in each line, compatible with both 'multi-line' and 'comma-separated' formats
                                 const perUrlItems = text
                                     .split(/\\r?\\n/)
                                     .map(l => l.trim())
@@ -4647,15 +6173,15 @@
                             if (allItems.length > 0) {
                                 document.getElementById('latencyTestInput').value = allItems.join(',');
                                 manualInputDiv.style.display = 'block';
-                                showStatus('${isFarsi ? 'دریافت شد' : '已获取'} ' + allItems.length + ' ${isFarsi ? 'IP' : '个IP'}', 'success');
+                                showStatus('${isFarsi ? 'دریافت شد' : 'Fetched'} ' + allItems.length + ' ${isFarsi ? 'IP' : ' IPs'}', 'success');
                             } else {
-                                showStatus('${isFarsi ? 'داده‌ای یافت نشد' : '未获取到数据'}', 'error');
+                                showStatus('${isFarsi ? 'داده‌ای یافت نشد' : 'No data found'}', 'error');
                             }
                         } catch (err) {
-                            showStatus('${isFarsi ? 'خطا در دریافت' : '获取失败'}: ' + err.message, 'error');
+                            showStatus('${isFarsi ? 'خطا در دریافت' : 'Fetch failed'}: ' + err.message, 'error');
                         } finally {
                             fetchIPBtn.disabled = false;
-                            fetchIPBtn.textContent = '⬇ ${isFarsi ? 'دریافت IP' : '获取IP'}';
+                            fetchIPBtn.textContent = '⬇ ${isFarsi ? 'دریافت IP' : 'Fetch IP'}';
                         }
                     });
                 }
@@ -4670,7 +6196,7 @@
                         const threads = parseInt(threadsField.value) || 5;
 
                         if (!inputValue) {
-                            showStatus('${isFarsi ? 'لطفا IP یا دامنه وارد کنید' : '请输入IP或域名'}', 'error');
+                            showStatus('${isFarsi ? 'لطفا IP یا دامنه وارد کنید' : 'Please enter IP or Domain'}', 'error');
                             return;
                         }
 
@@ -4719,7 +6245,7 @@
                         }
 
                         function renderResult(result, index, shouldShow = true) {
-                            // 只展示在线优选成功的结果，失败/超时的不再显示
+                            // Only show successful online optimization results, failed/timed out ones are not shown
                             if (!result.success) {
                                 return null;
                             }
@@ -4766,7 +6292,7 @@
                             if (testAbortController.signal.aborted) break;
 
                             const batch = targets.slice(i, Math.min(i + threads, total));
-                            testStatus.textContent = '${isFarsi ? 'در حال تست' : '测试中'}: ' + (i + 1) + '-' + Math.min(i + threads, total) + '/' + total + ' (${isFarsi ? 'رشته‌ها' : '线程'}: ' + threads + ')';
+                            testStatus.textContent = '${isFarsi ? 'در حال تست' : 'Testing'}: ' + (i + 1) + '-' + Math.min(i + threads, total) + '/' + total + ' (${isFarsi ? 'رشته‌ها' : '线程'}: ' + threads + ')';
 
                             const results = await Promise.all(batch.map(t => testOne(t)));
 
@@ -4780,11 +6306,11 @@
                             }
                         }
 
-                        testStatus.textContent = '${isFarsi ? 'تست کامل شد' : '测试完成'}: ' + completed + '/' + total;
+                        testStatus.textContent = '${isFarsi ? 'تست کامل شد' : 'Test Complete'}: ' + completed + '/' + total;
                         startTestBtn.style.display = 'inline-block';
                         stopTestBtn.style.display = 'none';
 
-                        // 更新城市选择器
+                        // Update city filter
                         updateCityFilter();
                     });
                 }
@@ -4796,7 +6322,7 @@
                         }
                         startTestBtn.style.display = 'inline-block';
                         stopTestBtn.style.display = 'none';
-                        testStatus.textContent = '${isFarsi ? 'تست متوقف شد' : '测试已停止'}';
+                        testStatus.textContent = '${isFarsi ? 'تست متوقف شد' : 'Test Stopped'}';
                     });
                 }
 
@@ -4814,11 +6340,11 @@
                     });
                 }
 
-                // 获取选中项的通用函数
+                // Generic function to get selected items
                 function getSelectedItems() {
                     const checkboxes = resultsList.querySelectorAll('input[type="checkbox"]:checked');
                     if (checkboxes.length === 0) {
-                        showStatus('${isFarsi ? 'لطفا حداقل یک مورد انتخاب کنید' : '请至少选择一项'}', 'error');
+                        showStatus('${isFarsi ? 'لطفا حداقل یک مورد انتخاب کنید' : 'Please select at least one item'}', 'error');
                         return null;
                     }
 
@@ -4836,7 +6362,7 @@
                     return selectedItems;
                 }
 
-                // 覆盖添加
+                // Overwrite add
                 if (overwriteSelectedBtn) {
                     overwriteSelectedBtn.addEventListener('click', async function() {
                         const selectedItems = getSelectedItems();
@@ -4848,7 +6374,7 @@
 
                         overwriteSelectedBtn.disabled = true;
                         appendSelectedBtn.disabled = true;
-                        overwriteSelectedBtn.textContent = '${isFarsi ? 'در حال ذخیره...' : '保存中...'}';
+                        overwriteSelectedBtn.textContent = '${isFarsi ? 'در حال ذخیره...' : 'Saving...'}';
 
                         try {
                             const configData = {
@@ -4858,18 +6384,18 @@
                                 s: document.getElementById('socksConfig').value
                             };
                             await saveConfig(configData);
-                            showStatus('${isFarsi ? 'موفقیت‌آمیز بود' : '已覆盖'} ' + selectedItems.length + ' ${isFarsi ? 'مورد و ذخیره شد' : '项并已保存'}', 'success');
+                            showStatus('${isFarsi ? 'موفقیت‌آمیز بود' : 'Overwritten'} ' + selectedItems.length + ' ${isFarsi ? 'مورد و ذخیره شد' : ' items saved'}', 'success');
                         } catch (err) {
-                            showStatus('${isFarsi ? 'خطا در ذخیره' : '保存失败'}: ' + err.message, 'error');
+                            showStatus('${isFarsi ? 'خطا در ذخیره' : 'Save failed'}: ' + err.message, 'error');
                         } finally {
                             overwriteSelectedBtn.disabled = false;
                             appendSelectedBtn.disabled = false;
-                            overwriteSelectedBtn.textContent = '${isFarsi ? '覆盖添加' : '覆盖添加'}';
+                            overwriteSelectedBtn.textContent = '${isFarsi ? '覆盖添加' : 'Overwrite Add'}';
                         }
                     });
                 }
 
-                // 追加添加
+                // Append add
                 if (appendSelectedBtn) {
                     appendSelectedBtn.addEventListener('click', async function() {
                         const selectedItems = getSelectedItems();
@@ -4883,7 +6409,7 @@
 
                         overwriteSelectedBtn.disabled = true;
                         appendSelectedBtn.disabled = true;
-                        appendSelectedBtn.textContent = '${isFarsi ? 'در حال ذخیره...' : '保存中...'}';
+                        appendSelectedBtn.textContent = '${isFarsi ? 'در حال ذخیره...' : 'Saving...'}';
 
                         try {
                             const configData = {
@@ -4893,13 +6419,13 @@
                                 s: document.getElementById('socksConfig').value
                             };
                             await saveConfig(configData);
-                            showStatus('${isFarsi ? 'موفقیت‌آمیز بود' : '已追加'} ' + selectedItems.length + ' ${isFarsi ? 'مورد و ذخیره شد' : '项并已保存'}', 'success');
+                            showStatus('${isFarsi ? 'موفقیت‌آمیز بود' : 'Appended'} ' + selectedItems.length + ' ${isFarsi ? 'مورد و ذخیره شد' : ' items saved'}', 'success');
                         } catch (err) {
-                            showStatus('${isFarsi ? 'خطا در ذخیره' : '保存失败'}: ' + err.message, 'error');
+                            showStatus('${isFarsi ? 'خطا در ذخیره' : 'Save failed'}: ' + err.message, 'error');
                         } finally {
                             overwriteSelectedBtn.disabled = false;
                             appendSelectedBtn.disabled = false;
-                            appendSelectedBtn.textContent = '${isFarsi ? '追加添加' : '追加添加'}';
+                            appendSelectedBtn.textContent = '${isFarsi ? '追加添加' : 'Append Add'}';
                         }
                     });
                 }
@@ -4977,14 +6503,14 @@
                     return coloMap[colo] || colo;
                 }
 
-                // 城市筛选相关函数
+                // City filtering related functions
                 const cityFilterContainer = document.getElementById('cityFilterContainer');
                 const cityCheckboxesContainer = document.getElementById('cityCheckboxesContainer');
 
                 function updateCityFilter() {
                     if (!cityFilterContainer || !cityCheckboxesContainer) return;
 
-                    // 从测试结果中提取所有可用的城市
+                    // Extract all available cities from test results
                     const cityMap = new Map();
                     testResults.forEach((result, index) => {
                         if (result.success && result.colo) {
@@ -5008,7 +6534,7 @@
                     cityFilterContainer.style.display = 'block';
                     cityCheckboxesContainer.innerHTML = '';
 
-                    // 按城市名称排序
+                    // Sort by city name
                     const cities = Array.from(cityMap.values()).sort((a, b) => a.name.localeCompare(b.name));
 
                     cities.forEach(city => {
@@ -5032,12 +6558,12 @@
                         checkbox.addEventListener('change', filterResultsByCity);
                     });
 
-                    // 监听筛选模式变化
+                    // Listen for filter mode changes
                     const filterModeRadios = document.querySelectorAll('input[name="cityFilterMode"]');
                     filterModeRadios.forEach(radio => {
                         radio.addEventListener('change', function() {
                             if (this.value === 'all') {
-                                // 切换到"全部城市"模式时，自动选中所有城市复选框
+                                // When switching to 'All Cities' mode, automatically check all city checkboxes
                                 const cityCheckboxes = cityCheckboxesContainer.querySelectorAll('input[type="checkbox"]');
                                 cityCheckboxes.forEach(cb => {
                                     cb.checked = true;
@@ -5057,7 +6583,7 @@
                     const cityCheckboxes = cityCheckboxesContainer.querySelectorAll('input[type="checkbox"]');
 
                     if (filterMode === 'fastest10') {
-                        // 只选择最快的10个
+                        // Select only the fastest 10
                         const sortedResults = testResults
                             .map((result, index) => ({ result, index }))
                             .filter(item => item.result.success)
@@ -5078,10 +6604,10 @@
                             }
                         });
 
-                        // 禁用城市复选框
+                        // Disable city checkboxes
                         cityCheckboxes.forEach(cb => cb.disabled = true);
                     } else {
-                        // 根据选中的城市筛选
+                        // Filter by selected cities
                         const selectedCities = new Set();
                         cityCheckboxes.forEach(cb => {
                             if (cb.checked) {
@@ -5089,7 +6615,7 @@
                             }
                         });
 
-                        // 如果所有城市都被选中（或没有选中任何城市），显示所有结果
+                        // If all cities are selected (or none), show all results
                         const allChecked = cityCheckboxes.length > 0 && selectedCities.size === cityCheckboxes.length;
                         const noneChecked = selectedCities.size === 0;
 
@@ -5098,29 +6624,29 @@
                             const checkbox = item.querySelector('input[type="checkbox"]');
                             if (allChecked || noneChecked || selectedCities.has(colo)) {
                                 item.style.display = 'flex';
-                                // 同步更新结果项复选框的选中状态
+                                // Sync update result item checkbox state
                                 if (checkbox) {
                                     if (allChecked) {
-                                        // 所有城市都选中时，所有结果项复选框都选中
+                                        // When all cities are selected, all result item checkboxes are checked
                                         checkbox.checked = true;
                                     } else if (noneChecked) {
-                                        // 没有选中任何城市时，所有结果项复选框都取消选中
+                                        // When no city is selected, all result item checkboxes are unchecked
                                         checkbox.checked = false;
                                     } else {
-                                        // 根据城市选择状态同步复选框
+                                        // Sync checkboxes based on city selection state
                                         checkbox.checked = selectedCities.has(colo);
                                     }
                                 }
                             } else {
                                 item.style.display = 'none';
-                                // 取消选中隐藏的结果项复选框
+                                // Uncheck hidden result item checkboxes
                                 if (checkbox) {
                                     checkbox.checked = false;
                                 }
                             }
                         });
 
-                        // 启用城市复选框
+                        // Enable city checkboxes
                         cityCheckboxes.forEach(cb => cb.disabled = false);
                     }
                 }
@@ -5180,7 +6706,7 @@
 
                         return { success: true, latency: latency, colo: colo, testUrl: testUrl };
                     } catch (error) {
-                        const errorMsg = error.name === 'AbortError' ? '${isFarsi ? 'زمان تمام شد' : '超时'}' : error.message;
+                        const errorMsg = error.name === 'AbortError' ? '${isFarsi ? 'زمان تمام شد' : 'Timeout'}' : error.message;
                         console.log('[LatencyTest] Error:', errorMsg, 'URL:', testUrl);
                         return { success: false, latency: -1, error: errorMsg, colo: '', testUrl: testUrl };
                     }
@@ -5886,7 +7412,7 @@
                 const wsNodeName = `${nodeName}-${port}-WS-TLS`;
                 let link = `${proto}://${user}@${item.ip}:${port}?encryption=none&security=tls&sni=${workerDomain}&fp=${enableECH ? 'chrome' : 'randomized'}&type=ws&host=${workerDomain}&path=${wsPath}`;
 
-                // 如果启用了ECH，添加ech参数（ECH需要伪装成Chrome浏览器）
+                // If ECH is enabled, add ech parameter (ECH requires masquerading as Chrome browser)
                 if (enableECH) {
                     const dnsServer = customDNS || 'https://dns.joeyblog.eu.org/joeyblog';
                     const echDomain = customECHDomain || 'cloudflare-ech.com';
@@ -5907,7 +7433,7 @@
                 const wsNodeName = `${nodeName}-${port}-WS-TLS`;
                 let link = `${proto}://${user}@${item.ip}:${port}?encryption=none&security=tls&sni=${workerDomain}&fp=${enableECH ? 'chrome' : 'randomized'}&type=ws&host=${workerDomain}&path=${wsPath}`;
 
-                // 如果启用了ECH，添加ech参数（ECH需要伪装成Chrome浏览器）
+                // If ECH is enabled, add ech parameter (ECH requires masquerading as Chrome browser)
                 if (enableECH) {
                     const dnsServer = customDNS || 'https://dns.joeyblog.eu.org/joeyblog';
                     const echDomain = customECHDomain || 'cloudflare-ech.com';
@@ -5945,7 +7471,7 @@
                 mode: 'stream-one'
             });
 
-            // 如果启用了ECH，添加ech参数（ECH需要伪装成Chrome浏览器）
+            // If ECH is enabled, add ech parameter (ECH requires masquerading as Chrome browser)
             if (enableECH) {
                 const dnsServer = customDNS || 'https://dns.joeyblog.eu.org/joeyblog';
                 const echDomain = customECHDomain || 'cloudflare-ech.com';
@@ -5978,7 +7504,7 @@
                 const wsNodeName = `${nodeName}-${port}-${atob('VHJvamFu')}-WS-TLS`;
                 let link = `${atob('dHJvamFuOi8v')}${password}@${item.ip}:${port}?security=tls&sni=${workerDomain}&fp=chrome&type=ws&host=${workerDomain}&path=${wsPath}`;
 
-                // 如果启用了ECH，添加ech参数（ECH需要伪装成Chrome浏览器）
+                // If ECH is enabled, add ech parameter (ECH requires masquerading as Chrome browser)
                 if (enableECH) {
                     const dnsServer = customDNS || 'https://dns.joeyblog.eu.org/joeyblog';
                     const echDomain = customECHDomain || 'cloudflare-ech.com';
@@ -5999,7 +7525,7 @@
                 const wsNodeName = `${nodeName}-${port}-${atob('VHJvamFu')}-WS-TLS`;
                 let link = `${atob('dHJvamFuOi8v')}${password}@${item.ip}:${port}?security=tls&sni=${workerDomain}&fp=chrome&type=ws&host=${workerDomain}&path=${wsPath}`;
 
-                // 如果启用了ECH，添加ech参数（ECH需要伪装成Chrome浏览器）
+                // If ECH is enabled, add ech parameter (ECH requires masquerading as Chrome browser)
                 if (enableECH) {
                     const dnsServer = customDNS || 'https://dns.joeyblog.eu.org/joeyblog';
                     const echDomain = customECHDomain || 'cloudflare-ech.com';
@@ -6018,7 +7544,7 @@
 
             if (!kvStore) {
                 return new Response(JSON.stringify({
-                    error: 'KV存储未配置',
+                    error: 'KV Storage Not Configured',
                     kvEnabled: false
                 }), {
                     status: 503,
@@ -6080,6 +7606,11 @@
                         { domain: 'ProxyIP.NL.CMLiussss.net', region: 'NL', regionCode: 'NL', port: 443 },
                         { domain: 'ProxyIP.FI.CMLiussss.net', region: 'FI', regionCode: 'FI', port: 443 },
                         { domain: 'ProxyIP.GB.CMLiussss.net', region: 'GB', regionCode: 'GB', port: 443 },
+                        { domain: 'ProxyIP.IN.CMLiussss.net', region: 'IN', regionCode: 'IN', port: 443 },
+                        { domain: 'ProxyIP.BR.CMLiussss.net', region: 'BR', regionCode: 'BR', port: 443 },
+                        { domain: 'ProxyIP.PL.CMLiussss.net', region: 'PL', regionCode: 'PL', port: 443 },
+                        { domain: 'ProxyIP.RU.CMLiussss.net', region: 'RU', regionCode: 'RU', port: 443 },
+                        { domain: 'ProxyIP.IR.CMLiussss.net', region: 'IR', regionCode: 'IR', port: 443 },
                         { domain: 'ProxyIP.Oracle.cmliussss.net', region: 'Oracle', regionCode: 'Oracle', port: 443 },
                         { domain: 'ProxyIP.DigitalOcean.CMLiussss.net', region: 'DigitalOcean', regionCode: 'DigitalOcean', port: 443 },
                         { domain: 'ProxyIP.Vultr.CMLiussss.net', region: 'Vultr', regionCode: 'Vultr', port: 443 },
@@ -6141,8 +7672,8 @@
         if (!kvStore) {
             return new Response(JSON.stringify({
                 success: false,
-                error: 'KV存储未配置',
-                message: '需要配置KV存储才能使用此功能'
+                error: 'KV Storage Not Configured',
+                message: 'Requires KV storage configuration'
             }), {
                 status: 503,
                 headers: { 'Content-Type': 'application/json' }
@@ -6153,8 +7684,8 @@
         if (!ae) {
             return new Response(JSON.stringify({
                 success: false,
-                error: 'API功能未启用',
-                message: '出于安全考虑，优选IP API功能默认关闭。请在配置管理页面开启"允许API管理"选项后使用。'
+                error: 'API Disabled',
+                message: 'API disabled for security. Enable "Allow API Management" in settings.'
             }), {
                 status: 403,
                 headers: { 'Content-Type': 'application/json' }
@@ -6184,8 +7715,8 @@
                 if (ipsToAdd.length === 0) {
                     return new Response(JSON.stringify({
                         success: false,
-                        error: '请求数据为空',
-                        message: '请提供IP数据'
+                        error: 'Request Body Empty',
+                        message: 'Please provide IP data'
                     }), {
                         status: 400,
                         headers: { 'Content-Type': 'application/json' }
@@ -6202,7 +7733,7 @@
                 for (const item of ipsToAdd) {
 
                     if (!item.ip) {
-                        errors.push({ ip: '未知', reason: 'IP地址是必需的' });
+                        errors.push({ ip: 'Unknown', reason: 'IP address is required' });
                         continue;
                     }
 
@@ -6210,7 +7741,7 @@
                     const name = item.name || `API优选-${item.ip}:${port}`;
 
                     if (!isValidIP(item.ip) && !isValidDomain(item.ip)) {
-                        errors.push({ ip: item.ip, reason: '无效的IP或域名格式' });
+                        errors.push({ ip: item.ip, reason: 'Invalid IP or domain format' });
                         continue;
                     }
 
@@ -6219,7 +7750,7 @@
                     );
 
                     if (exists) {
-                        skippedIPs.push({ ip: item.ip, port: port, reason: '已存在' });
+                        skippedIPs.push({ ip: item.ip, port: port, reason: 'Already exists' });
                         continue;
                     }
 
@@ -6242,7 +7773,7 @@
 
                 return new Response(JSON.stringify({
                     success: addedIPs.length > 0,
-                    message: `成功添加 ${addedIPs.length} 个IP`,
+                    message: `Successfully added ${addedIPs.length} IPs`,
                     added: addedIPs.length,
                     skipped: skippedIPs.length,
                     errors: errors.length,
@@ -6270,7 +7801,7 @@
 
                     return new Response(JSON.stringify({
                         success: true,
-                        message: `已清空所有优选IP，共删除 ${deletedCount} 个`,
+                        message: `All preferred IPs cleared, deleted ${deletedCount}`,
                         deletedCount: deletedCount
                     }), {
                         headers: { 'Content-Type': 'application/json' }
@@ -6280,8 +7811,8 @@
                 if (!body.ip) {
                     return new Response(JSON.stringify({
                         success: false,
-                        error: 'IP地址是必需的',
-                        message: '请提供要删除的ip字段，或使用 {"all": true} 清空所有'
+                        error: 'IP address is required',
+                        message: 'Provide ip field to delete, or use {"all": true} to clear all'
                     }), {
                         status: 400,
                         headers: { 'Content-Type': 'application/json' }
@@ -6301,8 +7832,8 @@
                 if (filteredIPs.length === initialLength) {
                     return new Response(JSON.stringify({
                         success: false,
-                        error: '优选IP不存在',
-                        message: `${body.ip}:${port} 未找到`
+                        error: 'Preferred IP Not Found',
+                        message: `${body.ip}:${port} not found`
                     }), {
                         status: 404,
                         headers: { 'Content-Type': 'application/json' }
@@ -6315,7 +7846,7 @@
 
                 return new Response(JSON.stringify({
                     success: true,
-                    message: '优选IP已删除',
+                    message: 'Preferred IP Deleted',
                     deleted: { ip: body.ip, port: port }
                 }), {
                     headers: { 'Content-Type': 'application/json' }
@@ -6324,8 +7855,8 @@
             } else {
                 return new Response(JSON.stringify({
                     success: false,
-                    error: '不支持的请求方法',
-                    message: '支持的方法: GET, POST, DELETE'
+                    error: 'Method Not Allowed',
+                    message: 'Supported methods: GET, POST, DELETE'
                 }), {
                     status: 405,
                     headers: { 'Content-Type': 'application/json' }
@@ -6334,7 +7865,7 @@
         } catch (error) {
             return new Response(JSON.stringify({
                 success: false,
-                error: '处理请求失败',
+                error: 'Processing Failed',
                 message: error.message
             }), {
                 status: 500,
@@ -6432,7 +7963,7 @@
             enableECH = echControl === 'yes' || echControl === true || echControl === 'true';
         }
 
-        // 更新自定义DNS和ECH域名
+        // Update custom DNS and ECH domain
         const customDNSValue = getConfigValue('customDNS', '');
         if (customDNSValue && customDNSValue.trim()) {
             customDNS = customDNSValue.trim();
@@ -6447,13 +7978,13 @@
             customECHDomain = 'cloudflare-ech.com';
         }
 
-        // 如果启用了ECH，自动启用仅TLS模式（避免80端口干扰）
-        // ECH需要TLS才能工作，所以必须禁用非TLS节点
+        // If ECH is enabled, automatically enable TLS-only mode (avoid port 80 interference)
+        // ECH requires TLS to work, so non-TLS nodes must be disabled
         if (enableECH) {
             disableNonTLS = true;
         }
 
-        // 检查dkby配置（如果手动设置了dkby=yes，也会启用仅TLS）
+        // Check dkby config (if manually set dkby=yes, also enable TLS-only)
         const dkbyControl = getConfigValue('dkby', '');
         if (dkbyControl && dkbyControl.toLowerCase() === 'yes') {
             disableNonTLS = true;
@@ -6518,7 +8049,7 @@
                     const { address, port } = parseAddressAndPort(addressPart);
 
                     if (!nodeName) {
-                        nodeName = '自定义优选-' + address + (port ? ':' + port : '');
+                        nodeName = 'CustomPreferred-' + address + (port ? ':' + port : '');
                     }
 
                     if (isValidIP(address)) {
@@ -6685,7 +8216,7 @@
                         dataLines.forEach(line => {
                             const cols = line.split(',').map(c => c.trim());
                             const wrappedIP = IPV6_PATTERN.test(cols[ipIdx]) ? `[${cols[ipIdx]}]` : cols[ipIdx];
-                            results.add(`${wrappedIP}:${port}#CF优选 ${cols[delayIdx]}ms ${cols[speedIdx]}MB/s`);
+                            results.add(`${wrappedIP}:${port}#CF Preferred ${cols[delayIdx]}ms ${cols[speedIdx]}MB/s`);
                         });
                     }
                 }
