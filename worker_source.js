@@ -835,7 +835,6 @@
                             const translations = {
                                 en: {
                     title: 'Terminal',
-                    terminal: 'Terminal',
                     congratulations: 'Congratulations, you made it!',
                     enterU: 'Please enter the value of your U variable',
                     enterD: 'Please enter the value of your D variable',
@@ -1287,7 +1286,6 @@
                         const translations = {
                             en: {
                     title: 'Terminal',
-                    terminal: 'Terminal',
                     congratulations: 'Congratulations, you made it!',
                     enterU: 'Please enter the value of your U variable',
                     enterD: 'Please enter the value of your D variable',
@@ -1805,6 +1803,22 @@
             // If subscription conversion fails, return error
             throw new Error('无法获取 Clash 配置: ' + e.message);
         }
+    }
+
+    function generateSurgeConfig(links) {
+        return btoa(links.join('\n'));
+    }
+
+    function generateSSConfig(links) {
+        return btoa(links.join('\n'));
+    }
+
+    function generateV2RayConfig(links) {
+        return btoa(links.join('\n'));
+    }
+
+    function generateLoonConfig(links) {
+        return btoa(links.join('\n'));
     }
 
     // Global variable to store ECH debug info
@@ -2843,7 +2857,6 @@
             const translations = {
                 en: {
                     title: 'Terminal',
-                    terminal: 'Terminal',
                     congratulations: 'Congratulations, you made it!',
                     enterU: 'Please enter the value of your U variable',
                     enterD: 'Please enter the value of your D variable',
@@ -3774,7 +3787,6 @@
                 const translations = {
                     en: {
                     title: 'Terminal',
-                    terminal: 'Terminal',
                     congratulations: 'Congratulations, you made it!',
                     enterU: 'Please enter the value of your U variable',
                     enterD: 'Please enter the value of your D variable',
@@ -4255,7 +4267,6 @@
                         const translations = {
                             en: {
                     title: 'Terminal',
-                    terminal: 'Terminal',
                     congratulations: 'Congratulations, you made it!',
                     enterU: 'Please enter the value of your U variable',
                     enterD: 'Please enter the value of your D variable',
@@ -4548,7 +4559,6 @@
                         const translations = {
                             en: {
                     title: 'Terminal',
-                    terminal: 'Terminal',
                     congratulations: 'Congratulations, you made it!',
                     enterU: 'Please enter the value of your U variable',
                     enterD: 'Please enter the value of your D variable',
@@ -4758,7 +4768,6 @@
                         const translations = {
                             en: {
                     title: 'Terminal',
-                    terminal: 'Terminal',
                     congratulations: 'Congratulations, you made it!',
                     enterU: 'Please enter the value of your U variable',
                     enterD: 'Please enter the value of your D variable',
@@ -4966,7 +4975,6 @@
                         const translations = {
                             en: {
                     title: 'Terminal',
-                    terminal: 'Terminal',
                     congratulations: 'Congratulations, you made it!',
                     enterU: 'Please enter the value of your U variable',
                     enterD: 'Please enter the value of your D variable',
@@ -5169,7 +5177,6 @@
                         const translations = {
                             en: {
                     title: 'Terminal',
-                    terminal: 'Terminal',
                     congratulations: 'Congratulations, you made it!',
                     enterU: 'Please enter the value of your U variable',
                     enterD: 'Please enter the value of your D variable',
@@ -5402,7 +5409,6 @@
                     const translations = {
                         en: {
                     title: 'Terminal',
-                    terminal: 'Terminal',
                     congratulations: 'Congratulations, you made it!',
                     enterU: 'Please enter the value of your U variable',
                     enterD: 'Please enter the value of your D variable',
