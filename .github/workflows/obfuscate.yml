@@ -6,7 +6,7 @@ on:
     branches:
       - '**'  # 仅匹配分支推送，排除标签推送
     paths:
-      - '明文源码'
+      - 'worker_source.js'
 
 jobs:
   build-and-obfuscate:
@@ -31,19 +31,19 @@ jobs:
           const fs = require('fs');
           const path = require('path');
           
-          const sourceFileName = '明文源码';
-          const outputFileName = '少年你相信光吗';
+          const sourceFileName = 'worker_source.js';
+          const outputFileName = 'worker_obfuscated.js';
           const sourceFilePath = path.join(process.cwd(), sourceFileName);
 
           if (!fs.existsSync(sourceFilePath)) {
-            console.error('错误：在路径 \'' + sourceFilePath + '\' 未找到源文件。请确保您的仓库根目录有名为 \'明文源码\' 的文件。');
+            console.error('Error: Source file not found at path \'' + sourceFilePath + '\'. Please ensure \'worker_source.js\' exists in the root directory.');
             process.exit(1);
           }
 
           const originalCode = fs.readFileSync(sourceFilePath, 'utf8');
 
           if (!originalCode || originalCode.trim().length === 0) {
-            console.error('错误：源文件 ' + sourceFileName + ' 为空。');
+            console.error('Error: Source file ' + sourceFileName + ' is empty.');
             process.exit(1);
           }
 
@@ -84,7 +84,7 @@ jobs:
           const obfuscatedCode = JavaScriptObfuscator.obfuscate(originalCode, obfuscationOptions).getObfuscatedCode();
           
           fs.writeFileSync(path.join(process.cwd(), outputFileName), obfuscatedCode, 'utf8');
-          console.log('成功将 \'' + sourceFileName + '\' 混淆并保存至 \'' + outputFileName + '\'。');
+          console.log('Successfully obfuscated \'' + sourceFileName + '\' to \'' + outputFileName + '\'.');
           EOF
           node obfuscate.js
 
@@ -92,7 +92,7 @@ jobs:
         run: |
           git config --global user.name 'GitHub Actions Bot'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add '少年你相信光吗'
+          git add 'worker_obfuscated.js'
           if git diff --staged --quiet; then
             echo "No changes to commit, the obfuscated file is already up-to-date."
           else
