@@ -51,12 +51,73 @@
 
 ---
 
+## 方法 2: Wrangler CLI (高级) 💻
+
+供喜欢命令行的开发者使用。
+
+1.  **安装 Wrangler**:
+    ```bash
+    npm install -g wrangler
+    ```
+
+2.  **登录**:
+    ```bash
+    wrangler login
+    ```
+
+3.  **部署**:
+    在项目目录下运行此命令：
+    ```bash
+    wrangler deploy worker.js --name my-proxy-worker
+    ```
+
+4.  **设置密钥 (Secrets)**:
+    ```bash
+    wrangler secret put u
+    # 提示时输入您的 UUID
+    ```
+
+---
+
+## 自定义域名设置 🔗
+
+要使用自定义域名（如 `proxy.yourdomain.com`）而不是 `workers.dev`：
+
+1.  将您的域名添加到 Cloudflare。
+2.  进入您的 Worker > **Settings (设置)** > **Triggers (触发器)**。
+3.  点击 **Add Custom Domain (添加自定义域名)**。
+4.  输入您想要的子域名（例如 `vpn.example.com`）。
+5.  Cloudflare 将自动处理 DNS 记录和 SSL 证书。
+
+---
+
+## 优化：寻找 ProxyIP (优选 IP) ⚡
+
+如果默认连接速度慢或被封锁，您需要一个“干净 IP” (ProxyIP)。
+这是一个 Cloudflare 信任但未被您的 ISP 封锁的 IP 地址。
+
+1.  **它是什么？**: 您的 Worker 用来中转流量的后端 IP 地址。
+2.  **如何找到？**:
+    *   在 GitHub 或 Telegram 上搜索 "Cloudflare clean IP" 或 "优选IP"。
+    *   使用 `CloudflareSpeedTest` 等工具。
+3.  **如何使用？**:
+    *   在您的 Worker 设置中将 `p` 变量设置为该 IP 地址（例如 `104.16.x.x` 或 `domain.com`）。
+
+---
+
 ## 故障排除 🛠️
 
--   **"Error 1101"**: 通常意味着代码异常。检查日志。
--   **"UUID Invalid"**: 确保您的 UUID 符合 `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` 格式。
--   **"KV not configured"**: 您无法在 UI 中保存设置。请遵循上面的“设置 KV 存储”。
--   **速度慢**: 尝试设置有效的 `p` (ProxyIP)（例如 Cloudflare CDN IP 或干净的 IP）。
+| 错误代码 | 含义 | 解决方案 |
+| :--- | :--- | :--- |
+| **1101** | Worker 异常 | 代码崩溃。检查您是否错误地修改了 `worker.js`。检查日志。 |
+| **1033** | 隧道错误 | Cloudflare Tunnel 失败。通常是网络问题或错误的 ProxyIP (`p`)。尝试移除 `p`。 |
+| **522** | 连接超时 | Worker 无法到达目的地。目的地可能封锁了 Cloudflare。 |
+| **UUID Invalid** | 认证失败 | 确保 URL 中的 UUID 与 `u` 变量完全匹配。 |
+| **KV Error** | 存储缺失 | 您没有绑定 KV 命名空间 `C`。见方法 1 中的步骤 4。 |
+
+**常见修复:**
+*   **"我打不开 Google":** 您的 ProxyIP 可能坏了。清空 `p` 变量来测试。
+*   **"速度很慢":** 您的 ISP 正在对 Cloudflare 限速。寻找更好的 ProxyIP 或使用自定义域名。
 
 ---
 

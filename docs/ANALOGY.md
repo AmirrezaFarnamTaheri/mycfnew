@@ -65,3 +65,22 @@ Instead of sending the letter in one piece, you cut it into 10 tiny strips and m
 ### Hysteria / TUIC (UDP) - The "Drone Swarm"
 *   **TCP (VLESS)**: Like a truck. It drives on the road, stops at red lights, and signs for delivery. Reliable but can be slow or blocked by roadblocks.
 *   **UDP (Hysteria)**: Like a swarm of drones. They fly over traffic, don't wait for signatures, and if one crashes, the others keep going. Much faster for gaming and unstable networks.
+
+### Multiplexing (Mux) - The "Bus Lane" 🚌
+Imagine if every letter needed its own truck. That would be slow and wasteful.
+*   **Standard Connection**: One truck per letter.
+*   **Multiplexing**: A giant bus. You put 50 letters from different people (tabs in your browser) into one bus. The bus drives through the checkpoint once. The Inspector only has to check one vehicle, making it faster and less suspicious than a convoy of 50 trucks.
+
+---
+
+## Why Blockers Fail: The "Too Big to Fail" Problem 🏦
+
+You might ask: *"Why doesn't the Inspector just ban Cloudflare entirely?"*
+
+### 1. Collateral Damage 💥
+Cloudflare hosts millions of websites—banks, hospitals, schools, and government portals.
+If the Inspector bans the "Cloudflare Hub" address, he also bans access to all those legitimate services. It would be like closing the entire national highway system just to stop one smuggler. The economy would collapse.
+
+### 2. HTTPS & TLS 1.3 🔒
+Modern encryption is so good that the Inspector strictly cannot see inside the envelope. He knows the weight (size) and the timing, but he cannot read the content.
+*   **Obfuscation**: We make the "weight" and "timing" look random or identical to normal browsing (like watching a cat video), so he has no metadata to flag.

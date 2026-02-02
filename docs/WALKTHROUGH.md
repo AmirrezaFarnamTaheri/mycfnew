@@ -133,6 +133,31 @@ If you can't access some sites, you need a ProxyIP.
 4.  Update your subscription in your client.
     *   *Effect*: This encrypts the SNI, making it harder for firewalls to see you are connecting to Cloudflare.
 
+### 5.3. Client-Side Tweaks (v2rayNG / Shadowrocket)
+Sometimes the bottleneck is your client settings.
+*   **Mux (Multiplexing)**: Enable this in settings to reduce handshake latency.
+*   **Fragment**: If your connection is being throttled, enable TLS Fragmentation (often called "Fragment" or "Trick" in clients).
+    *   *Packets*: `100-200`
+    *   *Length*: `10-20`
+    *   *Interval*: `10-20`
+*   **Allow Insecure**: **Only** use this for debugging. Never leave it on permanently as it exposes you to Man-in-the-Middle attacks.
+
+---
+
+## Phase 6: Security Best Practices 🛡️
+
+### 6.1. Protect Your Dashboard
+Your dashboard URL contains your UUID. Anyone with this link can use your proxy and change your settings.
+1.  **Do not share screenshots** of your full URL.
+2.  **Use Cloudflare Access**: Set up a Zero Trust policy to require a login (email OTP) before accessing the dashboard path.
+
+### 6.2. Rotating UUIDs
+If you suspect your UUID has been leaked:
+1.  Generate a new UUID.
+2.  Update the `u` variable in Cloudflare.
+3.  Update your client subscriptions.
+4.  The old UUID will immediately stop working.
+
 ---
 
 ## Glossary 📖
