@@ -1809,21 +1809,20 @@
         }
     }
 
-    function generateSurgeConfig(links) {
-        return btoa(links.join('\n'));
+    function generateBase64Config(links) {
+        const joinedLinks = links.join('\n');
+        // To handle Unicode characters, first encode the string to UTF-8 percent-encoding,
+        // then convert the percent-encodings into raw bytes that btoa can process.
+        const utf8Bytes = encodeURIComponent(joinedLinks).replace(/%([0-9A-F]{2})/g,
+            (match, p1) => String.fromCharCode(parseInt(p1, 16))
+        );
+        return btoa(utf8Bytes);
     }
 
-    function generateSSConfig(links) {
-        return btoa(links.join('\n'));
-    }
-
-    function generateV2RayConfig(links) {
-        return btoa(links.join('\n'));
-    }
-
-    function generateLoonConfig(links) {
-        return btoa(links.join('\n'));
-    }
+    const generateSurgeConfig = generateBase64Config;
+    const generateSSConfig = generateBase64Config;
+    const generateV2RayConfig = generateBase64Config;
+    const generateLoonConfig = generateBase64Config;
 
     // Global variable to store ECH debug info
     let echDebugInfo = '';
