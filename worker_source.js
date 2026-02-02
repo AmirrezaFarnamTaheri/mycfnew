@@ -1545,7 +1545,7 @@
             document.addEventListener('DOMContentLoaded', function() {
                 const input = document.getElementById('uuidInput');
                 input.focus();
-                input.addEventListener('keypress', function(e) {
+                input.addEventListener('keydown', function(e) {
                     if (e.key === 'Enter') {
                         handleUUIDInput();
                     }
