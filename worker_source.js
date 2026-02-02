@@ -63,6 +63,7 @@
         'BR': ['🇧🇷 BR', 'BR', 'Brazil'],
         'PL': ['🇵🇱 PL', 'PL', 'Poland'],
         'RU': ['🇷🇺 RU', 'RU', 'Russia'],
+        'LV': ['🇱🇻 LV', 'LV', 'Latvia'],
         'IR': ['🇮🇷 IR', 'IR', 'Iran'],
         'Oracle': ['Oracle', 'Oracle'],
         'DigitalOcean': ['DigitalOcean', 'DigitalOcean'],
@@ -89,6 +90,7 @@
         { domain: 'ProxyIP.BR.CMLiussss.net', region: 'BR', regionCode: 'BR', port: 443 },
         { domain: 'ProxyIP.PL.CMLiussss.net', region: 'PL', regionCode: 'PL', port: 443 },
         { domain: 'ProxyIP.RU.CMLiussss.net', region: 'RU', regionCode: 'RU', port: 443 },
+        { domain: 'ProxyIP.LV.CMLiussss.net', region: 'LV', regionCode: 'LV', port: 443 },
         { domain: 'ProxyIP.IR.CMLiussss.net', region: 'IR', regionCode: 'IR', port: 443 },
         { domain: 'ProxyIP.Oracle.cmliussss.net', region: 'Oracle', regionCode: 'Oracle', port: 443 },
         { domain: 'ProxyIP.DigitalOcean.CMLiussss.net', region: 'DigitalOcean', regionCode: 'DigitalOcean', port: 443 },
@@ -289,7 +291,8 @@
             'BR': ['US'],
             'PL': ['DE', 'SE', 'FI', 'NL', 'RU'],
             'RU': ['FI', 'SE', 'DE', 'PL'],
-            'IR': ['DE', 'GB', 'FR', 'NL', 'SE', 'FI', 'PL', 'RU', 'US', 'CA', 'BR']
+            'LV': ['FI', 'SE', 'PL', 'RU'],
+            'IR': ['LV', 'SG', 'JP', 'KR', 'DE', 'SE', 'NL', 'FI', 'GB', 'FR', 'PL', 'RU', 'US', 'CA', 'BR', 'IN', 'AU', 'HK', 'TW']
         };
 
         return nearbyMap[region] || [];
@@ -297,7 +300,7 @@
 
     function getAllRegionsByPriority(region) {
         const nearbyRegions = getNearbyRegions(region);
-        const allRegions = ['US', 'SG', 'JP', 'KR', 'DE', 'SE', 'NL', 'FI', 'GB', 'IN', 'BR', 'PL', 'RU', 'IR'];
+        const allRegions = ['US', 'SG', 'JP', 'KR', 'DE', 'SE', 'NL', 'FI', 'GB', 'IN', 'BR', 'PL', 'RU', 'LV', 'IR', 'AU', 'HK', 'TW'];
 
         return [region, ...nearbyRegions, ...allRegions.filter(r => r !== region && !nearbyRegions.includes(r))];
     }
@@ -7610,6 +7613,7 @@
                         { domain: 'ProxyIP.BR.CMLiussss.net', region: 'BR', regionCode: 'BR', port: 443 },
                         { domain: 'ProxyIP.PL.CMLiussss.net', region: 'PL', regionCode: 'PL', port: 443 },
                         { domain: 'ProxyIP.RU.CMLiussss.net', region: 'RU', regionCode: 'RU', port: 443 },
+                        { domain: 'ProxyIP.LV.CMLiussss.net', region: 'LV', regionCode: 'LV', port: 443 },
                         { domain: 'ProxyIP.IR.CMLiussss.net', region: 'IR', regionCode: 'IR', port: 443 },
                         { domain: 'ProxyIP.Oracle.cmliussss.net', region: 'Oracle', regionCode: 'Oracle', port: 443 },
                         { domain: 'ProxyIP.DigitalOcean.CMLiussss.net', region: 'DigitalOcean', regionCode: 'DigitalOcean', port: 443 },
