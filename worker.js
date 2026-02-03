@@ -1414,15 +1414,37 @@
         <script>
             const translations = ${JSON.stringify(translations)};
 
+            function safeLocalStorageGet(key) {
+                try {
+                    if (typeof localStorage === 'undefined') return null;
+                    return window.localStorage.getItem(key);
+                } catch (e) {
+                    return null;
+                }
+            }
+
+            function safeLocalStorageSet(key, value) {
+                try {
+                    if (typeof localStorage === 'undefined') return false;
+                    window.localStorage.setItem(key, value);
+                    return true;
+                } catch (e) {
+                    return false;
+                }
+            }
+
             function getCookie(name) {
                 const value = '; ' + document.cookie;
                 const parts = value.split('; ' + name + '=');
-                if (parts.length === 2) return parts.pop()?.split(';').shift();
+                if (parts.length === 2) {
+                    const part = parts.pop();
+                    if (part) return part.split(';').shift();
+                }
                 return null;
             }
 
             function getPreferredLanguage() {
-                const savedLang = localStorage.getItem('preferredLanguage') || getCookie('preferredLanguage') || '';
+                const savedLang = safeLocalStorageGet('preferredLanguage') || getCookie('preferredLanguage') || '';
                 const browserLang = (navigator.language || navigator.userLanguage || '').toLowerCase();
 
                 if (savedLang) {
@@ -1931,7 +1953,7 @@
             }
 
                 function changeLanguage(lang) {
-                    localStorage.setItem('preferredLanguage', lang);
+                    safeLocalStorageSet('preferredLanguage', lang);
                     // Set Cookie (valid for 1 year)
                     const expiryDate = new Date();
                     expiryDate.setFullYear(expiryDate.getFullYear() + 1);
@@ -1945,11 +1967,14 @@
                     function getCookie(name) {
                         const value = '; ' + document.cookie;
                         const parts = value.split('; ' + name + '=');
-                        if (parts.length === 2) return parts.pop()?.split(';').shift();
+                        if (parts.length === 2) {
+                            const part = parts.pop();
+                            if (part) return part.split(';').shift();
+                        }
                         return null;
                     }
 
-                    const savedLang = localStorage.getItem('preferredLanguage') || getCookie('preferredLanguage');
+                    const savedLang = safeLocalStorageGet('preferredLanguage') || getCookie('preferredLanguage');
                     const urlParams = new URLSearchParams(window.location.search);
                     const urlLang = urlParams.get('lang');
 
@@ -1963,7 +1988,7 @@
                         const expiryDate = new Date();
                         expiryDate.setFullYear(expiryDate.getFullYear() + 1);
                         document.cookie = 'preferredLanguage=' + urlLang + '; path=/; expires=' + expiryDate.toUTCString() + '; SameSite=Lax';
-                        localStorage.setItem('preferredLanguage', urlLang);
+                        safeLocalStorageSet('preferredLanguage', urlLang);
 
                         // Use history API to remove URL parameter, do not reload page
                         window.history.replaceState({}, '', newUrl);
@@ -4645,6 +4670,25 @@
             var DEBUG_CONSOLE_READY = false;
             var DEBUG_AUTO_OPEN = false;
 
+            function safeLocalStorageGet(key) {
+                try {
+                    if (typeof localStorage === 'undefined') return null;
+                    return window.localStorage.getItem(key);
+                } catch (e) {
+                    return null;
+                }
+            }
+
+            function safeLocalStorageSet(key, value) {
+                try {
+                    if (typeof localStorage === 'undefined') return false;
+                    window.localStorage.setItem(key, value);
+                    return true;
+                } catch (e) {
+                    return false;
+                }
+            }
+
             function stringifyConsoleValue(value) {
                 if (value === null) return 'null';
                 if (value === undefined) return 'undefined';
@@ -4784,12 +4828,15 @@
                 function getCookie(name) {
                     const value = '; ' + document.cookie;
                     const parts = value.split('; ' + name + '=');
-                    if (parts.length === 2) return parts.pop()?.split(';').shift();
+                    if (parts.length === 2) {
+                        const part = parts.pop();
+                        if (part) return part.split(';').shift();
+                    }
                     return null;
                 }
 
                 function getPreferredLanguage() {
-                    const savedLang = localStorage.getItem('preferredLanguage') || getCookie('preferredLanguage') || '';
+                    const savedLang = safeLocalStorageGet('preferredLanguage') || getCookie('preferredLanguage') || '';
                     const browserLang = (navigator.language || navigator.userLanguage || '').toLowerCase();
 
                     if (savedLang) {
@@ -4817,7 +4864,7 @@
                 t = getTranslations();
 
                 function changeLanguage(lang) {
-                    localStorage.setItem('preferredLanguage', lang);
+                    safeLocalStorageSet('preferredLanguage', lang);
                     // Set Cookie (valid for 1 year)
                     const expiryDate = new Date();
                     expiryDate.setFullYear(expiryDate.getFullYear() + 1);
@@ -4828,7 +4875,7 @@
 
                 // Check localStorage and Cookie on page load, and clean up URL parameters
                 window.addEventListener('DOMContentLoaded', function() {
-                    const savedLang = localStorage.getItem('preferredLanguage') || getCookie('preferredLanguage');
+                    const savedLang = safeLocalStorageGet('preferredLanguage') || getCookie('preferredLanguage');
                     const urlParams = new URLSearchParams(window.location.search);
                     const urlLang = urlParams.get('lang');
 
@@ -4842,7 +4889,7 @@
                         const expiryDate = new Date();
                         expiryDate.setFullYear(expiryDate.getFullYear() + 1);
                         document.cookie = 'preferredLanguage=' + urlLang + '; path=/; expires=' + expiryDate.toUTCString() + '; SameSite=Lax';
-                        localStorage.setItem('preferredLanguage', urlLang);
+                        safeLocalStorageSet('preferredLanguage', urlLang);
 
                         // Use history API to remove URL parameter, do not reload page
                         window.history.replaceState({}, '', newUrl);
@@ -5083,12 +5130,15 @@
                         function getCookie(name) {
                             const value = '; ' + document.cookie;
                             const parts = value.split('; ' + name + '=');
-                            if (parts.length === 2) return parts.pop()?.split(';').shift();
+                            if (parts.length === 2) {
+                                const part = parts.pop();
+                                if (part) return part.split(';').shift();
+                            }
                             return null;
                         }
 
                         const browserLang = navigator.language || navigator.userLanguage || '';
-                        const savedLang = localStorage.getItem('preferredLanguage') || getCookie('preferredLanguage');
+                        const savedLang = safeLocalStorageGet('preferredLanguage') || getCookie('preferredLanguage');
                         let isFarsi = false;
 
                         if (savedLang === 'fa' || savedLang === 'fa-IR') {
@@ -5378,12 +5428,15 @@
                         function getCookie(name) {
                             const value = '; ' + document.cookie;
                             const parts = value.split('; ' + name + '=');
-                            if (parts.length === 2) return parts.pop()?.split(';').shift();
+                            if (parts.length === 2) {
+                                const part = parts.pop();
+                                if (part) return part.split(';').shift();
+                            }
                             return null;
                         }
 
                         const browserLang = navigator.language || navigator.userLanguage || '';
-                        const savedLang = localStorage.getItem('preferredLanguage') || getCookie('preferredLanguage');
+                        const savedLang = safeLocalStorageGet('preferredLanguage') || getCookie('preferredLanguage');
                         let isFarsi = false;
 
                         if (savedLang === 'fa' || savedLang === 'fa-IR') {
@@ -5587,12 +5640,15 @@
                         function getCookie(name) {
                             const value = '; ' + document.cookie;
                             const parts = value.split('; ' + name + '=');
-                            if (parts.length === 2) return parts.pop()?.split(';').shift();
+                            if (parts.length === 2) {
+                                const part = parts.pop();
+                                if (part) return part.split(';').shift();
+                            }
                             return null;
                         }
 
                         const browserLang = navigator.language || navigator.userLanguage || '';
-                        const savedLang = localStorage.getItem('preferredLanguage') || getCookie('preferredLanguage');
+                        const savedLang = safeLocalStorageGet('preferredLanguage') || getCookie('preferredLanguage');
                         let isFarsi = false;
 
                         if (savedLang === 'fa' || savedLang === 'fa-IR') {
@@ -5794,12 +5850,15 @@
                         function getCookie(name) {
                             const value = '; ' + document.cookie;
                             const parts = value.split('; ' + name + '=');
-                            if (parts.length === 2) return parts.pop()?.split(';').shift();
+                            if (parts.length === 2) {
+                                const part = parts.pop();
+                                if (part) return part.split(';').shift();
+                            }
                             return null;
                         }
 
                         const browserLang = navigator.language || navigator.userLanguage || '';
-                        const savedLang = localStorage.getItem('preferredLanguage') || getCookie('preferredLanguage');
+                        const savedLang = safeLocalStorageGet('preferredLanguage') || getCookie('preferredLanguage');
                         let isFarsi = false;
 
                         if (savedLang === 'fa' || savedLang === 'fa-IR') {
@@ -5996,12 +6055,15 @@
                         function getCookie(name) {
                             const value = '; ' + document.cookie;
                             const parts = value.split('; ' + name + '=');
-                            if (parts.length === 2) return parts.pop()?.split(';').shift();
+                            if (parts.length === 2) {
+                                const part = parts.pop();
+                                if (part) return part.split(';').shift();
+                            }
                             return null;
                         }
 
                         const browserLang = navigator.language || navigator.userLanguage || '';
-                        const savedLang = localStorage.getItem('preferredLanguage') || getCookie('preferredLanguage');
+                        const savedLang = safeLocalStorageGet('preferredLanguage') || getCookie('preferredLanguage');
                         let isFarsi = false;
 
                         if (savedLang === 'fa' || savedLang === 'fa-IR') {
@@ -6229,12 +6291,15 @@
                     function getCookie(name) {
                         const value = '; ' + document.cookie;
                         const parts = value.split('; ' + name + '=');
-                        if (parts.length === 2) return parts.pop()?.split(';').shift();
+                        if (parts.length === 2) {
+                            const part = parts.pop();
+                            if (part) return part.split(';').shift();
+                        }
                         return null;
                     }
 
                     const browserLang = navigator.language || navigator.userLanguage || '';
-                    const savedLang = localStorage.getItem('preferredLanguage') || getCookie('preferredLanguage');
+                    const savedLang = safeLocalStorageGet('preferredLanguage') || getCookie('preferredLanguage');
                     let isFarsi = false;
 
                     if (savedLang === 'fa' || savedLang === 'fa-IR') {
@@ -6880,31 +6945,31 @@
                 const fetchIPBtn = document.getElementById('fetchIPBtn');
 
                 if (latencyTestInput) {
-                    const savedTestInput = localStorage.getItem('latencyTestInput');
+                    const savedTestInput = safeLocalStorageGet('latencyTestInput');
                     if (savedTestInput) latencyTestInput.value = savedTestInput;
                     latencyTestInput.addEventListener('input', function() {
-                        localStorage.setItem('latencyTestInput', this.value);
+                        safeLocalStorageSet('latencyTestInput', this.value);
                     });
                 }
                 if (fetchURLInput) {
-                    const savedFetchURL = localStorage.getItem('fetchURLInput');
+                    const savedFetchURL = safeLocalStorageGet('fetchURLInput');
                     if (savedFetchURL) fetchURLInput.value = savedFetchURL;
                     fetchURLInput.addEventListener('input', function() {
-                        localStorage.setItem('fetchURLInput', this.value);
+                        safeLocalStorageSet('fetchURLInput', this.value);
                     });
                 }
                 if (latencyTestPort) {
-                    const savedPort = localStorage.getItem('latencyTestPort');
+                    const savedPort = safeLocalStorageGet('latencyTestPort');
                     if (savedPort) latencyTestPort.value = savedPort;
                     latencyTestPort.addEventListener('input', function() {
-                        localStorage.setItem('latencyTestPort', this.value);
+                        safeLocalStorageSet('latencyTestPort', this.value);
                     });
                 }
                 if (randomIPCount) {
-                    const savedCount = localStorage.getItem('randomIPCount');
+                    const savedCount = safeLocalStorageGet('randomIPCount');
                     if (savedCount) randomIPCount.value = savedCount;
                     randomIPCount.addEventListener('input', function() {
-                        localStorage.setItem('randomIPCount', this.value);
+                        safeLocalStorageSet('randomIPCount', this.value);
                     });
                     // On init, if hidden by default, disable input box
                     if (randomCountDiv && randomCountDiv.style.display === 'none') {
@@ -6913,14 +6978,14 @@
                 }
                 const testThreadsInput = document.getElementById('testThreads');
                 if (testThreadsInput) {
-                    const savedThreads = localStorage.getItem('testThreads');
+                    const savedThreads = safeLocalStorageGet('testThreads');
                     if (savedThreads) testThreadsInput.value = savedThreads;
                     testThreadsInput.addEventListener('input', function() {
-                        localStorage.setItem('testThreads', this.value);
+                        safeLocalStorageSet('testThreads', this.value);
                     });
                 }
                 if (ipSourceSelect) {
-                    const savedSource = localStorage.getItem('ipSourceSelect');
+                    const savedSource = safeLocalStorageGet('ipSourceSelect');
                     const currentSource = savedSource || ipSourceSelect.value || 'manual';
                     if (savedSource) {
                         ipSourceSelect.value = savedSource;
@@ -6967,7 +7032,7 @@
                 if (ipSourceSelect) {
                     ipSourceSelect.addEventListener('change', function() {
                         const value = this.value;
-                        localStorage.setItem('ipSourceSelect', value);
+                        safeLocalStorageSet('ipSourceSelect', value);
                         manualInputDiv.style.display = value === 'manual' ? 'block' : 'none';
                         urlFetchDiv.style.display = value === 'urlFetch' ? 'block' : 'none';
                         cfRandomDiv.style.display = value === 'cfRandom' ? 'block' : 'none';
@@ -7436,7 +7501,8 @@
                 function filterResultsByCity() {
                     if (!resultsList || !cityCheckboxesContainer) return;
 
-                    const filterMode = document.querySelector('input[name="cityFilterMode"]:checked')?.value || 'all';
+                    const filterModeEl = document.querySelector('input[name="cityFilterMode"]:checked');
+                    const filterMode = filterModeEl && filterModeEl.value ? filterModeEl.value : 'all';
                     const resultItems = resultsList.querySelectorAll('[data-index]');
                     const cityCheckboxes = cityCheckboxesContainer.querySelectorAll('input[type="checkbox"]');
 
@@ -9312,3 +9378,9 @@
         });
         return links;
     }
+
+
+
+
+
+

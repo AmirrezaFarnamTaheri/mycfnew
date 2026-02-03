@@ -1,7 +1,9 @@
 {
   "scripts": {
     "test": "node --check worker.js",
-    "qa": "node --check worker.js"
+    "qa": "node --check worker.js",
+    "dev": "wrangler dev worker.js --local",
+    "deploy": "wrangler deploy worker.js"
   },
   "dependencies": {
     "terser": "^5.46.0"
