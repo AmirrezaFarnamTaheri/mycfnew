@@ -1,86 +1,62 @@
-# The Mailman Analogy: Understanding How Proxies Work 📬
+# Analogy & Deep Dive
 
-To fully understand how this tool bypasses censorship, let's visualize it as a **Secure Postal Service**.
-
-## The Roles 🎭
-
-*   **You (Client)**: The sender of a letter. You want to send a message to **YouTube**.
-*   **The Firewall (The Censor)**: A strict inspector at the local post office who reads the "To:" address on every envelope. If he sees "YouTube", he burns the letter.
-*   **Cloudflare Worker (The Hub)**: A massive, trusted international logistics hub.
-*   **UUID (The Secret Stamp)**: A special, invisible stamp on your envelope that proves you are a verified customer.
-*   **ProxyIP (The Courier)**: A delivery driver who takes the package from the Hub to the final destination.
+This document explains CFnew using a simple analogy and then maps that analogy to real components.
 
 ---
 
-## The Process 🔄
+## The Secure Mailroom Analogy
 
-### 1. The Packaging (TLS & Encryption) ✉️
-You write a letter to YouTube. But you can't send it directly.
-*   **Encryption**: First, you write the letter in a secret code (Cipher) that only the Hub can read.
-*   **The Outer Envelope**: You put the letter inside an envelope.
-*   **The Address**: You write **"To: Cloudflare Hub"** on the envelope. You **do not** write "YouTube".
-*   **The Secret Stamp (UUID)**: You stamp the back with your UUID.
+Imagine you are sending letters in a country where mail is heavily inspected.
 
-### 2. Passing the Censor (Transmission) 👮‍♂️
-You drop the letter in the mailbox.
-*   The **Inspector (Firewall)** looks at the envelope.
-*   He sees "To: Cloudflare". Cloudflare is a legitimate business used by banks and shops.
-*   He cannot see inside (Encryption).
-*   He lets it pass.
+### 1) The Disguise (Cloudflare as a Safe Address)
+- You want to send a letter to a blocked site.
+- Instead of writing the blocked address, you write **Cloudflare** on the envelope.
+- Inspectors see “Cloudflare” and let it pass.
 
-### 3. At the Hub (The Worker) 🏭
-The letter arrives at the Cloudflare Worker.
-*   **Verification**: The Worker checks the **UUID stamp**.
-    *   *Wrong stamp?* The letter is shredded (Connection Closed).
-    *   *Valid stamp?* The Worker opens the envelope.
-*   **Decryption**: The Worker decodes the message and sees: *"Please fetch this video from YouTube."*
+### 2) The Invisible Stamp (UUID)
+- On the back of the envelope, you add a special invisible stamp (your UUID).
+- When the letter reaches the Cloudflare mailroom (Worker), it checks the stamp:
+  - **No stamp** → it looks like normal web traffic, so it gets a normal website.
+  - **Valid stamp** → it is treated as proxy traffic.
 
-### 4. The Last Mile (Routing) 🚚
-Now the Worker needs to get the video from YouTube.
-*   **Method A (Direct)**: The Worker goes to YouTube directly.
-    *   *Risk*: YouTube sees the Worker's uniform (Cloudflare IP). Some sites (like Netflix) don't like this.
-*   **Method B (ProxyIP)**: The Worker hands the request to a freelance courier (**ProxyIP**).
-    *   The courier goes to YouTube. YouTube sees a normal residential person (Residential IP).
-    *   The courier gets the video and brings it back to the Worker.
+### 3) The Trusted Courier (ProxyIP)
+- Sometimes inspectors target the real return address.
+- You can route through a trusted courier (ProxyIP) so the true origin is hidden.
 
-### 5. The Return Trip ↩️
-The Worker puts the video tape in a new envelope, writes "From: Cloudflare", and sends it back to you. The Inspector sees a package from Cloudflare and lets it through.
+### 4) The Sealed Inner Envelope (ECH)
+- ECH encrypts the “inner label” (SNI).
+- This makes it harder for inspectors to see which service you really want.
 
 ---
 
-## Advanced Evasion Techniques 🥷
+## Mapping the Analogy to CFnew
 
-### Encrypted Client Hello (ECH) - The "Double Envelope"
-Usually, even with TLS, the "To:" address (SNI) is visible during the first handshake.
-*   **Without ECH**: You say "Hello Cloudflare!" loudly. The Inspector hears it.
-*   **With ECH**: You put the *entire* envelope inside a bigger, opaque box. The box has **no** label other than "To: The Cloud".
-*   The Inspector doesn't even know which *part* of Cloudflare you are talking to. This is the cutting edge of privacy.
-
-### Fragmentation - The "Shredder"
-Instead of sending the letter in one piece, you cut it into 10 tiny strips and mail them one by one.
-*   The Inspector sees a strip with "You...". He ignores it.
-*   He sees "...Tube". He ignores it.
-*   The Worker receives all strips, tapes them together, and reads "YouTube".
-
-### Hysteria / TUIC (UDP) - The "Drone Swarm"
-*   **TCP (VLESS)**: Like a truck. It drives on the road, stops at red lights, and signs for delivery. Reliable but can be slow or blocked by roadblocks.
-*   **UDP (Hysteria)**: Like a swarm of drones. They fly over traffic, don't wait for signatures, and if one crashes, the others keep going. Much faster for gaming and unstable networks.
-
-### Multiplexing (Mux) - The "Bus Lane" 🚌
-Imagine if every letter needed its own truck. That would be slow and wasteful.
-*   **Standard Connection**: One truck per letter.
-*   **Multiplexing**: A giant bus. You put 50 letters from different people (tabs in your browser) into one bus. The bus drives through the checkpoint once. The Inspector only has to check one vehicle, making it faster and less suspicious than a convoy of 50 trucks.
+| Analogy | CFnew Component |
+|---|---|
+| Letter | Client traffic |
+| Cloudflare address | Worker domain |
+| Invisible stamp | UUID (`u`) |
+| Mailroom clerk | Worker script |
+| Trusted courier | ProxyIP (`p`) |
+| Sealed inner envelope | ECH (DoH + `ech`) |
 
 ---
 
-## Why Blockers Fail: The "Too Big to Fail" Problem 🏦
+## Why It Works Against Censorship
 
-You might ask: *"Why doesn't the Inspector just ban Cloudflare entirely?"*
+- The network only sees standard HTTPS to Cloudflare.
+- UUID is checked inside the Worker and never exposed to the censor.
+- ProxyIP masks the Worker’s real outbound IP.
+- ECH makes SNI-based filtering harder.
 
-### 1. Collateral Damage 💥
-Cloudflare hosts millions of websites—banks, hospitals, schools, and government portals.
-If the Inspector bans the "Cloudflare Hub" address, he also bans access to all those legitimate services. It would be like closing the entire national highway system just to stop one smuggler. The economy would collapse.
+---
 
-### 2. HTTPS & TLS 1.3 🔒
-Modern encryption is so good that the Inspector strictly cannot see inside the envelope. He knows the weight (size) and the timing, but he cannot read the content.
-*   **Obfuscation**: We make the "weight" and "timing" look random or identical to normal browsing (like watching a cat video), so he has no metadata to flag.
+## Practical Notes
+
+- UUID is your master key. If leaked, rotate it immediately.
+- Custom path (`d`) is like using a secret mailbox instead of a public one.
+- KV storage is the worker’s “filing cabinet” for your dashboard settings.
+
+---
+
+If you want the technical layer, see `DNS_ENCODING.md` for DoH/ECH details.

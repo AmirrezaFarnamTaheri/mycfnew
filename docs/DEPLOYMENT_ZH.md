@@ -1,127 +1,139 @@
-# 配置指南 (Deployment Guide) 🔧
+# 部署指南
 
-本指南提供部署 Cloudflare Worker VLESS Proxy & DoH Ultimate 脚本的分步说明。
-
----
-
-## 方法 1: Cloudflare 仪表盘 (简单) 🖥️
-
-### 1. 创建 Worker
-1.  登录您的 [Cloudflare 仪表盘](https://dash.cloudflare.com/)。
-2.  导航至 **Workers & Pages** > **Create Application (创建应用程序)**。
-3.  点击 **Create Worker (创建 Worker)**。
-4.  为您的 Worker 命名（例如 `vless-proxy`）并点击 **Deploy (部署)**。
-
-### 2. 安装代码
-1.  点击 **Edit Code (编辑代码)**。
-2.  删除 `worker.js` 中的现有内容。
-3.  复制提供的 `worker.js` 的全部内容（来自本仓库）并粘贴到编辑器中。
-4.  点击 **Save and Deploy (保存并部署)**。
-
-### 3. 配置变量 (重要!) 🔑
-1.  返回 Worker 的设置页面。
-2.  进入 **Settings (设置)** > **Variables and Secrets (变量和机密)**。
-3.  添加以下变量：
-
-| 变量名 | 类型 | 描述 | 示例值 |
-| :--- | :--- | :--- | :--- |
-| `u` | **Environment Variable** | **必需。** 您的 VLESS/Trojan 用户 ID (UUID)。 | `de305d54-75b4-431b-adb2-eb6b9e546014` |
-| `p` | Text | *(可选)* 自定义代理 IP/域名。 | `ts.hpc.tw` |
-| `s` | Secret | *(可选)* SOCKS5 代理用于回退。 | `user:pass@1.2.3.4:1080` |
-
-> [!WARNING]
-> **安全风险**: 请勿使用默认 UUID。请使用 `uuidgenerator.net` 或在终端运行 `uuidgen` 生成一个新的。
-
-### 4. 设置 KV 存储 (可选但推荐) 💾
-要使用 UI 中的“保存配置”功能和高级 IP 过滤：
-1.  进入 **Workers & Pages** > **KV**。
-2.  点击 **Create a Namespace (创建命名空间)**。
-    *   *建议*: 命名为 `CONFIG`。
-    *   点击 **Add (添加)**。
-3.  返回您的 Worker > **Settings (设置)** > **Variables and Secrets (变量和机密)**。
-4.  滚动到 **KV Namespace Bindings (KV 命名空间绑定)**。
-5.  点击 **Add Binding (添加绑定)**。
-    *   **Variable name (变量名)**: `C` (必须是大写的 `C`)。
-    *   **KV Namespace**: 选择您刚刚创建的命名空间（例如 `CONFIG`）。
-6.  点击 **Save and Deploy (保存并部署)**。
-
-### 5. 访问 UI 🌐
-使用您的 UUID 访问 Worker 的 URL：
-`https://<your-worker-name>.<your-subdomain>.workers.dev/<YOUR_UUID>`
+本文说明部署方式、环境变量、KV 绑定、更新与回滚等内容。
 
 ---
 
-## 方法 2: Wrangler CLI (高级) 💻
+## 1) 控制台部署（推荐）
 
-供喜欢命令行的开发者使用。
+### 1.1 创建 Worker
+1. Dashboard → **Workers & Pages** → **Create Application** → **Create Worker**
+2. 随机命名
+3. 点击 **Deploy**
 
-1.  **安装 Wrangler**:
-    ```bash
-    npm install -g wrangler
-    ```
-
-2.  **登录**:
-    ```bash
-    wrangler login
-    ```
-
-3.  **部署**:
-    在项目目录下运行此命令：
-    ```bash
-    wrangler deploy worker.js --name my-proxy-worker
-    ```
-
-4.  **设置密钥 (Secrets)**:
-    ```bash
-    wrangler secret put u
-    # 提示时输入您的 UUID
-    ```
+### 1.2 粘贴代码
+1. 点击 **Edit Code**
+2. 用 `worker.js`（或 `worker_obfuscated.js`）替换默认内容
+3. **Save and Deploy**
 
 ---
 
-## 自定义域名设置 🔗
+## 2) 配置环境变量
 
-要使用自定义域名（如 `proxy.yourdomain.com`）而不是 `workers.dev`：
+Settings → Variables and Secrets：
 
-1.  将您的域名添加到 Cloudflare。
-2.  进入您的 Worker > **Settings (设置)** > **Triggers (触发器)**。
-3.  点击 **Add Custom Domain (添加自定义域名)**。
-4.  输入您想要的子域名（例如 `vpn.example.com`）。
-5.  Cloudflare 将自动处理 DNS 记录和 SSL 证书。
+- `u`：**必需**（UUID）
+- `d`：可选，自定义路径
+- `p`：可选，ProxyIP
+- `s`：可选，SOCKS5
+
+修改后点击 **Deploy**。
+
+### 2.1 完整变量参考
+
+| 变量 | 作用 | 示例 |
+|---|---|---|
+| `u` | UUID（密钥） | `8485...5823` |
+| `d` | 自定义面板路径 | `/secret-panel` |
+| `p` | ProxyIP | `1.2.3.4:443` |
+| `s` | SOCKS5 上游 | `user:pass@host:port` |
+| `wk` | 手动区域 | `US` / `SG` / `JP` |
+| `yx` | 优选 IP 列表 | `1.1.1.1:443#HK,...` |
+| `yxURL` | 优选 IP 来源 | `https://example.com/ips.txt` |
+| `rm` | 区域匹配 | `no` 关闭 |
+| `qj` | 降级策略 | `no` 开启（直连 → SOCKS5 → 备用） |
+| `dkby` | 仅 TLS 节点 | `yes` 开启 |
+| `yxby` | 禁用优选 | `yes` 开启 |
+| `ae` | 允许 API | `yes` 开启 |
+| `ech` | 启用 ECH | `yes` 开启 |
+| `customDNS` | ECH 的 DoH | `https://dns.example/dns-query` |
+| `customECHDomain` | ECH 域名 | `cloudflare-ech.com` |
+| `tp` | Trojan 密码 | `custom-pass` |
+| `homepage` | 伪装主页 | `https://example.com` |
+| `scu` | 订阅转换 | `https://url.v1.mk/sub` |
+| `ev` | 启用 VLESS | `yes` / `no` |
+| `et` | 启用 Trojan | `yes` / `no` |
+| `ex` | 启用 xhttp | `yes` / `no` |
+| `evm` | VMess（仅链接） | `yes` / `no` |
+| `ess` | Shadowsocks（仅链接） | `yes` / `no` |
+| `etu` | TUIC（仅链接） | `yes` / `no` |
+| `ehy` | Hysteria2（仅链接） | `yes` / `no` |
+| `eg` | VLESS gRPC（仅链接） | `yes` / `no` |
+| `epd` | 优选域名 | `yes` / `no` |
+| `epi` | 优选 IP | `yes` / `no` |
+| `egi` | GitHub 默认优选 | `yes` / `no` |
+| `edp` | 多端口生成 | `yes` / `no` |
+| `ipv4` | IPv4 过滤 | `yes` / `no` |
+| `ipv6` | IPv6 过滤 | `yes` / `no` |
+| `ispMobile` | 运营商过滤：移动 | `yes` / `no` |
+| `ispUnicom` | 运营商过滤：联通 | `yes` / `no` |
+| `ispTelecom` | 运营商过滤：电信 | `yes` / `no` |
+
+### 2.2 Dashboard 与环境变量优先级
+
+- 环境变量为默认值。
+- Dashboard 保存到 **KV** 并覆盖默认值。
+- Dashboard 的 **Reset** 会清空 KV，回退到环境变量。
 
 ---
 
-## 优化：寻找 ProxyIP (优选 IP) ⚡
+## 3) KV 绑定（面板必须）
 
-如果默认连接速度慢或被封锁，您需要一个“干净 IP” (ProxyIP)。
-这是一个 Cloudflare 信任但未被您的 ISP 封锁的 IP 地址。
+1. **Workers & Pages** → **KV** → **Create Namespace**
+2. 在 Worker 中绑定：
+   - 变量名：`C`
+   - 选择 KV 命名空间
+3. **Save and Deploy**
 
-1.  **它是什么？**: 您的 Worker 用来中转流量的后端 IP 地址。
-2.  **如何找到？**:
-    *   在 GitHub 或 Telegram 上搜索 "Cloudflare clean IP" 或 "优选IP"。
-    *   使用 `CloudflareSpeedTest` 等工具。
-3.  **如何使用？**:
-    *   在您的 Worker 设置中将 `p` 变量设置为该 IP 地址（例如 `104.16.x.x` 或 `domain.com`）。
+> 不绑定 KV，面板无法保存配置。
 
 ---
 
-## 故障排除 🛠️
+## 4) Wrangler CLI（可选）
 
-| 错误代码 | 含义 | 解决方案 |
-| :--- | :--- | :--- |
-| **1101** | Worker 异常 | 代码崩溃。检查您是否错误地修改了 `worker.js`。检查日志。 |
-| **1033** | 隧道错误 | Cloudflare Tunnel 失败。通常是网络问题或错误的 ProxyIP (`p`)。尝试移除 `p`。 |
-| **522** | 连接超时 | Worker 无法到达目的地。目的地可能封锁了 Cloudflare。 |
-| **UUID Invalid** | 认证失败 | 确保 URL 中的 UUID 与 `u` 变量完全匹配。 |
-| **KV Error** | 存储缺失 | 您没有绑定 KV 命名空间 `C`。见方法 1 中的步骤 4。 |
+1. 安装：`npm i -g wrangler`
+2. 登录：`wrangler login`
+3. 发布：`wrangler publish`
+4. 设置变量：`wrangler secret put u`
 
-**常见修复:**
-*   **"我打不开 Google":** 您的 ProxyIP 可能坏了。清空 `p` 变量来测试。
-*   **"速度很慢":** 您的 ISP 正在对 Cloudflare 限速。寻找更好的 ProxyIP 或使用自定义域名。
+KV 绑定请在 `wrangler.toml` 中配置。
 
 ---
 
-**致谢**:
--   原始 VLESS 脚本作者 `3Kmfi6HP`.
--   DoH Proxy 逻辑作者 `Hossein Pira`.
--   UI & Integrations by `Tehran Network` & Contributors.
+## 5) 自定义域名（可选）
+
+1. 给 Worker 添加自定义域名
+2. 完成 DNS 验证
+3. 用新域名更新客户端链接
+
+---
+
+## 6) 更新与回滚
+
+- 替换 `worker.js` 后重新部署
+- KV 会保留
+
+**回滚**：保留旧版本文件，必要时重新部署即可。
+
+---
+
+## 7) 日志与调试
+
+- Worker 日志查看服务端错误
+- 面板内调试控制台查看 JS 错误
+
+---
+
+## 8) 常见问题
+
+**Error 1101**：通常是代码错误或绑定缺失
+
+**KV 未配置**：绑定名必须是 `C`
+
+**UUID 无效**：变量名是 `u`
+
+---
+
+更多细节请查看 Walkthrough。
+
+完整变量与 API 参考：`docs/REFERENCE_ZH.md`。

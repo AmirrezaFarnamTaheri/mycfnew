@@ -1,169 +1,200 @@
-# 终极新手保姆级教程 (Zero-to-Hero) 🚀
+# 从零到一完整上手指南 🚀
 
-本综合指南将带你从零开始，在 Cloudflare Workers 上部署一个功能齐全、抗封锁的代理服务。
-
----
-
-## 第一阶段：准备工作 🛠️
-
-在写代码之前，我们需要先把工具准备好。
-
-### 1.1. 注册 Cloudflare 账号
-1.  前往 [dash.cloudflare.com](https://dash.cloudflare.com/sign-up)。
-2.  注册一个免费账号。
-3.  验证你的电子邮箱。
-
-### 1.2. 生成 UUID (你的密钥)
-UUID 就像你的密码一样。你需要一个独一无二的 UUID。
-*   **方法 A (在线):** 访问 [uuidgenerator.net](https://www.uuidgenerator.net/) 并复制一个 Version 4 UUID。
-*   **方法 B (命令行):** 打开终端并运行 `uuidgen`。
-*   *UUID 示例:* `84852332-6229-4467-935e-6386566d5823` (请**不要**使用这个！)
+本指南从零开始，逐步带你完成 CFnew 的部署，并在每一步提供验证方法。
 
 ---
 
-## 第二阶段：部署 ☁️
+## 目录
 
-我们将部署 "Worker" 脚本，它充当服务器的角色。
-
-### 2.1. 创建 Worker
-1.  登录 Cloudflare 仪表盘。
-2.  在左侧侧边栏，点击 **Workers & Pages (Workers 和 Pages)**。
-3.  点击蓝色的 **Create Application (创建应用程序)** 按钮。
-4.  点击 **Create Worker (创建 Worker)**。
-5.  给它起个随机的名字（例如 `azure-sky-proxy`）以避免被探测。
-6.  点击 **Deploy (部署)**。
-
-### 2.2. 安装代码
-1.  点击 **Edit Code (编辑代码)**。
-2.  你会看到一个名为 `worker.js` 的文件。**删除里面的所有内容。**
-3.  复制本仓库中 `worker.js` 文件的全部代码。
-4.  粘贴到 Cloudflare 编辑器中。
-5.  点击右上角的 **Save and Deploy (保存并部署)**。
-
-### 2.3. 配置 UUID
-1.  回到 Worker 的概览页面（点击左上角的返回箭头 `<`）。
-2.  前往 **Settings (设置)** -> **Variables and Secrets (变量和机密)**。
-3.  点击 "Environment Variables (环境变量)" 下的 **Add variable (添加变量)**。
-    *   **Variable name (变量名)**: `u`
-    *   **Value (值)**: 粘贴你在 1.2 步生成的 UUID。
-4.  点击 **Deploy (部署)**（底部或顶部）。
-
-### 2.4. 设置 KV 存储 (仪表盘必需)
-仪表盘需要一个地方来保存你的设置。
-1.  在主侧边栏中，前往 **Workers & Pages** -> **KV**。
-2.  点击 **Create a Namespace (创建命名空间)**。
-    *   Name (名称): `CONFIG`
-    *   点击 **Add (添加)**。
-3.  回到你的 Worker -> **Settings (设置)** -> **Variables and Secrets (变量和机密)**。
-4.  向下滚动到 **KV Namespace Bindings (KV 命名空间绑定)**。
-5.  点击 **Add binding (添加绑定)**。
-    *   **Variable name (变量名)**: `C` (必须是大写的 `C`)。
-    *   **KV Namespace (KV 命名空间)**: 选择 `CONFIG`。
-6.  点击 **Save and Deploy (保存并部署)**。
+1. 准备工作
+2. 生成 UUID
+3. 部署 Worker
+4. 配置变量和 KV
+5. 验证访问
+6. 使用面板
+7. 连接客户端
+8. 进阶选项
+9. 安全建议
+10. 排查问题
 
 ---
 
-## 第三阶段：验证与仪表盘 🖥️
+## 1) 准备工作
 
-1.  找到你的 Worker URL（例如 `https://azure-sky-proxy.username.workers.dev`）。
-2.  在 URL 后面加上你的 UUID：
-    `https://azure-sky-proxy.username.workers.dev/84852332-6229-4467-935e-6386566d5823`
-3.  在浏览器中访问这个链接。
-4.  你应该能看到一个 **黑客帝国风格的终端** 界面。
-5.  它应该显示 "连接成功！" 并加载仪表盘。
+### 1.1 Cloudflare 账号
+1. 打开 https://dash.cloudflare.com/sign-up
+2. 注册账号并完成邮箱验证
 
-**故障排除:**
-*   *404 Not Found*: 你忘了在 URL 后面加 UUID。
-*   *Error 1101*: 代码问题。检查日志。
-*   *KV Error*: 你错过了步骤 2.4。
+### 1.2 准备内容
+- 一台可访问 Cloudflare 的设备
+- 一个 UUID（下一步生成）
+- 10–15 分钟的时间
 
 ---
 
-## 第四阶段：客户端配置 📱
+## 2) 生成 UUID（你的密钥）
 
-现在我们将你的设备连接到 Worker。
+UUID 就是你的密码，务必保密。
 
-### 4.1. 获取订阅链接
-1.  在仪表盘上，找到 **[ 快速订阅 ]** 或 **[ 复制链接 ]** 按钮。
-2.  如果你想要特定的设置（如“延迟优选”），请先在仪表盘中配置好，然后再复制链接。
+- **在线**：https://www.uuidgenerator.net/（选择 Version 4）
+- **命令行**：运行 `uuidgen`
 
-### 4.2. Android (v2rayNG)
-1.  从 Play Store 或 GitHub 安装 **v2rayNG**。
-2.  打开应用。
-3.  点击左上角菜单 (☰) -> **订阅设置**。
-4.  点击右上角 `+`。
-    *   **备注**: `Cloudflare Worker`
-    *   **地址(url)**: 粘贴你的链接。
-5.  保存。
-6.  点击右上角三个点 (⋮) -> **更新订阅**。
-7.  选择一个节点（例如 `VLESS-TLS-443`）。
-8.  点击右下角的 V 图标连接。
-
-### 4.3. iOS (Shadowrocket / 小火箭)
-1.  打开 **Shadowrocket**。
-2.  点击右上角 `+` -> 类型选择: **Subscribe (订阅)**。
-3.  **URL**: 粘贴你的链接。
-4.  点击 **完成**。
-5.  打开开关进行连接。
-
-### 4.4. Windows (v2rayN)
-1.  下载 **v2rayN**。
-2.  **订阅分组** -> **添加订阅地址**。
-3.  粘贴 URL。
-4.  **更新订阅**。
-5.  右键点击一个节点 -> **设为活动服务器**。
-6.  系统代理 -> **自动配置系统代理**。
+示例（不要使用）：
+`84852332-6229-4467-935e-6386566d5823`
 
 ---
 
-## 第五阶段：高级优化 ⚡
+## 3) 部署 Worker
 
-### 5.1. 解决 "Cloudflare Loop" (ProxyIP)
-如果你无法访问某些网站（如 Google 提示异常），你需要一个 ProxyIP。
-1.  前往 仪表盘 -> **配置管理**。
-2.  找到 **ProxyIP (p)**。
-3.  输入一个干净的 IP 或域名（例如 `proxyip.example.com`）。
-    *   *注*: 脚本内置了备用 IP，但使用自定义的效果更好。
-4.  点击 **保存配置**。
+### 3.1 创建 Worker
+1. Cloudflare 控制台 → **Workers & Pages**
+2. 点击 **Create Application** → **Create Worker**
+3. 随机起个名字
+4. 点击 **Deploy**
 
-### 5.2. 启用 ECH (抗封锁)
-1.  在 仪表盘 -> **协议选择**。
-2.  勾选 **启用 ECH**。
-3.  点击 **保存协议配置**。
-4.  在客户端更新订阅。
-    *   *效果*: 这会加密 SNI，使防火墙更难发现你在连接 Cloudflare。
-
-### 5.3. 客户端优化 (v2rayNG / Shadowrocket)
-有时候瓶颈在于你的客户端设置。
-*   **多路复用 (Mux)**: 在设置中启用此功能以减少握手延迟。
-*   **分片 (Fragment)**: 如果你的连接被限速，启用 TLS 分片（在客户端中通常称为 "Fragment" 或 "Trick"）。
-    *   *Packets (包数)*: `100-200`
-    *   *Length (长度)*: `10-20`
-    *   *Interval (间隔)*: `10-20`
-*   **允许不安全 (Allow Insecure)**: **仅**用于调试。永远不要永久开启它，因为这会让你暴露在中间人攻击之下。
+### 3.2 粘贴代码
+1. 点击 **Edit Code**
+2. 删除默认代码
+3. 粘贴仓库里的 `worker.js`
+4. 点击 **Save and Deploy**
 
 ---
 
-## 第六阶段：安全最佳实践 🛡️
+## 4) 配置变量与 KV
 
-### 6.1. 保护你的仪表盘
-你的仪表盘 URL 包含你的 UUID。任何拥有此链接的人都可以使用你的代理并更改你的设置。
-1.  **不要分享** 包含完整 URL 的截图。
-2.  **使用 Cloudflare Access**: 设置 Zero Trust 策略，要求在访问仪表盘路径之前登录（邮件验证码）。
+### 4.1 设置 UUID（必需）
+1. Worker → **Settings** → **Variables and Secrets**
+2. 添加环境变量：
+   - 名称：`u`
+   - 值：你的 UUID
+3. 点击 **Deploy**
 
-### 6.2. 定期轮换 UUID
-如果你怀疑你的 UUID 泄露了：
-1.  生成一个新的 UUID。
-2.  在 Cloudflare 中更新 `u` 变量。
-3.  更新你的客户端订阅。
-4.  旧的 UUID 将立即失效。
+> 注意：变量名是 **`u`**，不是 `uuid`。
+
+### 4.2 绑定 KV（面板配置必需）
+1. 侧边栏 → **Workers & Pages** → **KV**
+2. **Create Namespace**（如 `CONFIG`）
+3. 返回 Worker → **Settings** → **Variables and Secrets**
+4. **KV Namespace Bindings** → **Add binding**：
+   - 名称：`C`
+   - 命名空间：`CONFIG`
+5. **Save and Deploy**
 
 ---
 
-## 术语表 📖
+## 5) 验证访问（非常重要）
 
-*   **UUID**: 用户 ID。相当于密码。
-*   **VLESS**: 一种轻量级的代理协议。
-*   **KV**: 键值存储。Cloudflare 用于保存设置的数据库。
-*   **Sub/Subscription (订阅)**: 一个包含所有服务器详细信息的链接。
-*   **ProxyIP**: 一个中间服务器，用于向目标网站隐藏你的流量来源。
+打开以下地址检查：
+
+1. **根路径**
+   - `https://<worker>.workers.dev/`
+   - 应显示终端页面
+
+2. **面板**
+   - `https://<worker>.workers.dev/<UUID>`
+   - 应显示面板
+
+3. **区域接口**
+   - `https://<worker>.workers.dev/<UUID>/region`
+   - 返回 JSON
+
+4. **订阅接口**
+   - `https://<worker>.workers.dev/<UUID>/sub`
+   - 返回订阅文本
+
+---
+
+## 6) 使用面板
+
+- **System Status**：检测区域、当前 IP
+- **Config Management**：保存/加载/重置配置
+- **Latency Test**：测速、城市筛选、写入优选
+- **Debug Console**：查看 JS 错误
+
+### 6.5 面板字段细化说明
+- **指定区域 (wk)**：固定 Worker 区域用于选路。
+- **协议选择**：VLESS/Trojan/xhttp + VMess/SS/TUIC/Hysteria2/gRPC（仅链接）。
+- **ECH 设置**：启用 ECH + 自定义 DoH + 自定义域名。
+- **自定义路径 (d)**：面板迁移到隐藏路径。
+- **ProxyIP (p)**：隐藏出口或绕过 Cloudflare loop。
+- **优选 IP（yx/yxURL）**：手动输入或从 URL 获取。
+- **Latency Test**：批量测速、城市筛选、覆盖/追加到 `yx`。
+- **高级控制**：API 管理、区域匹配、降级策略、TLS-only、禁用优选。
+- **IP/运营商过滤**：限制优选列表解析范围。
+
+---
+
+## 7) 连接客户端
+
+### 7.1 Android（v2rayNG）
+1. 安装 v2rayNG
+2. 订阅 → 添加
+3. 粘贴 `/sub` 链接
+4. 更新订阅并连接
+
+### 7.2 iOS（Shadowrocket）
+1. 添加订阅链接
+2. 更新并连接
+
+### 7.3 Windows（v2rayN）
+1. 添加订阅链接
+2. 更新并设为活动节点
+
+### 7.4 macOS / Linux（Clash / sing-box）
+- 使用订阅功能导入链接
+
+---
+
+## 8) 进阶选项
+
+### 8.1 自定义路径
+- 设置 `d=/你的秘密路径`
+- UUID 访问会被禁用
+
+### 8.2 ProxyIP
+- 用于解决 Cloudflare loop 或被封锁
+- 示例：`1.2.3.4:443`
+
+### 8.3 启用 ECH
+- 面板勾选 ECH
+- 客户端更新订阅后生效
+
+### 8.4 伪装主页
+- 设置 `homepage` 为正常网页
+
+### 8.5 SOCKS5 上游
+- 设置 `s=user:pass@host:port`
+
+---
+
+## 9) 安全建议
+
+- 不要泄露 UUID
+- 推荐设置自定义路径 `d`
+- 面板可用 Cloudflare Access 保护
+- UUID 泄露后立刻更换
+
+---
+
+## 10) 排查问题
+
+**面板一直显示 Checking...**
+- 打开调试控制台
+- 检查 `/region` 和 `/sub`
+
+**UUID 无效**
+- 确认变量名是 `u`
+- 删除空格
+
+**KV 未配置**
+- 创建 KV 并绑定 `C`
+- 重新部署
+
+**订阅为空**
+- 直接访问 `/<UUID>/sub`
+
+---
+
+至此，你应该拥有完整可用的 CFnew 部署。
+
+完整参考（全部变量、API 与格式）：`docs/REFERENCE_ZH.md`。

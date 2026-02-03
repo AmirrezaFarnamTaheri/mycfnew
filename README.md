@@ -6,106 +6,130 @@
 
 ---
 
-## 🛡️ Introduction
+## TL;DR (Quick Start)
 
-**CFnew** is a state-of-the-art, all-in-one proxy solution running on Cloudflare Workers. It is designed to be **unblockable**, **fast**, and **easy to manage**.
-
-### Why CFnew?
-Unlike traditional VPNs that are easily detected and blocked, CFnew leverages the massive infrastructure of Cloudflare to hide your traffic. To the censor, your traffic looks exactly like normal web browsing to a legitimate business website.
-
-*   **Serverless**: No VPS required. Runs on Cloudflare's global edge network (300+ cities).
-*   **No-Code Management**: Manage everything (UUID, IPs, Protocols) via a beautiful "Matrix-style" Web Dashboard.
-*   **Polymorphic Nature**: Acts as VLESS, Trojan, and a normal website simultaneously. The server intelligently detects the type of request and responds accordingly—serving a real webpage to unauthorized users and a proxy connection to you.
-*   **Smart Routing**: Automatically selects the best route based on your region to minimize latency.
-*   **Expanded Regions**: Supports region detection for US, SG, JP, KR, DE, SE, NL, FI, GB, FR, CA, AU, HK, TW, IT, ES, RU, UA, BR, IN, ZA, TR, AR, NG, EG, VN, ID.
-*   **Legacy IPs**: Includes a robust list of Legacy IPs (Google, Microsoft, Apple, etc.) to bypass restrictions in sensitive regions like Iran where standard IPs might be throttled.
-
-> **Note:** The final `worker.js` file is minified/obscured for performance and compactness.
+1. Deploy `worker.js` (or `worker_obfuscated.js`) to a new Cloudflare Worker.
+2. Set environment variable `u` = your UUID.
+3. Bind KV namespace as variable `C`.
+4. Open `https://<your-worker>.workers.dev/<YOUR_UUID>`.
+5. Use the dashboard to generate subscription links.
 
 ---
 
-## 🧠 The Mailman Analogy: How it Works
+## What is CFnew?
 
-To understand how this tool bypasses censorship, imagine a **Secure Postal Service**.
+**CFnew** is a Cloudflare Workers-based proxy system that disguises your traffic as normal web browsing. It provides a built-in, Matrix-style dashboard to manage routing, protocol generation, and performance tuning without running any servers.
 
-### 1. The Disguise 🎭
-You want to send a letter to **YouTube** (a blocked location).
-Instead of mailing it directly, you put it in an envelope addressed to **Cloudflare** (a allowed business).
-The Inspector (Firewall) sees the address "Cloudflare" and lets it pass.
-
-### 2. The Verification 🔐
-On the back of the envelope, you place a special, invisible stamp called a **UUID**.
-When the letter arrives at Cloudflare, the Worker checks this stamp.
-*   **No stamp?** The letter is thrown away.
-*   **Valid stamp?** The Worker opens the envelope, reads your actual request ("Go to YouTube"), and fetches the data for you.
-
-### 3. The Delivery 🚚
-The Worker gets the data from YouTube and sends it back to you in a Cloudflare envelope.
-To the outside world, you are just talking to Cloudflare.
-
-*   **Read the full [Analogy & Deep Dive](docs/ANALOGY.md)** for details on ECH, Fragmentation, and ProxyIPs.
+**Why it is different:**
+- **Serverless**: No VPS required; it runs on Cloudflare’s edge network.
+- **Polymorphic**: Behaves as a normal website to strangers but turns into a proxy endpoint for authorized users.
+- **Self-managed**: Update settings from the dashboard, stored in KV.
+- **Hard to block**: Traffic looks like regular HTTPS to Cloudflare.
 
 ---
 
-## 🚀 Quick Start
+## How it Works (Short Version)
 
-### 1. Deployment (New Install)
-1.  Copy the code from `worker.js`.
-2.  Paste it into a new Cloudflare Worker.
-3.  Deploy.
-
-### 2. Configuration
-1.  Go to Worker Settings -> Variables.
-2.  Add `u` = `YOUR_UUID` (Generate one [here](https://www.uuidgenerator.net/)).
-3.  Add KV Namespace binding named `C` (Required for dashboard settings).
-
-### 3. Updating Existing Worker
-1.  Simply replace the code in your existing Worker with the content of `worker.js`.
-2.  Save and Deploy. Your settings in KV will be preserved.
-
-> [!WARNING]
-> **Security Warning**
-> 1. **Protect your UUID**: The dashboard URL contains your secret UUID. Do not share it.
->    - Recommended: protect the dashboard path with Cloudflare Access (or at least an IP allowlist / geo restriction).
->    - Stronger: require a second factor (e.g., a secret header or `?token=`) and reject requests without it.
-> 2. **DoH abuse risk**: If you expose the `/dns-query` endpoint publicly, it can be abused as an open resolver. Add access controls if you enable it.
-
-### 3. Usage
-Visit: `https://your-worker.workers.dev/<YOUR_UUID>`
-
-**[👉 Full Step-by-Step Walkthrough](docs/WALKTHROUGH.md)**
+- **`/` (root)** shows a terminal-style landing page.
+- **`/<UUID>`** opens the dashboard (valid UUID required).
+- **`/<UUID>/sub`** returns a subscription feed for clients.
+- **`/<CUSTOM_PATH>`** can replace UUID access when you set `d`.
 
 ---
 
-## 🛠️ Features & Configuration
+## Features
 
-### Supported Protocols
-*   **VLESS** (Native, WebSocket, TLS) - *Recommended*
-*   **Trojan** (Native, TLS) - *High Security*
-*   **Shadowsocks / VMess** (Link Generation Only)
-*   **Hysteria 2 / TUIC** (Link Generation Only - requires external backend)
-
-### Key Variables
-
-| Variable | Description |
-| :--- | :--- |
-| `u` | **UUID**. Your secret password. |
-| `p` | **ProxyIP**. The backend IP to relay traffic (e.g., `ip.example.com`). |
-| `d` | **Hidden Path**. Access dashboard via `/secret-path` instead of UUID. |
-| `s` | **SOCKS5**. Upstream proxy (`user:pass@host:port`). |
-
-*Full configuration guide available in the Dashboard.*
+- Multi-protocol generation: **VLESS**, **Trojan**, **VMess**, **Shadowsocks**, **Hysteria2**, **TUIC**
+- Smart region matching and fallback selection
+- Latency testing and preferred IP (ProxyIP) management
+- Optional ECH support (via DoH)
+- Built-in subscription conversion support
+- Debug console in the UI for error visibility
+- 3 language UI (English / 中文 / فارسی)
 
 ---
 
-## 📚 Documentation
+## Dashboard Map
 
-*   **[Walkthrough](docs/WALKTHROUGH.md)**: Zero to Hero guide.
-*   **[Deployment Guide](docs/DEPLOYMENT.md)**: Technical deployment details and [Troubleshooting](docs/DEPLOYMENT.md#troubleshooting-%EF%B8%8F).
-*   **[Analogy](docs/ANALOGY.md)**: Conceptual explanation of how the proxy works.
-*   **[DNS Encoding](docs/DNS_ENCODING.md)**: Technical guide on DoH DNS query encoding.
+- **System Status**: Worker region, detection method, current IP, region match
+- **Config Management**: Save config to KV, load current config, reset
+- **Latency Test**: Test batches of IPs, filter by city, add to preferred list
+- **Advanced Control**: Protocol toggles, TLS-only mode, downgrade strategy, API control
+- **Links**: One-click subscription links for common clients
 
 ---
 
-## ⚠️ Disclaimer
-This tool is for educational and research purposes only. The developers are not responsible for any misuse.
+## Core Variables (Quick Reference)
+
+| Variable | Purpose | Example |
+|---|---|---|
+| `u` | UUID (your secret password) | `8485...5823` |
+| `d` | Custom path (replaces UUID path) | `/secret-panel` |
+| `p` | ProxyIP (hide real Worker IP) | `1.2.3.4:443` |
+| `s` | SOCKS5 upstream | `user:pass@host:port` |
+| `wk` | Manual Worker region | `US` / `SG` / `JP` |
+| `yx` | Preferred IP list | `1.1.1.1:443#HK,...` |
+| `yxURL` | Preferred IP source URL | `https://example.com/ips.txt` |
+| `rm` | Region matching | `no` disables |
+| `qj` | Downgrade flow | `no` enables (Direct → SOCKS5 → Fallback) |
+| `dkby` | TLS-only nodes | `yes` enables |
+| `yxby` | Disable preferred nodes | `yes` disables |
+| `ae` | Allow API management | `yes` enables |
+| `ech` | Enable ECH | `yes` enables |
+| `customDNS` | DoH DNS for ECH | `https://dns.example/dns-query` |
+| `customECHDomain` | ECH domain | `cloudflare-ech.com` |
+| `tp` | Trojan password | `custom-pass` |
+| `homepage` | Fake homepage URL | `https://example.com` |
+| `scu` | Subscription converter | `https://url.v1.mk/sub` |
+
+> The dashboard exposes additional toggles (GitHub defaults, diverse ports, IPv4/IPv6, ISP filters). Full list: `docs/REFERENCE.md`.
+
+---
+
+## Common Flows
+
+### 1) Default UUID Access
+- Keep `d` empty.
+- Access dashboard at `/<UUID>`.
+
+### 2) Custom Path Mode
+- Set `d=/your-secret-path`.
+- UUID access is disabled; use `/<your-secret-path>`.
+
+### 3) Recommended Minimal Setup
+- `u` + KV binding only.
+- Generate subscription and connect.
+
+---
+
+## Troubleshooting (Quick)
+
+- **Stuck on “Checking...”**: Open the debug console; check for `/region` or `/sub` errors.
+- **UUID rejected**: Confirm variable name is `u` (not `uuid`). Remove spaces.
+- **KV errors**: Ensure KV namespace is bound as `C` and redeployed.
+- **No subscription data**: Check `/sub` directly in browser.
+
+---
+
+## Security Checklist
+
+- Do not share your UUID path.
+- Prefer a custom path (`d`) for the dashboard.
+- Use Cloudflare Access or IP allowlist for the dashboard path.
+- Rotate UUID if compromised.
+
+---
+
+## Documentation
+
+- **Walkthrough**: `docs/WALKTHROUGH.md`
+- **Deployment**: `docs/DEPLOYMENT.md`
+- **Analogy**: `docs/ANALOGY.md`
+- **DNS Encoding**: `docs/DNS_ENCODING.md`
+- **Full Reference**: `docs/REFERENCE.md`
+
+---
+
+## Disclaimer
+
+This tool is for educational and research purposes only. The developers are not responsible for misuse.

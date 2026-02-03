@@ -1,3 +1,4 @@
+// @ts-nocheck
     // CFnew - Terminal v2.9.3
     // Version: v2.9.3
     import { connect } from 'cloudflare:sockets';
@@ -348,6 +349,57 @@
         return { address: input, port: null };
     }
 
+    function normalizePathToken(token) {
+        return token ? token.trim().replace(/^\/+|\/+$/g, '') : '';
+    }
+
+    function splitPath(pathname) {
+        return pathname.split('/').filter(Boolean);
+    }
+
+    function pathEndsWithSegments(pathParts, tailParts, caseInsensitive = false) {
+        if (!tailParts.length || tailParts.length > pathParts.length) {
+            return false;
+        }
+
+        for (let i = 1; i <= tailParts.length; i++) {
+            const a = pathParts[pathParts.length - i];
+            const b = tailParts[tailParts.length - i];
+
+            if (caseInsensitive) {
+                if (a.toLowerCase() !== b.toLowerCase()) {
+                    return false;
+                }
+            } else if (a !== b) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    function matchesCustomPath(pathParts, customPath) {
+        const token = normalizePathToken(customPath);
+        if (!token) {
+            return false;
+        }
+
+        return pathEndsWithSegments(pathParts, token.split('/'), false);
+    }
+
+    function extractUuidFromPathParts(pathParts) {
+        if (!pathParts.length) {
+            return null;
+        }
+
+        const last = pathParts[pathParts.length - 1];
+        if (!isValidFormat(last)) {
+            return null;
+        }
+
+        return last.toLowerCase();
+    }
+
     export default {
         async fetch(request, env, ctx) {
             try {
@@ -562,31 +614,28 @@
             if (url.pathname === '/dns-encoding') return serveDNSEncodingExplanation();
 
                 if (url.pathname.includes('/api/config')) {
-                    const pathParts = url.pathname.split('/').filter(p => p);
+                    const pathParts = splitPath(url.pathname);
+                    const apiIndex = pathParts.findIndex(p => p.toLowerCase() === 'api');
 
-                    const apiIndex = pathParts.indexOf('api');
                     if (apiIndex > 0) {
-                        const pathSegments = pathParts.slice(0, apiIndex);
-                        const pathIdentifier = pathSegments.join('/');
+                        const accessParts = pathParts.slice(0, apiIndex);
 
-                    let isValid = false;
-                    if (cp && cp.trim()) {
-
-                        const cleanCustomPath = cp.trim().startsWith('/') ? cp.trim().substring(1) : cp.trim();
-                        isValid = (pathIdentifier === cleanCustomPath);
+                        let isValid = false;
+                        if (cp && cp.trim()) {
+                            isValid = matchesCustomPath(accessParts, cp);
                         } else {
-
-                            isValid = (isValidFormat(pathIdentifier) && pathIdentifier === at);
+                            const user = extractUuidFromPathParts(accessParts);
+                            isValid = !!user && user === at;
                         }
 
                         if (isValid) {
                             return await handleConfigAPI(request);
-                        } else {
-                            return new Response(JSON.stringify({ error: '路径验证失败' }), {
-                                status: 403,
-                                headers: { 'Content-Type': 'application/json' }
-                            });
                         }
+
+                        return new Response(JSON.stringify({ error: '路径验证失败' }), {
+                            status: 403,
+                            headers: { 'Content-Type': 'application/json' }
+                        });
                     }
 
                     return new Response(JSON.stringify({ error: 'Invalid API Path' }), {
@@ -596,31 +645,28 @@
                 }
 
                 if (url.pathname.includes('/api/preferred-ips')) {
-                    const pathParts = url.pathname.split('/').filter(p => p);
+                    const pathParts = splitPath(url.pathname);
+                    const apiIndex = pathParts.findIndex(p => p.toLowerCase() === 'api');
 
-                    const apiIndex = pathParts.indexOf('api');
                     if (apiIndex > 0) {
-                    const pathSegments = pathParts.slice(0, apiIndex);
-                    const pathIdentifier = pathSegments.join('/');
+                        const accessParts = pathParts.slice(0, apiIndex);
 
-                    let isValid = false;
-                    if (cp && cp.trim()) {
-
-                        const cleanCustomPath = cp.trim().startsWith('/') ? cp.trim().substring(1) : cp.trim();
-                        isValid = (pathIdentifier === cleanCustomPath);
-                    } else {
-
-                        isValid = (isValidFormat(pathIdentifier) && pathIdentifier === at);
-                    }
-
-                    if (isValid) {
-                            return await handlePreferredIPsAPI(request);
-                    } else {
-                        return new Response(JSON.stringify({ error: '路径验证失败' }), {
-                                status: 403,
-                                headers: { 'Content-Type': 'application/json' }
-                            });
+                        let isValid = false;
+                        if (cp && cp.trim()) {
+                            isValid = matchesCustomPath(accessParts, cp);
+                        } else {
+                            const user = extractUuidFromPathParts(accessParts);
+                            isValid = !!user && user === at;
                         }
+
+                        if (isValid) {
+                            return await handlePreferredIPsAPI(request);
+                        }
+
+                        return new Response(JSON.stringify({ error: '路径验证失败' }), {
+                            status: 403,
+                            headers: { 'Content-Type': 'application/json' }
+                        });
                     }
 
                     return new Response(JSON.stringify({ error: 'Invalid API Path' }), {
@@ -657,19 +703,17 @@
                 if (request.method === 'GET') {
                     // Handle /{UUID}/region or /{CustomPath}/region
                     if (url.pathname.endsWith('/region')) {
-                        const pathParts = url.pathname.split('/').filter(p => p);
+                        const pathParts = splitPath(url.pathname);
 
-                        if (pathParts.length === 2 && pathParts[1] === 'region') {
-                            const pathIdentifier = pathParts[0];
+                        if (pathParts.length >= 2 && pathParts[pathParts.length - 1].toLowerCase() === 'region') {
+                            const accessParts = pathParts.slice(0, -1);
                             let isValid = false;
 
                             if (cp && cp.trim()) {
-                                // Use custom path
-                                const cleanCustomPath = cp.trim().startsWith('/') ? cp.trim().substring(1) : cp.trim();
-                                isValid = (pathIdentifier === cleanCustomPath);
+                                isValid = matchesCustomPath(accessParts, cp);
                             } else {
-                                // Use UUID path
-                                isValid = (isValidFormat(pathIdentifier) && pathIdentifier === at);
+                                const user = extractUuidFromPathParts(accessParts);
+                                isValid = !!user && user === at;
                             }
 
                             if (isValid) {
@@ -717,19 +761,17 @@
 
                     // Handle /{UUID}/test-api or /{CustomPath}/test-api
                     if (url.pathname.endsWith('/test-api')) {
-                        const pathParts = url.pathname.split('/').filter(p => p);
+                        const pathParts = splitPath(url.pathname);
 
-                        if (pathParts.length === 2 && pathParts[1] === 'test-api') {
-                            const pathIdentifier = pathParts[0];
+                        if (pathParts.length >= 2 && pathParts[pathParts.length - 1].toLowerCase() === 'test-api') {
+                            const accessParts = pathParts.slice(0, -1);
                             let isValid = false;
 
                             if (cp && cp.trim()) {
-                                // Use custom path
-                                const cleanCustomPath = cp.trim().startsWith('/') ? cp.trim().substring(1) : cp.trim();
-                                isValid = (pathIdentifier === cleanCustomPath);
+                                isValid = matchesCustomPath(accessParts, cp);
                             } else {
-                                // Use UUID path
-                                isValid = (isValidFormat(pathIdentifier) && pathIdentifier === at);
+                                const user = extractUuidFromPathParts(accessParts);
+                                isValid = !!user && user === at;
                             }
 
                             if (isValid) {
@@ -820,21 +862,32 @@
                             }
                         }
 
-                        let isFarsi = false;
+                        let lang = 'en';
 
-                        if (langFromCookie === 'fa' || langFromCookie === 'fa-IR') {
-                            isFarsi = true;
-                        } else if (langFromCookie === 'en' || langFromCookie === 'en-US') {
-                            isFarsi = false;
+                        if (langFromCookie) {
+                            if (langFromCookie === 'fa' || langFromCookie === 'fa-IR') {
+                                lang = 'fa';
+                            } else if (langFromCookie === 'zh' || langFromCookie === 'zh-CN' || langFromCookie === 'zh-Hans') {
+                                lang = 'zh';
+                            } else {
+                                lang = 'en';
+                            }
                         } else {
                             // If no Cookie, use browser language detection
                             const acceptLanguage = request.headers.get('Accept-Language') || '';
                             const browserLang = acceptLanguage.split(',')[0].split('-')[0].toLowerCase();
-                            isFarsi = browserLang === 'fa' || acceptLanguage.includes('fa-IR') || acceptLanguage.includes('fa');
+                            if (browserLang === 'fa' || acceptLanguage.includes('fa-IR') || acceptLanguage.includes('fa')) {
+                                lang = 'fa';
+                            } else if (browserLang === 'zh' || acceptLanguage.includes('zh-CN') || acceptLanguage.includes('zh')) {
+                                lang = 'zh';
+                            } else {
+                                lang = 'en';
+                            }
                         }
 
-                            const lang = isFarsi ? 'fa' : 'en-US';
-                            const langAttr = isFarsi ? 'fa-IR' : 'en-US';
+                        const isFarsi = lang === 'fa';
+                        const isZh = lang === 'zh';
+                        const langAttr = isFarsi ? 'fa-IR' : (isZh ? 'zh-CN' : 'en-US');
 
                             const translations = {
                                 en: {
@@ -909,7 +962,7 @@
                     ipSource: 'IP Source:',
                     manualInput: 'Manual Input',
                     cfRandomIP: 'CF Random IP',
-                    urlFetch: 'URL Fetch',
+                    urlFetch: 'Fetch from URL',
                     randomCount: 'Generate Count:',
                     fetchURL: 'Fetch URL:',
                     fetchURLPlaceholder: 'Enter URL of IP list',
@@ -1006,14 +1059,20 @@
                     kvNotEnabled: 'KV Storage Not Configured',
                     kvCheckFailed: 'KV Check Failed: Invalid Response',
                     kvCheckFailedStatus: 'KV Check Failed - Status: ',
-                    kvCheckFailedError: 'KV Check Failed - Error: '
+                    kvCheckFailedError: 'KV Check Failed - Error: ',
+                    debugConsoleTitle: 'Debug Console',
+                    debugShow: 'Show',
+                    debugHide: 'Hide',
+                    debugReady: 'Console ready',
+                    debugUnknownError: 'Unknown error',
+                    debugUnhandledPromise: 'Unhandled promise rejection'
                 },
                                 fa: {
                                     title: 'ترمینال',
                                     terminal: 'ترمینال',
                                     congratulations: 'تبریک می‌گوییم به شما',
-                                    enterU: 'لطفا مقدار متغیر U خود را وارد کنید',
-                                    enterD: 'لطفا مقدار متغیر D خود را وارد کنید',
+                                    enterU: 'لطفاً مقدار متغیر U خود را وارد کنید',
+                                    enterD: 'لطفاً مقدار متغیر D خود را وارد کنید',
                                     command: 'دستور: connect [',
                                     uuid: 'UUID',
                                     path: 'PATH',
@@ -1023,11 +1082,41 @@
                                     invading: 'در حال نفوذ...',
                                     success: 'اتصال موفق! در حال بازگشت نتیجه...',
                                     error: 'خطا: فرمت UUID نامعتبر',
-                                    reenter: 'لطفا UUID معتبر را دوباره وارد کنید'
+                                    reenter: 'لطفاً UUID معتبر را دوباره وارد کنید',
+                                    debugConsoleTitle: 'کنسول اشکال‌زدایی',
+                                    debugShow: 'نمایش',
+                                    debugHide: 'پنهان کردن',
+                                    debugReady: 'کنسول آماده است',
+                                    debugUnknownError: 'خطای ناشناخته',
+                                    debugUnhandledPromise: 'رد Promise بدون مدیریت'
                                 }
                             };
+                            translations.fa = Object.assign({}, translations.en, translations.fa);
+                            translations.zh = Object.assign({}, translations.en, {
+                                title: '终端',
+                                terminal: '终端 v2.9.3',
+                                congratulations: '恭喜，你成功了！',
+                                enterU: '请输入你的 U 变量的值',
+                                enterD: '请输入你的 D 变量的值',
+                                command: '命令：connect [',
+                                uuid: 'UUID',
+                                path: '路径',
+                                inputU: '输入 U 变量内容并回车...',
+                                inputD: '输入 D 变量内容并回车...',
+                                connecting: '连接中...',
+                                invading: '正在连接...',
+                                success: '连接成功！正在返回结果...',
+                                error: '错误：UUID 格式无效',
+                                reenter: '请重新输入有效的 UUID',
+                                debugConsoleTitle: '调试控制台',
+                                debugShow: '展开',
+                                debugHide: '收起',
+                                debugReady: '控制台就绪',
+                                debugUnknownError: '未知错误',
+                                debugUnhandledPromise: '未处理的 Promise 拒绝'
+                            });
 
-                            const t = translations[isFarsi ? 'fa' : 'en'];
+                            const t = translations[lang] || translations.en;
 
                         const terminalHtml = `<!DOCTYPE html>
         <html lang="${langAttr}" dir="${isFarsi ? 'rtl' : 'ltr'}">
@@ -1036,16 +1125,52 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>${t.title}</title>
         <style>
+            @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600&family=Space+Mono:wght@400;700&display=swap');
+            :root {
+                --bg-0: #040806;
+                --bg-1: #071510;
+                --panel: rgba(4, 12, 8, 0.9);
+                --panel-strong: rgba(2, 10, 6, 0.95);
+                --accent: #2cff9a;
+                --accent-2: #13d0ff;
+                --accent-dim: #00aa6a;
+                --text: #d8ffef;
+                --muted: #86d4a5;
+                --danger: #ff5a5a;
+                --glow: 0 0 24px rgba(44, 255, 154, 0.35);
+                --font-sans: "Space Grotesk", "Segoe UI", "Noto Sans", sans-serif;
+                --font-mono: "Space Mono", "Cascadia Mono", "Consolas", "Courier New", monospace;
+            }
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body {
-                font-family: "Courier New", monospace;
-                background: #000; color: #00ff00; min-height: 100vh;
-                overflow-x: hidden; position: relative;
-                display: flex; justify-content: center; align-items: center;
+                font-family: var(--font-mono);
+                background:
+                    radial-gradient(1200px 600px at 15% -10%, rgba(44, 255, 154, 0.16), transparent 60%),
+                    radial-gradient(900px 500px at 90% 120%, rgba(19, 208, 255, 0.12), transparent 60%),
+                    linear-gradient(180deg, var(--bg-0) 0%, var(--bg-1) 100%);
+                color: var(--accent);
+                min-height: 100vh;
+                overflow-x: hidden;
+                position: relative;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+            body::before {
+                content: "";
+                position: fixed;
+                inset: 0;
+                background-image:
+                    linear-gradient(120deg, rgba(44, 255, 154, 0.06), transparent 40%),
+                    repeating-linear-gradient(0deg, rgba(0, 255, 170, 0.05) 0 1px, transparent 1px 3px),
+                    repeating-linear-gradient(90deg, rgba(0, 255, 170, 0.04) 0 1px, transparent 1px 4px);
+                opacity: 0.35;
+                pointer-events: none;
+                z-index: -1;
             }
             .matrix-bg {
                 position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-                background: #000;
+                background: var(--bg-0);
                 z-index: -1;
             }
             @keyframes bg-pulse {
@@ -1094,18 +1219,18 @@
             }
             .terminal {
                 width: 90%; max-width: 800px; height: 500px;
-                background: rgba(0, 0, 0, 0.9);
-                border: 2px solid #00ff00;
-                border-radius: 8px;
-                box-shadow: 0 0 30px rgba(0, 255, 0, 0.5), inset 0 0 20px rgba(0, 255, 0, 0.1);
+                background: var(--panel);
+                border: 1px solid rgba(44, 255, 154, 0.6);
+                border-radius: 14px;
+                box-shadow: var(--glow), inset 0 0 18px rgba(44, 255, 154, 0.08);
                 backdrop-filter: blur(10px);
                 position: relative; z-index: 1;
                 overflow: hidden;
             }
             .terminal-header {
-                background: rgba(0, 20, 0, 0.8);
-                padding: 10px 15px;
-                border-bottom: 1px solid #00ff00;
+                background: var(--panel-strong);
+                padding: 12px 16px;
+                border-bottom: 1px solid rgba(44, 255, 154, 0.35);
                 display: flex; align-items: center;
             }
             .terminal-buttons {
@@ -1118,8 +1243,13 @@
             .terminal-button:nth-child(2) { background: #ffbd2e; }
             .terminal-button:nth-child(3) { background: #28ca42; }
             .terminal-title {
-                margin-left: 15px; color: #00ff00;
-                font-size: 14px; font-weight: bold;
+                margin-left: 15px;
+                color: var(--text);
+                font-size: 13px;
+                font-weight: 600;
+                font-family: var(--font-sans);
+                letter-spacing: 0.2em;
+                text-transform: uppercase;
             }
             .terminal-body {
                 padding: 20px; height: calc(100% - 50px);
@@ -1130,21 +1260,25 @@
                 margin-bottom: 8px; display: flex; align-items: center;
             }
             .terminal-prompt {
-                color: #00ff00; margin-right: 10px;
+                color: var(--accent); margin-right: 10px;
                 font-weight: bold;
             }
             .terminal-input {
                 background: transparent; border: none; outline: none;
-                color: #00ff00; font-family: "Courier New", monospace;
+                color: var(--text); font-family: var(--font-mono);
                 font-size: 14px; flex: 1;
-                caret-color: #00ff00;
+                caret-color: var(--accent);
             }
             .terminal-input::placeholder {
-                color: #00aa00; opacity: 0.7;
+                color: var(--muted); opacity: 0.75;
+            }
+            .terminal-input:focus-visible {
+                outline: none;
+                text-shadow: 0 0 8px rgba(44, 255, 154, 0.6);
             }
             .terminal-cursor {
                 display: inline-block; width: 8px; height: 16px;
-                background: #00ff00;
+                background: var(--accent);
                 margin-left: 2px;
             }
             @keyframes blink {
@@ -1152,22 +1286,77 @@
                 51%, 100% { opacity: 0; }
             }
             .terminal-output {
-                color: #00aa00; margin: 5px 0;
+                color: var(--muted); margin: 5px 0;
             }
             .terminal-error {
-                color: #ff4444; margin: 5px 0;
+                color: var(--danger); margin: 5px 0;
             }
             .terminal-success {
-                color: #44ff44; margin: 5px 0;
+                color: #44ff99; margin: 5px 0;
             }
             .matrix-text {
                 position: fixed; top: 20px; right: 20px;
-                color: #00ff00; font-family: "Courier New", monospace;
-                font-size: 0.8rem; opacity: 0.6;
+                color: var(--accent); font-family: var(--font-sans);
+                font-size: 0.75rem; opacity: 0.75;
+                letter-spacing: 0.2em;
+                text-transform: uppercase;
             }
             @keyframes matrix-flicker {
                 0%, 100% { opacity: 0.6; }
                 50% { opacity: 1; }
+            }
+            .debug-console {
+                position: fixed; right: 20px; bottom: 20px;
+                width: 360px; max-width: calc(100% - 40px);
+                background: var(--panel-strong);
+                border: 1px solid rgba(44, 255, 154, 0.5);
+                color: var(--text);
+                font-family: var(--font-mono);
+                font-size: 12px;
+                z-index: 3000;
+                box-shadow: var(--glow);
+            }
+            .debug-console-header {
+                display: flex; align-items: center; justify-content: space-between;
+                padding: 6px 8px;
+                border-bottom: 1px solid rgba(44, 255, 154, 0.35);
+                cursor: pointer;
+                user-select: none;
+            }
+            .debug-console-title {
+                font-weight: bold;
+            }
+            .debug-console-toggle {
+                background: transparent;
+                border: 1px solid rgba(44, 255, 154, 0.6);
+                color: var(--accent);
+                font-size: 11px;
+                padding: 2px 6px;
+                cursor: pointer;
+            }
+            .debug-console-body {
+                display: none;
+                max-height: 200px;
+                overflow-y: auto;
+                padding: 8px;
+            }
+            .debug-console.open .debug-console-body {
+                display: block;
+            }
+            .debug-console-line {
+                margin-bottom: 6px;
+                white-space: pre-wrap;
+                word-break: break-word;
+            }
+            .debug-console-line.error { color: #ff6666; }
+            .debug-console-line.warn { color: #ffaa00; }
+            .debug-console-line.info { color: #66ff66; }
+            @media (max-width: 720px) {
+                .terminal { height: 460px; }
+                .matrix-text { display: none; }
+            }
+            @media (prefers-reduced-motion: reduce) {
+                * { animation: none !important; transition: none !important; }
             }
         </style>
     </head>
@@ -1178,8 +1367,9 @@
             <div class="matrix-text">${t.terminal}</div>
             <div style="position: fixed; top: 20px; left: 20px; z-index: 1000;">
                 <select id="languageSelector" style="background: rgba(0, 20, 0, 0.9); border: 2px solid #00ff00; color: #00ff00; padding: 8px 12px; font-family: 'Courier New', monospace; font-size: 14px; cursor: pointer; text-shadow: 0 0 5px #00ff00; box-shadow: 0 0 15px rgba(0, 255, 0, 0.4);" onchange="changeLanguage(this.value)">
-                    <option value="en" ${!isFarsi ? 'selected' : ''}>🇺🇸 English</option>
-                    <option value="fa" ${isFarsi ? 'selected' : ''}>🇮🇷 فارسی</option>
+                    <option value="en" ${lang === 'en' ? 'selected' : ''}>🇺🇸 English</option>
+                    <option value="zh" ${lang === 'zh' ? 'selected' : ''}>🇨🇳 中文</option>
+                    <option value="fa" ${lang === 'fa' ? 'selected' : ''}>🇮🇷 فارسی</option>
                 </select>
             </div>
         <div class="terminal">
@@ -1211,7 +1401,182 @@
                 </div>
             </div>
         </div>
+        <div id="debugConsole" class="debug-console">
+            <div class="debug-console-header" id="debugConsoleHeader">
+                <span class="debug-console-title">${t.debugConsoleTitle}</span>
+                <button type="button" class="debug-console-toggle" id="debugConsoleToggle">${t.debugShow}</button>
+            </div>
+            <div class="debug-console-body" id="debugConsoleBody"></div>
+        </div>
         <script>
+            const translations = ${JSON.stringify(translations)};
+
+            function getCookie(name) {
+                const value = '; ' + document.cookie;
+                const parts = value.split('; ' + name + '=');
+                if (parts.length === 2) return parts.pop().split(';').shift();
+                return null;
+            }
+
+            function getPreferredLanguage() {
+                const savedLang = localStorage.getItem('preferredLanguage') || getCookie('preferredLanguage') || '';
+                const browserLang = (navigator.language || navigator.userLanguage || '').toLowerCase();
+
+                if (savedLang) {
+                    if (savedLang === 'fa' || savedLang === 'fa-IR') return 'fa';
+                    if (savedLang === 'zh' || savedLang === 'zh-CN' || savedLang === 'zh-Hans') return 'zh';
+                    return 'en';
+                }
+
+                if (browserLang.startsWith('fa')) return 'fa';
+                if (browserLang.startsWith('zh')) return 'zh';
+                return 'en';
+            }
+
+            function getTranslations() {
+                const lang = getPreferredLanguage();
+                const base = translations.en || {};
+                const current = translations[lang] || {};
+                return Object.assign({}, base, current);
+            }
+
+            const t = getTranslations();
+            var DEBUG_LOG_QUEUE = [];
+            var DEBUG_CONSOLE_READY = false;
+            var DEBUG_AUTO_OPEN = false;
+
+            function stringifyConsoleValue(value) {
+                if (value === null) return 'null';
+                if (value === undefined) return 'undefined';
+                if (value instanceof Error) return value.stack || value.message || String(value);
+                if (typeof value === 'string') return value;
+                if (typeof value === 'object') {
+                    try { return JSON.stringify(value); } catch (error) { return String(value); }
+                }
+                return String(value);
+            }
+
+            function formatConsoleArgs(args) {
+                return Array.prototype.map.call(args, stringifyConsoleValue).join(' ');
+            }
+
+            function ensureDebugConsoleOpen(level) {
+                if (level !== 'error' && level !== 'warn') return;
+                var consoleEl = document.getElementById('debugConsole');
+                var toggleBtn = document.getElementById('debugConsoleToggle');
+                if (!consoleEl || !toggleBtn) {
+                    DEBUG_AUTO_OPEN = true;
+                    return;
+                }
+                if (!consoleEl.classList.contains('open')) {
+                    consoleEl.classList.add('open');
+                    toggleBtn.textContent = t.debugHide || 'Hide';
+                }
+            }
+
+            function debugConsolePush(message, level) {
+                var entry = {
+                    time: new Date().toISOString(),
+                    level: level || 'info',
+                    message: typeof message === 'string' ? message : stringifyConsoleValue(message)
+                };
+                DEBUG_LOG_QUEUE.push(entry);
+                ensureDebugConsoleOpen(entry.level);
+                if (DEBUG_CONSOLE_READY) {
+                    debugConsoleFlush();
+                }
+            }
+
+            function debugConsoleFlush() {
+                if (!DEBUG_CONSOLE_READY) return;
+                var body = document.getElementById('debugConsoleBody');
+                if (!body) return;
+                while (DEBUG_LOG_QUEUE.length) {
+                    var entry = DEBUG_LOG_QUEUE.shift();
+                    var line = document.createElement('div');
+                    line.className = 'debug-console-line ' + entry.level;
+                    line.textContent = '[' + entry.time + '] ' + entry.message;
+                    body.appendChild(line);
+                }
+                body.scrollTop = body.scrollHeight;
+            }
+
+            function initDebugConsole() {
+                var consoleEl = document.getElementById('debugConsole');
+                var body = document.getElementById('debugConsoleBody');
+                var toggleBtn = document.getElementById('debugConsoleToggle');
+                var header = document.getElementById('debugConsoleHeader');
+                if (!consoleEl || !body || !toggleBtn || !header) return;
+
+                function toggle() {
+                    consoleEl.classList.toggle('open');
+                    toggleBtn.textContent = consoleEl.classList.contains('open') ? t.debugHide : t.debugShow;
+                }
+
+                header.addEventListener('click', toggle);
+                toggleBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    toggle();
+                });
+
+                DEBUG_CONSOLE_READY = true;
+                debugConsoleFlush();
+                debugConsolePush(t.debugReady, 'info');
+                if (DEBUG_AUTO_OPEN) {
+                    consoleEl.classList.add('open');
+                    toggleBtn.textContent = t.debugHide || 'Hide';
+                }
+            }
+
+            window.addEventListener('error', function(event) {
+                var message = event.message || t.debugUnknownError || 'Unknown error';
+                var location = '';
+                if (event.filename) {
+                    location = event.filename + ':' + (event.lineno || 0) + ':' + (event.colno || 0);
+                }
+                debugConsolePush(message + (location ? ' @ ' + location : ''), 'error');
+                if (event.error && event.error.stack) {
+                    debugConsolePush(event.error.stack, 'error');
+                }
+            });
+
+            window.addEventListener('unhandledrejection', function(event) {
+                var reason = event.reason;
+                if (reason && reason.stack) {
+                    debugConsolePush(reason.stack, 'error');
+                } else {
+                    debugConsolePush(String(reason || t.debugUnhandledPromise), 'error');
+                }
+            });
+
+            (function() {
+                if (!window.console) return;
+                var originalLog = console.log;
+                var originalInfo = console.info;
+                var originalDebug = console.debug;
+                var originalError = console.error;
+                var originalWarn = console.warn;
+                console.log = function() {
+                    debugConsolePush(formatConsoleArgs(arguments), 'info');
+                    if (originalLog) originalLog.apply(console, arguments);
+                };
+                console.info = function() {
+                    debugConsolePush(formatConsoleArgs(arguments), 'info');
+                    if (originalInfo) originalInfo.apply(console, arguments);
+                };
+                console.debug = function() {
+                    debugConsolePush(formatConsoleArgs(arguments), 'info');
+                    if (originalDebug) originalDebug.apply(console, arguments);
+                };
+                console.error = function() {
+                    debugConsolePush(formatConsoleArgs(arguments), 'error');
+                    if (originalError) originalError.apply(console, arguments);
+                };
+                console.warn = function() {
+                    debugConsolePush(formatConsoleArgs(arguments), 'warn');
+                    if (originalWarn) originalWarn.apply(console, arguments);
+                };
+            })();
             function createMatrixRain() {
                 const matrixContainer = document.getElementById('matrixCodeRain');
                 const matrixChars = '01ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
@@ -1285,6 +1650,10 @@
                 const cp = '${ cp }';
 
                 if (inputValue) {
+                    const basePath = window.location.pathname.replace(/\/$/, '');
+                    const prefixPath = basePath === '/' ? '' : basePath;
+                    const buildTarget = (suffix) => (prefixPath || '') + suffix;
+
                     addTerminalLine(atob('Y29ubmVjdCA=') + inputValue, 'output');
 
                         const translations = {
@@ -1360,7 +1729,7 @@
                     ipSource: 'IP Source:',
                     manualInput: 'Manual Input',
                     cfRandomIP: 'CF Random IP',
-                    urlFetch: 'URL Fetch',
+                    urlFetch: 'Fetch from URL',
                     randomCount: 'Generate Count:',
                     fetchURL: 'Fetch URL:',
                     fetchURLPlaceholder: 'Enter URL of IP list',
@@ -1455,39 +1824,100 @@
                     kvNotEnabled: 'KV Storage Not Configured',
                     kvCheckFailed: 'KV Check Failed: Invalid Response',
                     kvCheckFailedStatus: 'KV Check Failed - Status: ',
-                    kvCheckFailedError: 'KV Check Failed - Error: '
+                    kvCheckFailedError: 'KV Check Failed - Error: ',
+                    preferredIPsURLPlaceholder: 'e.g., https://example.com/ips.txt',
+                    preferredIPsURLHint: 'Fetch preferred IPs from a URL; supports plain text or CSV.',
+                    preferredIPFilterTitle: 'Preferred IP Filters',
+                    ipVersionSelection: 'IP Version',
+                    ispSelection: 'ISP',
+                    ispMobile: 'Mobile',
+                    ispUnicom: 'Unicom',
+                    ispTelecom: 'Telecom',
+                    ipFilterHint: 'Filters only apply to parsed lists; manual entries are unaffected.',
+                    threadsLabel: 'Threads',
+                    cityFilterAll: 'All cities',
+                    cityFilterFastest10: 'Fastest 10',
+                    overwriteAdd: 'Replace',
+                    appendAdd: 'Append',
+                    socks5ConfigPlaceholder: 'e.g., user:pass@host:port',
+                    generated: 'Generated',
+                    cfRandomIPs: 'CF Random IPs',
+                    pleaseEnterUrl: 'Please enter a URL',
+                    fetching: 'Fetching...',
+                    fetched: 'Fetched',
+                    ipCountSuffix: 'IPs',
+                    noDataFound: 'No data found',
+                    fetchFailed: 'Fetch failed',
+                    pleaseEnterIPOrDomain: 'Please enter an IP or domain',
+                    testing: 'Testing',
+                    testStopped: 'Test stopped',
+                    selectAtLeastOne: 'Please select at least one option',
+                    saving: 'Saving...',
+                    overwritten: 'Replaced',
+                    itemsSaved: ' items',
+                    appended: 'Appended',
+                    saveFailed: 'Save failed',
+                    timeoutLabel: 'Timeout',
+                    configNotConfigured: 'KV storage not configured. Unable to load config.',
+                    configLoadFailed: 'Failed to load config',
+                    configLoadFailedStatus: 'Failed to load config: ',
+                    currentConfigLabel: 'Current config:\\n',
+                    currentConfigEmpty: '(No config)',
+                    currentConfigUnset: '(Unset)',
+                    pathTypeCustom: 'Usage: Custom Path (d)',
+                    pathTypeUUID: 'Usage: UUID Path (u)',
+                    currentPathLabel: 'Current path',
+                    accessUrlLabel: 'Access URL',
+                    echStatusLabel: 'ECH status:',
+                    statusEnabled: 'Enabled',
+                    statusDisabled: 'Disabled',
+                    statusCheckFailed: 'Check failed',
+                    configLengthLabel: 'Config length',
+                    debugConsoleTitle: 'Debug Console',
+                    debugShow: 'Show',
+                    debugHide: 'Hide',
+                    debugReady: 'Console ready',
+                    debugUnknownError: 'Unknown error',
+                    debugUnhandledPromise: 'Unhandled promise rejection',
+                    kvNotConfiguredSave: 'KV not configured, cannot save. Please configure KV in Cloudflare Workers.',
+                    kvNotConfiguredReset: 'KV not configured, cannot reset.',
+                    resetConfirm: 'Are you sure you want to reset all configs? This clears KV and reverts to env vars.',
+                    resetFailed: 'Reset failed',
+                    resetSuccess: 'Config reset',
+                    unknown: 'Unknown'
                 },
                             fa: {
                                 connecting: 'در حال اتصال...',
                                 invading: 'در حال نفوذ...',
                                 success: 'اتصال موفق! در حال بازگشت نتیجه...',
                                 error: 'خطا: فرمت UUID نامعتبر',
-                                reenter: 'لطفا UUID معتبر را دوباره وارد کنید'
+                                reenter: 'لطفاً UUID معتبر را دوباره وارد کنید'
                             }
                         };
                         const browserLang = navigator.language || navigator.userLanguage || '';
                         const isFarsi = browserLang.includes('fa') || browserLang.includes('fa-IR');
-                        const t = translations[isFarsi ? 'fa' : 'en'];
+                        const t = getTranslations();
 
                     if (cp) {
                         const cleanInput = inputValue.startsWith('/') ? inputValue : '/' + inputValue;
-                            addTerminalLine(t.connecting, 'output');
+                        addTerminalLine(t.connecting, 'output');
                         setTimeout(() => {
-                                addTerminalLine(t.success, 'success');
+                            addTerminalLine(t.success, 'success');
                             setTimeout(() => {
-                                window.location.href = cleanInput;
+                                window.location.href = buildTarget(cleanInput);
                             }, 1000);
                         }, 500);
                     } else {
-                        if (isValidUUID(inputValue)) {
+                        const normalizedInput = inputValue.toLowerCase();
+                        if (isValidUUID(normalizedInput)) {
                             addTerminalLine(t.invading, 'output');
-                        setTimeout(() => {
-                                addTerminalLine(t.success, 'success');
                             setTimeout(() => {
-                                    window.location.href = '/' + inputValue;
-                            }, 1000);
-                        }, 500);
-                    } else {
+                                addTerminalLine(t.success, 'success');
+                                setTimeout(() => {
+                                    window.location.href = buildTarget('/' + normalizedInput);
+                                }, 1000);
+                            }, 500);
+                        } else {
                             addTerminalLine(t.error, 'error');
                             addTerminalLine(t.reenter, 'output');
                         }
@@ -1543,6 +1973,8 @@
                 });
 
             document.addEventListener('DOMContentLoaded', function() {
+                initDebugConsole();
+                createMatrixRain();
                 const input = document.getElementById('uuidInput');
                 input.focus();
                 input.addEventListener('keydown', function(e) {
@@ -1558,62 +1990,60 @@
                     }
 
             if (cp && cp.trim()) {
-                const cleanCustomPath = cp.trim().startsWith('/') ? cp.trim() : '/' + cp.trim();
-                const normalizedCustomPath = cleanCustomPath.endsWith('/') && cleanCustomPath.length > 1 ? cleanCustomPath.slice(0, -1) : cleanCustomPath;
-                const normalizedPath = url.pathname.endsWith('/') && url.pathname.length > 1 ? url.pathname.slice(0, -1) : url.pathname;
+                const pathParts = splitPath(url.pathname.replace(/\/+$/, ''));
+                const isSubRequest = pathParts.length > 0 && pathParts[pathParts.length - 1].toLowerCase() === 'sub';
 
-                    if (normalizedPath === normalizedCustomPath) {
-                        return await handleSubscriptionPage(request, at);
-                    }
-
-                    if (normalizedPath === normalizedCustomPath + '/sub') {
+                if (isSubRequest) {
+                    const accessParts = pathParts.slice(0, -1);
+                    if (matchesCustomPath(accessParts, cp)) {
                         return await handleSubscriptionRequest(request, at, url);
                     }
+                }
 
-                    if (url.pathname.length > 1 && url.pathname !== '/') {
-                        const user = url.pathname.replace(/\/$/, '').replace('/sub', '').substring(1);
-                        if (isValidFormat(user)) {
-                            return new Response(JSON.stringify({
-                                error: 'Access Denied',
-                                message: 'Custom path mode enabled, UUID access disabled'
-                            }), {
+                if (matchesCustomPath(pathParts, cp)) {
+                    return await handleSubscriptionPage(request, at);
+                }
+
+                const user = extractUuidFromPathParts(pathParts);
+                if (user) {
+                    return new Response(JSON.stringify({
+                        error: 'Access Denied',
+                        message: 'Custom path mode enabled, UUID access disabled'
+                    }), {
+                        status: 403,
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                }
+            } else {
+                const pathParts = splitPath(url.pathname.replace(/\/+$/, ''));
+                const isSubRequest = pathParts.length > 0 && pathParts[pathParts.length - 1].toLowerCase() === 'sub';
+
+                if (isSubRequest) {
+                    const user = extractUuidFromPathParts(pathParts.slice(0, -1));
+                    if (user) {
+                        if (user === at) {
+                            return await handleSubscriptionRequest(request, user, url);
+                        } else {
+                            return new Response(JSON.stringify({ error: 'UUID Error' }), {
                                 status: 403,
                                 headers: { 'Content-Type': 'application/json' }
                             });
                         }
                     }
-                } else {
-
-                    if (url.pathname.length > 1 && url.pathname !== '/' && !url.pathname.includes('/sub')) {
-                        const user = url.pathname.replace(/\/$/, '').substring(1);
-                        if (isValidFormat(user)) {
-                            if (user === at) {
-                                return await handleSubscriptionPage(request, user);
-                            } else {
-                                return new Response(JSON.stringify({ error: 'UUID Error: Please note the variable name is u, not uuid' }), {
-                                    status: 403,
-                                    headers: { 'Content-Type': 'application/json' }
-                                });
-                            }
+                } else if (pathParts.length > 0) {
+                    const user = extractUuidFromPathParts(pathParts);
+                    if (user) {
+                        if (user === at) {
+                            return await handleSubscriptionPage(request, user);
+                        } else {
+                            return new Response(JSON.stringify({ error: 'UUID Error: Please note the variable name is u, not uuid' }), {
+                                status: 403,
+                                headers: { 'Content-Type': 'application/json' }
+                            });
                         }
                     }
-                    if (url.pathname.includes('/sub')) {
-                        const pathParts = url.pathname.split('/');
-                        if (pathParts.length === 2 && pathParts[1] === 'sub') {
-                            const user = pathParts[0].substring(1);
-                            if (isValidFormat(user)) {
-                                if (user === at) {
-                                    return await handleSubscriptionRequest(request, user, url);
-                                } else {
-                                    return new Response(JSON.stringify({ error: 'UUID Error' }), {
-                                        status: 403,
-                                        headers: { 'Content-Type': 'application/json' }
-                                    });
-                                }
-                                }
-                            }
-                        }
-                    }
+                }
+            }
                     const normalizedPathname = url.pathname.replace(/\/+$/, '').toLowerCase();
                     const normalizedSubPath = `/${subPath}`.toLowerCase();
                     if (normalizedPathname === normalizedSubPath) {
@@ -2842,20 +3272,32 @@
             }
         }
 
-        let isFarsi = false;
+        let lang = 'en';
 
-        if (langFromCookie === 'fa' || langFromCookie === 'fa-IR') {
-            isFarsi = true;
-        } else if (langFromCookie === 'en' || langFromCookie === 'en-US') {
-            isFarsi = false;
+        if (langFromCookie) {
+            if (langFromCookie === 'fa' || langFromCookie === 'fa-IR') {
+                lang = 'fa';
+            } else if (langFromCookie === 'zh' || langFromCookie === 'zh-CN' || langFromCookie === 'zh-Hans') {
+                lang = 'zh';
+            } else {
+                lang = 'en';
+            }
         } else {
             // If no Cookie, use browser language detection
             const acceptLanguage = request.headers.get('Accept-Language') || '';
             const browserLang = acceptLanguage.split(',')[0].split('-')[0].toLowerCase();
-            isFarsi = browserLang === 'fa' || acceptLanguage.includes('fa-IR') || acceptLanguage.includes('fa');
+            if (browserLang === 'fa' || acceptLanguage.includes('fa-IR') || acceptLanguage.includes('fa')) {
+                lang = 'fa';
+            } else if (browserLang === 'zh' || acceptLanguage.includes('zh-CN') || acceptLanguage.includes('zh')) {
+                lang = 'zh';
+            } else {
+                lang = 'en';
+            }
         }
 
-            const langAttr = isFarsi ? 'fa-IR' : 'en-US';
+        const isFarsi = lang === 'fa';
+        const isZh = lang === 'zh';
+        const langAttr = isFarsi ? 'fa-IR' : (isZh ? 'zh-CN' : 'en-US');
 
             const translations = {
                 en: {
@@ -2930,7 +3372,7 @@
                     ipSource: 'IP Source:',
                     manualInput: 'Manual Input',
                     cfRandomIP: 'CF Random IP',
-                    urlFetch: 'URL Fetch',
+                    urlFetch: 'Fetch from URL',
                     randomCount: 'Generate Count:',
                     fetchURL: 'Fetch URL:',
                     fetchURLPlaceholder: 'Enter URL of IP list',
@@ -3113,8 +3555,8 @@
                     enablePreferredDomain: 'فعال‌سازی دامنه ترجیحی',
                     enablePreferredIP: 'فعال‌سازی IP ترجیحی',
                     enableGitHubPreferred: 'فعال‌سازی ترجیح پیش‌فرض GitHub',
-                    enableDiverseProxies: 'Enable Diverse Proxies (Generate all ports)',
-                    enableDiverseProxiesHint: 'Generate nodes for all supported ports (80, 443, 2053, etc.) for each IP.',
+                    enableDiverseProxies: 'فعال‌سازی گره‌های چندپورتی (تولید همه پورت‌ها)',
+                    enableDiverseProxiesHint: 'برای هر IP همه پورت‌های پشتیبانی‌شده (80، 443، 2053 و ...) را تولید می‌کند.',
                     allowAPIManagement: 'اجازه مدیریت API (ae):',
                     regionMatching: 'تطبیق منطقه (rm):',
                     downgradeControl: 'کنترل کاهش سطح (qj):',
@@ -3134,11 +3576,11 @@
                     subscriptionConverterPlaceholder: 'پیش‌فرض: https://url.v1.mk/sub',
                     subscriptionConverterHint: 'آدرس API تبدیل اشتراک سفارشی، اگر خالی بگذارید از آدرس پیش‌فرض استفاده می‌شود',
                     builtinPreferredHint: 'کنترل اینکه کدام گره‌های ترجیحی داخلی در اشتراک گنجانده شوند. به طور پیش‌فرض همه فعال هستند.',
-                    apiEnabledDefault: 'پیش‌فرض (بستن API)',
+                    apiEnabledDefault: 'پیش‌فرض (API غیرفعال)',
                     apiEnabledYes: 'فعال‌سازی مدیریت API',
                     apiEnabledHint: '⚠️ هشدار امنیتی: فعال‌سازی این گزینه اجازه می‌دهد IP های ترجیحی از طریق API به طور پویا اضافه شوند. توصیه می‌شود فقط در صورت نیاز فعال کنید.',
                     regionMatchingDefault: 'پیش‌فرض (فعال‌سازی تطبیق منطقه)',
-                    regionMatchingNo: 'بستن تطبیق منطقه',
+                    regionMatchingNo: 'غیرفعال‌کردن تطبیق منطقه',
                     regionMatchingHint: 'وقتی "بستن" تنظیم شود، تطبیق هوشمند منطقه انجام نمی‌شود',
                     downgradeControlDefault: 'پیش‌فرض (عدم فعال‌سازی کاهش سطح)',
                     downgradeControlNo: 'فعال‌سازی حالت کاهش سطح',
@@ -3147,8 +3589,8 @@
                     tlsControlYes: 'فقط گره‌های TLS',
                     tlsControlHint: 'وقتی "فقط گره‌های TLS" تنظیم شود، فقط گره‌های با TLS تولید می‌شوند، گره‌های غیر TLS (مانند پورت 80) تولید نمی‌شوند',
                     preferredControlDefault: 'پیش‌فرض (فعال‌سازی ترجیح)',
-                    preferredControlYes: 'بستن ترجیح',
-                    preferredControlHint: 'وقتی "بستن ترجیح" تنظیم شود، فقط از آدرس اصلی استفاده می‌شود، گره‌های IP و دامنه ترجیحی تولید نمی‌شوند',
+                    preferredControlYes: 'غیرفعال‌کردن اولویت',
+                    preferredControlHint: 'وقتی "غیرفعال‌کردن اولویت" تنظیم شود، فقط از آدرس اصلی استفاده می‌شود، گره‌های IP و دامنه ترجیحی تولید نمی‌شوند',
                     regionNames: {
                         US: '🇺🇸 آمریکا', SG: '🇸🇬 سنگاپور', JP: '🇯🇵 ژاپن',
                         KR: '🇰🇷 کره جنوبی', DE: '🇩🇪 آلمان', SE: '🇸🇪 سوئد', NL: '🇳🇱 هلند',
@@ -3177,15 +3619,305 @@
                 apiTestFailed: 'تشخیص API ناموفق: ',
                 unknownError: 'خطای ناشناخته',
                 apiTestError: 'تست API ناموفق: ',
-                kvNotConfigured: 'ذخیره‌سازی KV پیکربندی نشده است، نمی‌توانید از عملکرد مدیریت تنظیمات استفاده کنید.\\n\\nلطفا در Cloudflare Workers:\\n1. فضای نام KV ایجاد کنید\\n2. متغیر محیطی C را پیوند دهید\\n3. کد را دوباره مستقر کنید',
+                kvNotConfigured: 'ذخیره‌سازی KV پیکربندی نشده است، نمی‌توانید از عملکرد مدیریت تنظیمات استفاده کنید.\\n\\nلطفاً در Cloudflare Workers:\\n1. فضای نام KV ایجاد کنید\\n2. متغیر محیطی C را پیوند دهید\\n3. کد را دوباره مستقر کنید',
                 kvNotEnabled: 'ذخیره‌سازی KV پیکربندی نشده است',
                 kvCheckFailed: 'بررسی ذخیره‌سازی KV ناموفق: خطای فرمت پاسخ',
                 kvCheckFailedStatus: 'بررسی ذخیره‌سازی KV ناموفق - کد وضعیت: ',
-                kvCheckFailedError: 'بررسی ذخیره‌سازی KV ناموفق - خطا: '
+                kvCheckFailedError: 'بررسی ذخیره‌سازی KV ناموفق - خطا: ',
+                preferredIPsURLPlaceholder: 'مثال: https://example.com/ips.txt',
+                preferredIPsURLHint: 'استخراج IPهای ترجیحی از URL (متن ساده یا CSV).',
+                preferredIPFilterTitle: 'فیلتر IPهای اولویت‌دار',
+                ipVersionSelection: 'نسخه IP',
+                ispSelection: 'اپراتور',
+                ispMobile: 'همراه',
+                ispUnicom: 'یونیکام',
+                ispTelecom: 'تلکام',
+                ipFilterHint: 'فیلترها فقط روی لیست‌های دریافت‌شده اعمال می‌شوند؛ ورودی دستی تغییری نمی‌کند.',
+                threadsLabel: 'رشته‌ها',
+                cityFilterAll: 'همه شهرها',
+                cityFilterFastest10: '۱۰ مورد سریع‌تر',
+                overwriteAdd: 'بازنویسی',
+                appendAdd: 'افزودن',
+                socks5ConfigPlaceholder: 'مثال: user:pass@host:port',
+                generated: 'تولید شد:',
+                cfRandomIPs: 'IP تصادفی CF',
+                pleaseEnterUrl: 'لطفاً URL را وارد کنید',
+                fetching: 'در حال دریافت...',
+                fetched: 'دریافت شد:',
+                ipCountSuffix: 'آی‌پی',
+                noDataFound: 'داده‌ای یافت نشد',
+                fetchFailed: 'دریافت ناموفق',
+                pleaseEnterIPOrDomain: 'لطفاً IP یا دامنه وارد کنید',
+                testing: 'در حال تست',
+                testStopped: 'تست متوقف شد',
+                selectAtLeastOne: 'لطفاً حداقل یک گزینه را انتخاب کنید',
+                saving: 'در حال ذخیره...',
+                overwritten: 'بازنویسی شد:',
+                itemsSaved: ' مورد',
+                appended: 'افزوده شد:',
+                saveFailed: 'ذخیره ناموفق',
+                timeoutLabel: 'زمان تمام شد',
+                configNotConfigured: 'ذخیره‌سازی KV پیکربندی نشده است، بارگذاری تنظیمات ممکن نیست.',
+                configLoadFailed: 'بارگذاری تنظیمات ناموفق بود',
+                configLoadFailedStatus: 'بارگذاری تنظیمات ناموفق: ',
+                currentConfigLabel: 'پیکربندی فعلی:\\n',
+                currentConfigEmpty: '(بدون پیکربندی)',
+                currentConfigUnset: '(تنظیم نشده)',
+                pathTypeCustom: 'نوع استفاده: مسیر سفارشی (d)',
+                pathTypeUUID: 'نوع استفاده: مسیر UUID (u)',
+                currentPathLabel: 'مسیر فعلی',
+                accessUrlLabel: 'آدرس دسترسی',
+                echStatusLabel: 'وضعیت ECH:',
+                statusEnabled: 'فعال',
+                statusDisabled: 'غیرفعال',
+                statusCheckFailed: 'بررسی ناموفق',
+                configLengthLabel: 'طول پیکربندی',
+                debugConsoleTitle: 'کنسول اشکال‌زدایی',
+                debugShow: 'نمایش',
+                debugHide: 'پنهان',
+                debugReady: 'کنسول آماده است',
+                debugUnknownError: 'خطای ناشناخته',
+                debugUnhandledPromise: 'رد Promise بدون مدیریت',
+                kvNotConfiguredSave: 'KV پیکربندی نشده است، ذخیره ممکن نیست. لطفاً در Cloudflare Workers KV را تنظیم کنید.',
+                kvNotConfiguredReset: 'KV پیکربندی نشده است، بازنشانی ممکن نیست.',
+                resetConfirm: 'آیا مطمئن هستید که همه تنظیمات بازنشانی شوند؟ این کار KV را پاک کرده و به متغیرهای محیطی برمی‌گرداند.',
+                resetFailed: 'بازنشانی ناموفق',
+                resetSuccess: 'پیکربندی بازنشانی شد',
+                unknown: 'نامشخص'
             }
         };
 
-            const t = translations[isFarsi ? 'fa' : 'en'];
+            translations.fa = Object.assign({}, translations.en, translations.fa);
+            translations.zh = Object.assign({}, translations.en, {
+                title: '终端',
+                terminal: '终端 v2.9.3',
+                congratulations: '恭喜，你成功了！',
+                enterU: '请输入你的 U 变量的值',
+                enterD: '请输入你的 D 变量的值',
+                command: '命令：connect [',
+                uuid: 'UUID',
+                path: '路径',
+                inputU: '输入 U 变量内容并回车...',
+                inputD: '输入 D 变量内容并回车...',
+                connecting: '连接中...',
+                invading: '正在连接...',
+                success: '连接成功！正在返回结果...',
+                error: '错误：UUID 格式无效',
+                reenter: '请重新输入有效的 UUID',
+                subtitle: '多客户端支持 • 智能优化 • 一键生成',
+                selectClient: '[ 选择客户端 ]',
+                systemStatus: '[ 系统状态 ]',
+                configManagement: '[ 配置管理 ]',
+                relatedLinks: '[ 相关链接 ]',
+                checking: '检查中...',
+                workerRegion: 'Worker 区域：',
+                detectionMethod: '检测方式：',
+                proxyIPStatus: 'ProxyIP 状态：',
+                currentIP: '当前 IP：',
+                regionMatch: '区域匹配：',
+                selectionLogic: '选择逻辑：',
+                kvStatusChecking: '正在检查 KV 状态...',
+                kvEnabled: '✅ KV 已启用，可进行配置管理',
+                kvDisabled: '⚠️ KV 未启用或未配置',
+                specifyRegion: '指定区域 (wk)：',
+                autoDetect: '自动检测',
+                saveRegion: '保存区域配置',
+                protocolSelection: '协议选择：',
+                enableVLESS: '启用 VLESS 协议',
+                enableVMess: '启用 VMess 协议',
+                enableShadowsocks: '启用 Shadowsocks 协议',
+                enableTrojan: '启用 Trojan 协议',
+                enableXhttp: '启用 xhttp 协议',
+                enableTUIC: '启用 TUIC 协议',
+                enableHysteria2: '启用 Hysteria 2 协议',
+                enableVLESSgRPC: '启用 VLESS gRPC 协议',
+                linkOnlyHint: '需要外部后端（仅生成链接）',
+                grpcHint: '需要自定义域名（gRPC）',
+                trojanPassword: 'Trojan 密码（可选）：',
+                customPath: '自定义路径 (d)：',
+                customPathPlaceholder: '例如：/secret-path',
+                customIP: '自定义 ProxyIP (p)：',
+                customIPPlaceholder: '例如：1.2.3.4 或 proxy.example.com',
+                preferredIPs: '优选 IP 列表 (yx)：',
+                preferredIPsPlaceholder: '例如：1.1.1.1:443#HongKong, 8.8.8.8:443#USA',
+                preferredIPsURL: '优选 IP 来源 URL (yxURL)：',
+                latencyTest: '延迟测试',
+                latencyTestIP: '测试 IP/域名：',
+                latencyTestIPPlaceholder: '输入 IP 或域名，用逗号分隔',
+                latencyTestPort: '端口：',
+                startTest: '开始测试',
+                stopTest: '停止测试',
+                testResult: '测试结果：',
+                addToYx: '添加到优选列表',
+                addSelectedToYx: '添加选中项到优选列表',
+                selectAll: '全选',
+                deselectAll: '取消全选',
+                testingInProgress: '测试中...',
+                testComplete: '测试完成',
+                latencyMs: '延迟（HTTP 握手）',
+                timeout: '超时',
+                ipSource: 'IP 来源：',
+                manualInput: '手动输入',
+                cfRandomIP: 'CF 随机 IP',
+                urlFetch: '从 URL 获取',
+                randomCount: '生成数量：',
+                fetchURL: '获取 URL：',
+                fetchURLPlaceholder: '输入 IP 列表 URL',
+                generateIP: '生成 IP',
+                fetchIP: '获取 IP',
+                socks5Config: 'SOCKS5 配置 (s)：',
+                customHomepage: '自定义首页 URL (homepage)：',
+                customHomepagePlaceholder: '例如：https://example.com',
+                customHomepageHint: '设置自定义 URL 作为伪装首页。访问根路径 / 时显示该内容。留空则显示默认终端页面。',
+                customPathHint: '若设置，将只能通过该路径访问，UUID 访问将被禁用。建议使用复杂路径防止扫描。',
+                customIPHint: '隐藏 Worker 真实 IP，或解决 Cloudflare Loop 问题。支持 IP:端口 或 域名:端口。',
+                preferredIPsHint: '手动指定优选节点，优先级最高。格式：IP:端口#备注。',
+                socks5ConfigHint: '格式：user:pass@host:port。Worker 将通过该代理连接目标。',
+                saveConfig: '保存配置',
+                advancedControl: '高级控制',
+                subscriptionConverter: '订阅转换地址：',
+                builtinPreferred: '内置优选类型：',
+                enablePreferredDomain: '启用优选域名',
+                enablePreferredIP: '启用优选 IP',
+                enableGitHubPreferred: '启用 GitHub 默认优选',
+                allowAPIManagement: '允许 API 管理 (ae)：',
+                regionMatching: '区域匹配 (rm)：',
+                downgradeControl: '降级控制 (qj)：',
+                tlsControl: 'TLS 控制 (dkby)：',
+                preferredControl: '优选控制 (yxby)：',
+                saveAdvanced: '保存高级配置',
+                loading: '加载中...',
+                currentConfig: '📍 当前路径配置',
+                refreshConfig: '刷新配置',
+                resetConfig: '重置配置',
+                subscriptionCopied: '订阅链接已复制',
+                autoSubscriptionCopied: '已复制自动检测订阅链接，将根据 User-Agent 识别客户端。',
+                trojanPasswordPlaceholder: '留空则使用 UUID',
+                trojanPasswordHint: '设置自定义 Trojan 密码。留空则使用 UUID。客户端会用 SHA224 进行哈希。',
+                protocolHint: '可启用多种协议。<br>• VLESS WS：标准 WebSocket 协议<br>• VMess WS：基于 WS 的 VMess（仅生成链接）<br>• Shadowsocks：基于 WS 的 SS（仅生成链接）<br>• Trojan：使用 SHA224 密码认证<br>• xhttp：HTTP POST 伪装（需要自定义域名 & gRPC）',
+                enableECH: '启用 ECH（加密客户端 Hello）',
+                enableECHHint: '启用后将从 DoH 获取 ECH 配置并在每次订阅刷新时加入链接',
+                customDNS: '自定义 DNS 服务器',
+                customDNSPlaceholder: '例如：https://dns.joeyblog.eu.org/joeyblog',
+                customDNSHint: '用于查询 ECH 配置的 DNS 服务器（DoH 格式）',
+                customECHDomain: '自定义 ECH 域名',
+                customECHDomainPlaceholder: '例如：cloudflare-ech.com',
+                customECHDomainHint: 'ECH 配置使用的域名，留空为默认',
+                saveProtocol: '保存协议配置',
+                subscriptionConverterPlaceholder: '默认：https://url.v1.mk/sub',
+                subscriptionConverterHint: '自定义订阅转换 API，留空使用默认',
+                builtinPreferredHint: '控制内置优选节点是否包含，默认全部启用',
+                apiEnabledDefault: '默认（API 禁用）',
+                apiEnabledYes: '启用 API 管理',
+                apiEnabledHint: '⚠️ 安全提示：启用 API 允许动态添加优选 IP，仅在需要时开启',
+                regionMatchingDefault: '默认（启用区域匹配）',
+                regionMatchingNo: '关闭区域匹配',
+                regionMatchingHint: '设置为“关闭”后，智能区域匹配将停止',
+                downgradeControlDefault: '默认（禁用降级）',
+                downgradeControlNo: '启用降级模式',
+                downgradeControlHint: '启用后：CF 直连失败 -> SOCKS5 -> Fallback',
+                tlsControlDefault: '默认（保留所有节点）',
+                tlsControlYes: '仅 TLS 节点',
+                tlsControlHint: '设置为“仅 TLS 节点”时，将不生成非 TLS 节点（如 80 端口）',
+                preferredControlDefault: '默认（启用优选）',
+                preferredControlYes: '关闭优选',
+                preferredControlHint: '设置为“关闭优选”时，仅使用原生地址',
+                regionNames: {
+                    US: '🇺🇸 美国', SG: '🇸🇬 新加坡', JP: '🇯🇵 日本',
+                    KR: '🇰🇷 韩国', DE: '🇩🇪 德国', SE: '🇸🇪 瑞典', NL: '🇳🇱 荷兰',
+                    FI: '🇫🇮 芬兰', GB: '🇬🇧 英国', FR: '🇫🇷 法国', CA: '🇨🇦 加拿大',
+                    AU: '🇦🇺 澳大利亚', HK: '🇭🇰 香港', TW: '🇹🇼 台湾'
+                },
+                githubProject: 'GitHub 项目',
+                autoDetectClient: '自动识别',
+                selectionLogicText: '同区域 -> 临近区域 -> 其他区域',
+                customIPDisabledHint: '使用自定义 ProxyIP 时区域选择已禁用',
+                customIPMode: '自定义 ProxyIP 模式（p 变量启用）',
+                customIPModeDesc: '自定义 IP 模式（已禁用区域匹配）',
+                usingCustomProxyIP: '使用自定义 ProxyIP：',
+                customIPConfig: '（p 变量配置）',
+                customIPModeDisabled: '自定义 IP 模式，区域选择已禁用',
+                manualRegion: '手动指定区域',
+                manualRegionDesc: '（手动）',
+                proxyIPAvailable: '10/10 可用（预设 ProxyIP 域名可用）',
+                smartSelection: '智能就近选择',
+                sameRegionIP: '同区域 IP 可用（1个）',
+                cloudflareDetection: 'Cloudflare 内置检测',
+                detectionFailed: '检测失败',
+                apiTestResult: 'API 检测结果：',
+                apiTestTime: '检测耗时：',
+                apiTestFailed: 'API 检测失败：',
+                unknownError: '未知错误',
+                apiTestError: 'API 测试失败：',
+                kvNotConfigured: 'KV 存储未配置，配置管理不可用。\\n\\n请在 Cloudflare Workers：\\n1. 创建 KV Namespace\\n2. 绑定变量 C\\n3. 重新部署',
+                kvNotEnabled: 'KV 存储未启用',
+                kvCheckFailed: 'KV 检查失败：响应无效',
+                kvCheckFailedStatus: 'KV 检查失败 - 状态码：',
+                kvCheckFailedError: 'KV 检查失败 - 错误： ',
+                preferredIPsURLPlaceholder: '例如：https://example.com/ips.txt',
+                preferredIPsURLHint: '从 URL 拉取优选 IP，支持纯文本或 CSV。',
+                preferredIPFilterTitle: '优选 IP 筛选',
+                ipVersionSelection: 'IP 版本',
+                ispSelection: '运营商',
+                ispMobile: '移动',
+                ispUnicom: '联通',
+                ispTelecom: '电信',
+                ipFilterHint: '过滤仅作用于列表解析，手动输入不受影响。',
+                threadsLabel: '线程',
+                cityFilterAll: '全部城市',
+                cityFilterFastest10: '最快 10 个',
+                overwriteAdd: '覆盖写入',
+                appendAdd: '追加写入',
+                socks5ConfigPlaceholder: '例如：user:pass@host:port',
+                generated: '已生成',
+                cfRandomIPs: 'CF 随机 IP',
+                pleaseEnterUrl: '请输入 URL',
+                fetching: '获取中...',
+                fetched: '已获取',
+                ipCountSuffix: '个 IP',
+                noDataFound: '未找到数据',
+                fetchFailed: '获取失败',
+                pleaseEnterIPOrDomain: '请输入 IP 或域名',
+                testing: '测试中',
+                testStopped: '测试已停止',
+                selectAtLeastOne: '请至少选择一个选项',
+                saving: '保存中...',
+                overwritten: '已覆盖',
+                itemsSaved: ' 项',
+                appended: '已追加',
+                saveFailed: '保存失败',
+                timeoutLabel: '超时',
+                configNotConfigured: 'KV 存储未配置，无法加载配置',
+                configLoadFailed: '加载配置失败',
+                configLoadFailedStatus: '加载配置失败：',
+                currentConfigLabel: '当前配置：\\n',
+                currentConfigEmpty: '（暂无配置）',
+                currentConfigUnset: '（未设置）',
+                pathTypeCustom: '使用类型：自定义路径 (d)',
+                pathTypeUUID: '使用类型：UUID 路径 (u)',
+                currentPathLabel: '当前路径',
+                accessUrlLabel: '访问地址',
+                echStatusLabel: 'ECH 状态：',
+                statusEnabled: '已启用',
+                statusDisabled: '已禁用',
+                statusCheckFailed: '检查失败',
+                configLengthLabel: '配置长度',
+                debugConsoleTitle: '调试控制台',
+                debugShow: '展开',
+                debugHide: '收起',
+                debugReady: '控制台就绪',
+                debugUnknownError: '未知错误',
+                debugUnhandledPromise: '未处理的 Promise 拒绝',
+                kvNotConfiguredSave: 'KV 未配置，无法保存。请在 Cloudflare Workers 配置 KV。',
+                kvNotConfiguredReset: 'KV 未配置，无法重置。',
+                resetConfirm: '确定要重置所有配置吗？这将清空 KV 并恢复为环境变量。',
+                resetFailed: '重置失败',
+                resetSuccess: '配置已重置',
+                unknown: '未知',
+                enableDiverseProxies: '启用多端口节点（生成全部端口）',
+                enableDiverseProxiesHint: '为每个 IP 生成所有支持的端口（80、443、2053 等）。订阅体积会明显增大。'
+            });
+            const t = translations[lang] || translations.en;
 
         const pageHtml = `<!DOCTYPE html>
         <html lang="${langAttr}" dir="${isFarsi ? 'rtl' : 'ltr'}">
@@ -3194,15 +3926,68 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>${t.title}</title>
         <style>
+            @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600&family=Space+Mono:wght@400;700&display=swap');
+            :root {
+                --bg-0: #040806;
+                --bg-1: #071510;
+                --panel: rgba(4, 12, 8, 0.9);
+                --panel-strong: rgba(2, 10, 6, 0.95);
+                --accent: #2cff9a;
+                --accent-2: #13d0ff;
+                --accent-dim: #00aa6a;
+                --text: #d8ffef;
+                --muted: #86d4a5;
+                --danger: #ff5a5a;
+                --glow: 0 0 24px rgba(44, 255, 154, 0.35);
+                --font-sans: "Space Grotesk", "Segoe UI", "Noto Sans", sans-serif;
+                --font-mono: "Space Mono", "Cascadia Mono", "Consolas", "Courier New", monospace;
+            }
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body {
-                font-family: "Courier New", monospace;
-                background: #000; color: #00ff00; min-height: 100vh;
-                overflow-x: hidden; position: relative;
+                font-family: var(--font-sans);
+                background:
+                    radial-gradient(1200px 600px at 10% -10%, rgba(44, 255, 154, 0.16), transparent 60%),
+                    radial-gradient(900px 500px at 90% 120%, rgba(19, 208, 255, 0.12), transparent 60%),
+                    linear-gradient(180deg, var(--bg-0) 0%, var(--bg-1) 100%);
+                color: var(--accent);
+                min-height: 100vh;
+                overflow-x: hidden;
+                position: relative;
+            }
+            body::before {
+                content: "";
+                position: fixed;
+                inset: 0;
+                background-image:
+                    linear-gradient(120deg, rgba(44, 255, 154, 0.06), transparent 40%),
+                    repeating-linear-gradient(0deg, rgba(0, 255, 170, 0.05) 0 1px, transparent 1px 3px),
+                    repeating-linear-gradient(90deg, rgba(0, 255, 170, 0.04) 0 1px, transparent 1px 4px);
+                opacity: 0.35;
+                pointer-events: none;
+                z-index: -1;
+            }
+            input, select, textarea, button {
+                font-family: var(--font-mono) !important;
+            }
+            input, select, textarea {
+                border-radius: 10px;
+                transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+            }
+            button {
+                border-radius: 10px;
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+            }
+            input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible {
+                outline: none;
+                border-color: var(--accent) !important;
+                box-shadow: 0 0 0 2px rgba(19, 208, 255, 0.25), 0 0 18px rgba(44, 255, 154, 0.35);
+            }
+            input, select, textarea, button {
+                font-family: var(--font-mono) !important;
             }
             .matrix-bg {
                 position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-                background: #000;
+                background: var(--bg-0);
                 z-index: -1;
             }
             @keyframes bg-pulse {
@@ -3249,14 +4034,16 @@
                 animation-duration: 20s;
                 animation-delay: -8s;
             }
-            .container { max-width: 900px; margin: 0 auto; padding: 20px; position: relative; z-index: 1; }
-            .header { text-align: center; margin-bottom: 40px; }
+            .container { max-width: 980px; margin: 0 auto; padding: 24px; position: relative; z-index: 1; }
+            .header { text-align: center; margin-bottom: 48px; }
             .title {
-                font-size: 3.5rem; font-weight: bold;
-                text-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00, 0 0 30px #00ff00, 0 0 40px #00ff00;
-                margin-bottom: 10px;
+                font-size: 3.2rem; font-weight: 600;
+                font-family: var(--font-sans);
+                letter-spacing: 0.06em;
+                margin-bottom: 12px;
                 position: relative;
-                color: #00ff00;
+                color: var(--text);
+                text-shadow: 0 0 25px rgba(44, 255, 154, 0.4);
             }
             @keyframes matrix-glow {
                 from { text-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00, 0 0 30px #00ff00, 0 0 40px #00ff00; }
@@ -3266,12 +4053,12 @@
                 0%, 100% { background-position: 0% 50%; }
                 50% { background-position: 100% 50%; }
             }
-            .subtitle { color: #00aa00; margin-bottom: 30px; font-size: 1.2rem; }
+            .subtitle { color: var(--muted); margin-bottom: 30px; font-size: 1.05rem; font-family: var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; }
             .card {
-                background: rgba(0, 20, 0, 0.9);
-                border: 2px solid #00ff00;
-                border-radius: 0; padding: 30px; margin-bottom: 20px;
-                box-shadow: 0 0 30px rgba(0, 255, 0, 0.5), inset 0 0 20px rgba(0, 255, 0, 0.1);
+                background: var(--panel);
+                border: 1px solid rgba(44, 255, 154, 0.5);
+                border-radius: 16px; padding: 28px; margin-bottom: 22px;
+                box-shadow: var(--glow), inset 0 0 20px rgba(44, 255, 154, 0.08);
                 position: relative;
                 backdrop-filter: blur(10px);
                 box-sizing: border-box;
@@ -3293,23 +4080,28 @@
                 100% { transform: translateX(100%); }
             }
             .card-title {
-                font-size: 1.8rem; margin-bottom: 20px;
-                color: #00ff00; text-shadow: 0 0 5px #00ff00;
+                font-size: 1.35rem; margin-bottom: 18px;
+                color: var(--text);
+                font-family: var(--font-sans);
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                text-shadow: 0 0 12px rgba(44, 255, 154, 0.35);
             }
             .client-grid {
                 display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
                 gap: 15px; margin: 20px 0;
             }
             .client-btn {
-                background: rgba(0, 20, 0, 0.8);
-                border: 2px solid #00ff00;
-                padding: 15px 20px; color: #00ff00;
-                font-family: "Courier New", monospace; font-weight: bold;
+                background: var(--panel-strong);
+                border: 1px solid rgba(44, 255, 154, 0.5);
+                padding: 14px 18px; color: var(--text);
+                font-family: var(--font-mono); font-weight: 700;
                 cursor: pointer; transition: all 0.4s ease;
                 text-align: center; position: relative;
                 overflow: hidden;
-                text-shadow: 0 0 5px #00ff00;
-                box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+                letter-spacing: 0.08em;
+                text-shadow: 0 0 6px rgba(44, 255, 154, 0.4);
+                box-shadow: 0 0 14px rgba(44, 255, 154, 0.2);
             }
             .client-btn::before {
                 content: ""; position: absolute; top: 0; left: -100%;
@@ -3327,19 +4119,19 @@
             .client-btn:hover::before { left: 100%; }
             .client-btn:hover::after { opacity: 1; }
             .client-btn:hover {
-                background: rgba(0, 255, 0, 0.3);
-                box-shadow: 0 0 25px #00ff00, 0 0 35px rgba(0, 255, 0, 0.5);
-                transform: translateY(-3px) scale(1.05);
-                text-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00;
+                background: rgba(44, 255, 154, 0.18);
+                box-shadow: 0 0 25px rgba(44, 255, 154, 0.5), 0 0 40px rgba(19, 208, 255, 0.35);
+                transform: translateY(-3px) scale(1.04);
+                text-shadow: 0 0 12px rgba(44, 255, 154, 0.7);
             }
             .generate-btn {
-                background: rgba(0, 255, 0, 0.15);
-                border: 2px solid #00ff00; padding: 15px 30px;
-                color: #00ff00; font-family: "Courier New", monospace;
-                font-weight: bold; cursor: pointer;
+                background: rgba(44, 255, 154, 0.14);
+                border: 1px solid rgba(44, 255, 154, 0.6); padding: 14px 28px;
+                color: var(--text); font-family: var(--font-mono);
+                font-weight: 700; cursor: pointer;
                 transition: all 0.4s ease; margin-right: 15px;
-                text-shadow: 0 0 8px #00ff00;
-                box-shadow: 0 0 15px rgba(0, 255, 0, 0.4);
+                text-shadow: 0 0 8px rgba(44, 255, 154, 0.6);
+                box-shadow: 0 0 18px rgba(44, 255, 154, 0.35);
                 position: relative;
                 overflow: hidden;
             }
@@ -3351,10 +4143,10 @@
             }
             .generate-btn:hover::before { left: 100%; }
             .generate-btn:hover {
-                background: rgba(0, 255, 0, 0.4);
-                box-shadow: 0 0 30px #00ff00, 0 0 40px rgba(0, 255, 0, 0.6);
-                transform: translateY(-4px) scale(1.08);
-                text-shadow: 0 0 15px #00ff00, 0 0 25px #00ff00;
+                background: rgba(44, 255, 154, 0.28);
+                box-shadow: 0 0 32px rgba(44, 255, 154, 0.6), 0 0 46px rgba(19, 208, 255, 0.4);
+                transform: translateY(-4px) scale(1.06);
+                text-shadow: 0 0 14px rgba(44, 255, 154, 0.9);
             }
             .atob('c3Vic2NyaXB0aW9u')-url {
                 background: rgba(0, 0, 0, 0.9);
@@ -3384,12 +4176,61 @@
             }
             .matrix-text {
                 position: fixed; top: 20px; right: 20px;
-                color: #00ff00; font-family: "Courier New", monospace;
-                font-size: 0.8rem; opacity: 0.6;
+                color: var(--accent); font-family: var(--font-sans);
+                font-size: 0.75rem; opacity: 0.75;
+                letter-spacing: 0.2em;
+                text-transform: uppercase;
             }
             @keyframes matrix-flicker {
                 0%, 100% { opacity: 0.6; }
                 50% { opacity: 1; }
+            }
+            .debug-console {
+                position: fixed; right: 20px; bottom: 20px;
+                width: 360px; max-width: calc(100% - 40px);
+                background: var(--panel-strong);
+                border: 1px solid rgba(44, 255, 154, 0.5);
+                color: var(--text);
+                font-family: var(--font-mono);
+                font-size: 12px;
+                z-index: 3000;
+                box-shadow: var(--glow);
+            }
+            .debug-console-header {
+                display: flex; align-items: center; justify-content: space-between;
+                padding: 6px 8px;
+                border-bottom: 1px solid rgba(44, 255, 154, 0.35);
+                cursor: pointer;
+                user-select: none;
+            }
+            .debug-console-title { font-weight: bold; }
+            .debug-console-toggle {
+                background: transparent;
+                border: 1px solid rgba(44, 255, 154, 0.6);
+                color: var(--accent);
+                font-size: 11px;
+                padding: 2px 6px;
+                cursor: pointer;
+            }
+            .debug-console-body {
+                display: none;
+                max-height: 200px;
+                overflow-y: auto;
+                padding: 8px;
+            }
+            .debug-console.open .debug-console-body { display: block; }
+            .debug-console-line { margin-bottom: 6px; white-space: pre-wrap; word-break: break-word; }
+            .debug-console-line.error { color: #ff6666; }
+            .debug-console-line.warn { color: #ffaa00; }
+            .debug-console-line.info { color: #66ff66; }
+            @media (max-width: 720px) {
+                .title { font-size: 2.4rem; }
+                .card { padding: 20px; }
+                .client-grid { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+                .matrix-text { display: none; }
+            }
+            @media (prefers-reduced-motion: reduce) {
+                * { animation: none !important; transition: none !important; }
             }
         </style>
     </head>
@@ -3400,8 +4241,9 @@
             <div class="matrix-text">${t.terminal}</div>
             <div style="position: fixed; top: 20px; left: 20px; z-index: 1000;">
                 <select id="languageSelector" style="background: rgba(0, 20, 0, 0.9); border: 2px solid #00ff00; color: #00ff00; padding: 8px 12px; font-family: 'Courier New', monospace; font-size: 14px; cursor: pointer; text-shadow: 0 0 5px #00ff00; box-shadow: 0 0 15px rgba(0, 255, 0, 0.4);" onchange="changeLanguage(this.value)">
-                    <option value="en" ${!isFarsi ? 'selected' : ''}>🇺🇸 English</option>
-                    <option value="fa" ${isFarsi ? 'selected' : ''}>🇮🇷 فارسی</option>
+                    <option value="en" ${lang === 'en' ? 'selected' : ''}>🇺🇸 English</option>
+                    <option value="zh" ${lang === 'zh' ? 'selected' : ''}>🇨🇳 中文</option>
+                    <option value="fa" ${lang === 'fa' ? 'selected' : ''}>🇮🇷 فارسی</option>
                 </select>
             </div>
         <div class="container">
@@ -3433,7 +4275,7 @@
                         <div id="geoInfo" style="margin: 8px 0; color: #00aa00; font-family: 'Courier New', monospace; font-size: 0.9rem; text-shadow: 0 0 3px #00aa00;">${t.detectionMethod}${t.checking}</div>
                         <div id="backupStatus" style="margin: 8px 0; color: #00ff00; font-family: 'Courier New', monospace; text-shadow: 0 0 3px #00ff00;">${t.proxyIPStatus}${t.checking}</div>
                         <div id="currentIP" style="margin: 8px 0; color: #00ff00; font-family: 'Courier New', monospace; text-shadow: 0 0 3px #00ff00;">${t.currentIP}${t.checking}</div>
-                        <div id="echStatus" style="margin: 8px 0; color: #00ff00; font-family: 'Courier New', monospace; text-shadow: 0 0 3px #00ff00; font-size: 0.9rem;">ECH状态: ${t.checking}</div>
+                        <div id="echStatus" style="margin: 8px 0; color: #00ff00; font-family: 'Courier New', monospace; text-shadow: 0 0 3px #00ff00; font-size: 0.9rem;">${t.echStatusLabel} ${t.checking}</div>
                         <div id="regionMatch" style="margin: 8px 0; color: #00ff00; font-family: 'Courier New', monospace; text-shadow: 0 0 3px #00ff00;">${t.regionMatch}${t.checking}</div>
                         <div id="selectionLogic" style="margin: 8px 0; color: #00aa00; font-family: 'Courier New', monospace; font-size: 0.9rem; text-shadow: 0 0 3px #00aa00;">${t.selectionLogic}${t.selectionLogicText}</div>
                 </div>
@@ -3467,45 +4309,46 @@
                         <div style="margin-bottom: 15px;">
                                 <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">${t.protocolSelection}</label>
                             <div style="padding: 15px; background: rgba(0, 20, 0, 0.6); border: 1px solid #00ff00; border-radius: 5px;">
-                                <div style="margin-bottom: 10px;">
+                                <div class="checkbox-item" style="margin-bottom: 10px;">
                                     <label style="display: inline-flex; align-items: center; cursor: pointer; color: #00ff00;">
                                         <input type="checkbox" id="ev" checked style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;">
-                                            <span style="font-size: 1.1rem;">${t.enableVLESS}</span>
+                                        <span style="font-size: 1.05rem;">${t.enableVLESS}</span>
                                     </label>
                                 </div>
-                                <div style="margin-bottom: 10px;">
+                                <div class="checkbox-item" style="margin-bottom: 10px;">
                                     <label style="display: inline-flex; align-items: center; cursor: pointer; color: #00ff00;">
                                         <input type="checkbox" id="et" style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;">
-                                            <span style="font-size: 1.1rem;">${t.enableTrojan}</span>
+                                        <span style="font-size: 1.05rem;">${t.enableTrojan}</span>
                                     </label>
                                 </div>
-                                <div style="margin-bottom: 10px;">
+                                <div class="checkbox-item" style="margin-bottom: 10px;">
                                     <label style="display: inline-flex; align-items: center; cursor: pointer; color: #00ff00;">
                                         <input type="checkbox" id="ex" style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;">
-
-                            <div class="checkbox-item" style="margin-top: 10px;">
-                                <label style="display: flex; align-items: center;"><input type="checkbox" id="evm" ${evm ? 'checked' : ''} style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;"> ${t.enableVMess}</label>
-                                <small style="color: #ffaa00; font-size: 0.8rem; display: block; margin-top: 2px; margin-left: 26px;">${t.linkOnlyHint}</small>
-                            </div>
-                            <div class="checkbox-item" style="margin-top: 10px;">
-                                <label style="display: flex; align-items: center;"><input type="checkbox" id="ess" ${ess ? 'checked' : ''} style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;"> ${t.enableShadowsocks}</label>
-                                <small style="color: #ffaa00; font-size: 0.8rem; display: block; margin-top: 2px; margin-left: 26px;">${t.linkOnlyHint}</small>
-                            </div>
-                            <div class="checkbox-item" style="margin-top: 10px;">
-                                <label style="display: flex; align-items: center;"><input type="checkbox" id="etu" ${etu ? 'checked' : ''} style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;"> ${t.enableTUIC}</label>
-                                <small style="color: #ffaa00; font-size: 0.8rem; display: block; margin-top: 2px; margin-left: 26px;">${t.linkOnlyHint}</small>
-                            </div>
-                            <div class="checkbox-item" style="margin-top: 10px;">
-                                <label style="display: flex; align-items: center;"><input type="checkbox" id="ehy" ${ehy ? 'checked' : ''} style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;"> ${t.enableHysteria2}</label>
-                                <small style="color: #ffaa00; font-size: 0.8rem; display: block; margin-top: 2px; margin-left: 26px;">${t.linkOnlyHint}</small>
-                            </div>
-                            <div class="checkbox-item" style="margin-top: 10px;">
-                                <label style="display: flex; align-items: center;"><input type="checkbox" id="eg" ${eg ? 'checked' : ''} style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;"> ${t.enableVLESSgRPC}</label>
-                                <small style="color: #ffaa00; font-size: 0.8rem; display: block; margin-top: 2px; margin-left: 26px;">${t.grpcHint}</small>
-                            </div>
-
-                                            <span style="font-size: 1.1rem;">${t.enableXhttp}</span>
+                                        <span style="font-size: 1.05rem;">${t.enableXhttp}</span>
                                     </label>
+                                </div>
+
+                                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed rgba(44, 255, 154, 0.3);">
+                                    <div class="checkbox-item" style="margin-top: 10px;">
+                                        <label style="display: flex; align-items: center; color: #00ff00;"><input type="checkbox" id="evm" ${evm ? 'checked' : ''} style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;"> ${t.enableVMess}</label>
+                                        <small style="color: #ffaa00; font-size: 0.8rem; display: block; margin-top: 2px; margin-left: 26px;">${t.linkOnlyHint}</small>
+                                    </div>
+                                    <div class="checkbox-item" style="margin-top: 10px;">
+                                        <label style="display: flex; align-items: center; color: #00ff00;"><input type="checkbox" id="ess" ${ess ? 'checked' : ''} style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;"> ${t.enableShadowsocks}</label>
+                                        <small style="color: #ffaa00; font-size: 0.8rem; display: block; margin-top: 2px; margin-left: 26px;">${t.linkOnlyHint}</small>
+                                    </div>
+                                    <div class="checkbox-item" style="margin-top: 10px;">
+                                        <label style="display: flex; align-items: center; color: #00ff00;"><input type="checkbox" id="etu" ${etu ? 'checked' : ''} style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;"> ${t.enableTUIC}</label>
+                                        <small style="color: #ffaa00; font-size: 0.8rem; display: block; margin-top: 2px; margin-left: 26px;">${t.linkOnlyHint}</small>
+                                    </div>
+                                    <div class="checkbox-item" style="margin-top: 10px;">
+                                        <label style="display: flex; align-items: center; color: #00ff00;"><input type="checkbox" id="ehy" ${ehy ? 'checked' : ''} style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;"> ${t.enableHysteria2}</label>
+                                        <small style="color: #ffaa00; font-size: 0.8rem; display: block; margin-top: 2px; margin-left: 26px;">${t.linkOnlyHint}</small>
+                                    </div>
+                                    <div class="checkbox-item" style="margin-top: 10px;">
+                                        <label style="display: flex; align-items: center; color: #00ff00;"><input type="checkbox" id="eg" ${eg ? 'checked' : ''} style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;"> ${t.enableVLESSgRPC}</label>
+                                        <small style="color: #ffaa00; font-size: 0.8rem; display: block; margin-top: 2px; margin-left: 26px;">${t.grpcHint}</small>
+                                    </div>
                                 </div>
                                 <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(0, 255, 0, 0.3);">
                                     <div style="margin-bottom: 10px;">
@@ -3557,8 +4400,8 @@
                         </div>
                         <div style="margin-bottom: 15px;">
                                 <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">${t.preferredIPsURL}</label>
-                                <input type="text" id="yxURL" placeholder="${isFarsi ? 'پیش‌فرض: https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt' : '默认: https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt'}" style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.8); border: 2px solid #00ff00; color: #00ff00; font-family: 'Courier New', monospace; font-size: 14px;">
-                                <small style="color: #00aa00; font-size: 0.85rem;">${isFarsi ? 'URL منبع لیست IP ترجیحی سفارشی، اگر خالی بگذارید از آدرس پیش‌فرض استفاده می‌شود' : '自定义优选IP列表来源URL，留空则使用默认地址'}</small>
+                                <input type="text" id="yxURL" placeholder="${t.preferredIPsURLPlaceholder}" style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.8); border: 2px solid #00ff00; color: #00ff00; font-family: 'Courier New', monospace; font-size: 14px;">
+                                <small style="color: #00aa00; font-size: 0.85rem;">${t.preferredIPsURLHint}</small>
                         </div>
 
                         <div style="margin-bottom: 20px; padding: 15px; background: rgba(0, 40, 0, 0.6); border: 2px solid #00aa00; border-radius: 8px;">
@@ -3581,7 +4424,7 @@
                                     <input type="number" id="randomIPCount" value="20" min="1" max="100" style="width: 100%; padding: 10px; background: rgba(0, 0, 0, 0.8); border: 1px solid #00ff00; color: #00ff00; font-family: 'Courier New', monospace; font-size: 13px;">
                                 </div>
                                 <div style="width: 80px;">
-                                    <label style="display: block; margin-bottom: 5px; color: #00ff00; font-size: 0.9rem;">${isFarsi ? 'رشته‌ها' : '线程'}</label>
+                                    <label style="display: block; margin-bottom: 5px; color: #00ff00; font-size: 0.9rem;">${t.threadsLabel}</label>
                                     <input type="number" id="testThreads" value="5" min="1" max="50" style="width: 100%; padding: 10px; background: rgba(0, 0, 0, 0.8); border: 1px solid #00ff00; color: #00ff00; font-family: 'Courier New', monospace; font-size: 13px;">
                                 </div>
                             </div>
@@ -3616,26 +4459,26 @@
                                     <div style="margin-bottom: 8px;">
                                         <label style="display: inline-flex; align-items: center; cursor: pointer; color: #00ff00; font-size: 0.9rem;">
                                             <input type="radio" name="cityFilterMode" value="all" checked style="margin-right: 6px; width: 16px; height: 16px; cursor: pointer;">
-                                            <span>${isFarsi ? '全部城市' : '全部城市'}</span>
+                                            <span>${t.cityFilterAll}</span>
                                         </label>
                                         <label style="display: inline-flex; align-items: center; cursor: pointer; color: #00ff00; font-size: 0.9rem; margin-left: 15px;">
                                             <input type="radio" name="cityFilterMode" value="fastest10" style="margin-right: 6px; width: 16px; height: 16px; cursor: pointer;">
-                                            <span>${isFarsi ? '只选择最快的10个' : '只选择最快的10个'}</span>
+                                            <span>${t.cityFilterFastest10}</span>
                                         </label>
                                     </div>
                                     <div id="cityCheckboxesContainer" style="display: flex; flex-wrap: wrap; gap: 8px; max-height: 80px; overflow-y: auto; padding: 5px;"></div>
                                 </div>
                                 <div id="latencyResultsList" style="background: rgba(0, 0, 0, 0.5); border: 1px solid #004400; border-radius: 4px; padding: 10px;"></div>
                                 <div style="margin-top: 10px; display: flex; gap: 10px;">
-                                    <button type="button" id="overwriteSelectedToYx" style="flex: 1; background: rgba(0, 200, 0, 0.3); border: 1px solid #00ff00; padding: 10px 20px; color: #00ff00; font-family: 'Courier New', monospace; font-weight: bold; cursor: pointer; transition: all 0.3s;">${isFarsi ? '覆盖添加' : '覆盖添加'}</button>
-                                    <button type="button" id="appendSelectedToYx" style="flex: 1; background: rgba(0, 150, 0, 0.3); border: 1px solid #00aa00; padding: 10px 20px; color: #00aa00; font-family: 'Courier New', monospace; font-weight: bold; cursor: pointer; transition: all 0.3s;">${isFarsi ? '追加添加' : '追加添加'}</button>
+                                    <button type="button" id="overwriteSelectedToYx" style="flex: 1; background: rgba(0, 200, 0, 0.3); border: 1px solid #00ff00; padding: 10px 20px; color: #00ff00; font-family: 'Courier New', monospace; font-weight: bold; cursor: pointer; transition: all 0.3s;">${t.overwriteAdd}</button>
+                                    <button type="button" id="appendSelectedToYx" style="flex: 1; background: rgba(0, 150, 0, 0.3); border: 1px solid #00aa00; padding: 10px 20px; color: #00aa00; font-family: 'Courier New', monospace; font-weight: bold; cursor: pointer; transition: all 0.3s;">${t.appendAdd}</button>
                                 </div>
                             </div>
                         </div>
 
                         <div style="margin-bottom: 15px;">
                                 <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">${t.socks5Config}</label>
-                                <input type="text" id="socksConfig" placeholder="${isFarsi ? 'مثال: user:pass@host:port یا host:port' : '例如: user:pass@host:port 或 host:port'}" style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.8); border: 2px solid #00ff00; color: #00ff00; font-family: 'Courier New', monospace; font-size: 14px;">
+                                <input type="text" id="socksConfig" placeholder="${t.socks5ConfigPlaceholder}" style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.8); border: 2px solid #00ff00; color: #00ff00; font-family: 'Courier New', monospace; font-size: 14px;">
                                 <small style="color: #00aa00; font-size: 0.85rem;">${t.socks5ConfigHint}</small>
                         </div>
                             <button type="submit" style="background: rgba(0, 255, 0, 0.15); border: 2px solid #00ff00; padding: 12px 24px; color: #00ff00; font-family: 'Courier New', monospace; font-weight: bold; cursor: pointer; margin-right: 10px; text-shadow: 0 0 8px #00ff00; transition: all 0.4s ease;">${t.saveConfig}</button>
@@ -3682,10 +4525,10 @@
                             </div>
                         </div>
                         <div style="margin-bottom: 15px;">
-                                <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">优选IP筛选设置</label>
+                                <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">${t.preferredIPFilterTitle}</label>
                             <div style="padding: 15px; background: rgba(0, 20, 0, 0.6); border: 1px solid #00ff00; border-radius: 5px;">
                                 <div style="margin-bottom: 15px;">
-                                    <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">IP版本选择</label>
+                                    <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">${t.ipVersionSelection}</label>
                                     <div style="display: flex; gap: 20px; flex-wrap: wrap;">
                                         <label style="display: inline-flex; align-items: center; cursor: pointer; color: #00ff00;">
                                             <input type="checkbox" id="ipv4Enabled" checked style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;">
@@ -3698,23 +4541,23 @@
                                     </div>
                                 </div>
                                 <div style="margin-bottom: 10px;">
-                                    <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">运营商选择</label>
+                                    <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">${t.ispSelection}</label>
                                     <div style="display: flex; gap: 20px; flex-wrap: wrap;">
                                         <label style="display: inline-flex; align-items: center; cursor: pointer; color: #00ff00;">
                                             <input type="checkbox" id="ispMobile" checked style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;">
-                                            <span style="font-size: 1rem;">移动</span>
+                                            <span style="font-size: 1rem;">${t.ispMobile}</span>
                                         </label>
                                         <label style="display: inline-flex; align-items: center; cursor: pointer; color: #00ff00;">
                                             <input type="checkbox" id="ispUnicom" checked style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;">
-                                            <span style="font-size: 1rem;">联通</span>
+                                            <span style="font-size: 1rem;">${t.ispUnicom}</span>
                                         </label>
                                         <label style="display: inline-flex; align-items: center; cursor: pointer; color: #00ff00;">
                                             <input type="checkbox" id="ispTelecom" checked style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;">
-                                            <span style="font-size: 1rem;">电信</span>
+                                            <span style="font-size: 1rem;">${t.ispTelecom}</span>
                                         </label>
                                     </div>
                                 </div>
-                                    <small style="color: #00aa00; font-size: 0.85rem; display: block; margin-top: 10px;">选择要使用的IP版本和运营商，未选中的将被过滤</small>
+                                    <small style="color: #00aa00; font-size: 0.85rem; display: block; margin-top: 10px;">${t.ipFilterHint}</small>
                             </div>
                         </div>
                         <div style="margin-bottom: 15px;">
@@ -3780,188 +4623,157 @@
                 </div>
             </div>
         </div>
+        <div id="debugConsole" class="debug-console">
+            <div class="debug-console-header" id="debugConsoleHeader">
+                <span class="debug-console-title">${t.debugConsoleTitle}</span>
+                <button type="button" class="debug-console-toggle" id="debugConsoleToggle">${t.debugShow}</button>
+            </div>
+            <div class="debug-console-body" id="debugConsoleBody"></div>
+        </div>
         <script>
             // 订阅转换地址（从服务器配置注入）
             var SUB_CONVERTER_URL = "${ scu }";
             // Remote config URL (Hardcoded)
             var REMOTE_CONFIG_URL = "${ remoteConfigUrl }";
+            var DEBUG_LOG_QUEUE = [];
+            var DEBUG_CONSOLE_READY = false;
+            var DEBUG_AUTO_OPEN = false;
+
+            function stringifyConsoleValue(value) {
+                if (value === null) return 'null';
+                if (value === undefined) return 'undefined';
+                if (value instanceof Error) return value.stack || value.message || String(value);
+                if (typeof value === 'string') return value;
+                if (typeof value === 'object') {
+                    try { return JSON.stringify(value); } catch (error) { return String(value); }
+                }
+                return String(value);
+            }
+
+            function formatConsoleArgs(args) {
+                return Array.prototype.map.call(args, stringifyConsoleValue).join(' ');
+            }
+
+            function ensureDebugConsoleOpen(level) {
+                if (level !== 'error' && level !== 'warn') return;
+                var consoleEl = document.getElementById('debugConsole');
+                var toggleBtn = document.getElementById('debugConsoleToggle');
+                if (!consoleEl || !toggleBtn) {
+                    DEBUG_AUTO_OPEN = true;
+                    return;
+                }
+                if (!consoleEl.classList.contains('open')) {
+                    consoleEl.classList.add('open');
+                    toggleBtn.textContent = t.debugHide || 'Hide';
+                }
+            }
+
+            function debugConsolePush(message, level) {
+                var entry = {
+                    time: new Date().toISOString(),
+                    level: level || 'info',
+                    message: typeof message === 'string' ? message : stringifyConsoleValue(message)
+                };
+                DEBUG_LOG_QUEUE.push(entry);
+                ensureDebugConsoleOpen(entry.level);
+                if (DEBUG_CONSOLE_READY) {
+                    debugConsoleFlush();
+                }
+            }
+
+            function debugConsoleFlush() {
+                if (!DEBUG_CONSOLE_READY) return;
+                var body = document.getElementById('debugConsoleBody');
+                if (!body) return;
+                while (DEBUG_LOG_QUEUE.length) {
+                    var entry = DEBUG_LOG_QUEUE.shift();
+                    var line = document.createElement('div');
+                    line.className = 'debug-console-line ' + entry.level;
+                    line.textContent = '[' + entry.time + '] ' + entry.message;
+                    body.appendChild(line);
+                }
+                body.scrollTop = body.scrollHeight;
+            }
+
+            function initDebugConsole() {
+                var consoleEl = document.getElementById('debugConsole');
+                var body = document.getElementById('debugConsoleBody');
+                var toggleBtn = document.getElementById('debugConsoleToggle');
+                var header = document.getElementById('debugConsoleHeader');
+                if (!consoleEl || !body || !toggleBtn || !header) return;
+
+                function toggle() {
+                    consoleEl.classList.toggle('open');
+                    toggleBtn.textContent = consoleEl.classList.contains('open') ? t.debugHide : t.debugShow;
+                }
+
+                header.addEventListener('click', toggle);
+                toggleBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    toggle();
+                });
+
+                DEBUG_CONSOLE_READY = true;
+                debugConsoleFlush();
+                debugConsolePush(t.debugReady, 'info');
+                if (DEBUG_AUTO_OPEN) {
+                    consoleEl.classList.add('open');
+                    toggleBtn.textContent = t.debugHide || 'Hide';
+                }
+            }
+
+            window.addEventListener('error', function(event) {
+                var message = event.message || t.debugUnknownError;
+                var location = '';
+                if (event.filename) {
+                    location = event.filename + ':' + (event.lineno || 0) + ':' + (event.colno || 0);
+                }
+                debugConsolePush(message + (location ? ' @ ' + location : ''), 'error');
+                if (event.error && event.error.stack) {
+                    debugConsolePush(event.error.stack, 'error');
+                }
+            });
+
+            window.addEventListener('unhandledrejection', function(event) {
+                var reason = event.reason;
+                if (reason && reason.stack) {
+                    debugConsolePush(reason.stack, 'error');
+                } else {
+                    debugConsolePush(String(reason || t.debugUnhandledPromise), 'error');
+                }
+            });
+
+            (function() {
+                if (!window.console) return;
+                var originalLog = console.log;
+                var originalInfo = console.info;
+                var originalDebug = console.debug;
+                var originalError = console.error;
+                var originalWarn = console.warn;
+                console.log = function() {
+                    debugConsolePush(formatConsoleArgs(arguments), 'info');
+                    if (originalLog) originalLog.apply(console, arguments);
+                };
+                console.info = function() {
+                    debugConsolePush(formatConsoleArgs(arguments), 'info');
+                    if (originalInfo) originalInfo.apply(console, arguments);
+                };
+                console.debug = function() {
+                    debugConsolePush(formatConsoleArgs(arguments), 'info');
+                    if (originalDebug) originalDebug.apply(console, arguments);
+                };
+                console.error = function() {
+                    debugConsolePush(formatConsoleArgs(arguments), 'error');
+                    if (originalError) originalError.apply(console, arguments);
+                };
+                console.warn = function() {
+                    debugConsolePush(formatConsoleArgs(arguments), 'warn');
+                    if (originalWarn) originalWarn.apply(console, arguments);
+                };
+            })();
 
                 // 翻译对象
-                const translations = {
-                    en: {
-                    title: 'Terminal',
-                    congratulations: 'Congratulations, you made it!',
-                    enterU: 'Please enter the value of your U variable',
-                    enterD: 'Please enter the value of your D variable',
-                    command: 'Command: connect [',
-                    uuid: 'UUID',
-                    path: 'PATH',
-                    inputU: 'Enter content of U variable and press Enter...',
-                    inputD: 'Enter content of D variable and press Enter...',
-                    connecting: 'Connecting...',
-                    invading: 'Invading...',
-                    success: 'Connection successful! Returning result...',
-                    error: 'Error: Invalid UUID format',
-                    reenter: 'Please re-enter a valid UUID',
-
-                    // Subscription Page Translations
-                    subtitle: 'Multi-client Support • Smart Optimization • One-Click Generation',
-                    selectClient: '[ Select Client ]',
-                    systemStatus: '[ System Status ]',
-                    configManagement: '[ Config Management ]',
-                    relatedLinks: '[ Related Links ]',
-                    checking: 'Checking...',
-                    workerRegion: 'Worker Region: ',
-                    detectionMethod: 'Detection Method: ',
-                    proxyIPStatus: 'ProxyIP Status: ',
-                    currentIP: 'Current IP: ',
-                    regionMatch: 'Region Match: ',
-                    selectionLogic: 'Selection Logic: ',
-                    kvStatusChecking: 'Checking KV Status...',
-                    kvEnabled: '✅ KV Storage Enabled, Config Management Available',
-                    kvDisabled: '⚠️ KV Storage Disabled or Not Configured',
-                    specifyRegion: 'Specify Region (wk):',
-                    autoDetect: 'Auto Detect',
-                    saveRegion: 'Save Region Config',
-                    protocolSelection: 'Protocol Selection:',
-                    enableVLESS: 'Enable VLESS Protocol',
-                    enableVMess: 'Enable VMess Protocol',
-                    enableShadowsocks: 'Enable Shadowsocks Protocol',
-                    enableTrojan: 'Enable Trojan Protocol',
-                    enableXhttp: 'Enable xhttp Protocol',
-                    enableTUIC: 'Enable TUIC Protocol',
-                    enableHysteria2: 'Enable Hysteria 2 Protocol',
-                    enableVLESSgRPC: 'Enable VLESS gRPC Protocol',
-                    linkOnlyHint: 'Requires External Backend (Link-Only)',
-                    grpcHint: 'Requires Custom Domain (gRPC)',
-                    trojanPassword: 'Trojan Password (Optional):',
-                    customPath: 'Custom Path (d):',
-                    customPathPlaceholder: 'e.g., /secret-path',
-                    customIP: 'Custom ProxyIP (p):',
-                    customIPPlaceholder: 'e.g., 1.2.3.4 or proxy.example.com',
-                    preferredIPs: 'Preferred IP List (yx):',
-                    preferredIPsPlaceholder: 'e.g., 1.1.1.1:443#HongKong, 8.8.8.8:443#USA',
-                    preferredIPsURL: 'Preferred IP Source URL (yxURL):',
-                    latencyTest: 'Latency Test',
-                    latencyTestIP: 'Test IP/Domain:',
-                    latencyTestIPPlaceholder: 'Enter IP or Domain, comma separated',
-                    latencyTestPort: 'Port:',
-                    startTest: 'Start Test',
-                    stopTest: 'Stop Test',
-                    testResult: 'Test Result:',
-                    addToYx: 'Add to Preferred List',
-                    addSelectedToYx: 'Add Selected to Preferred List',
-                    selectAll: 'Select All',
-                    deselectAll: 'Deselect All',
-                    testingInProgress: 'Testing...',
-                    testComplete: 'Test Complete',
-                    latencyMs: 'Latency (HTTP Handshake)',
-                    timeout: 'Timeout',
-                    ipSource: 'IP Source:',
-                    manualInput: 'Manual Input',
-                    cfRandomIP: 'CF Random IP',
-                    urlFetch: 'URL Fetch',
-                    randomCount: 'Generate Count:',
-                    fetchURL: 'Fetch URL:',
-                    fetchURLPlaceholder: 'Enter URL of IP list',
-                    generateIP: 'Generate IP',
-                    fetchIP: 'Fetch IP',
-                    socks5Config: 'SOCKS5 Config (s):',
-                    customHomepage: 'Custom Homepage URL (homepage):',
-                    customHomepagePlaceholder: 'e.g., https://example.com',
-                    customHomepageHint: 'Set custom URL as homepage camouflage. Content of this URL will be shown when accessing root path /. Leave empty to show default terminal page.',
-                    customPathHint: 'Only accessible via this path if set. UUID access will be disabled. Suggest using complex path to prevent scanning.',
-                    customIPHint: 'Hide Worker real IP, or solve Cloudflare Loop issue. Supports IP:Port or Domain:Port.',
-                    preferredIPsHint: 'Manually specify preferred nodes. Highest priority. Format: IP:Port#Remark.',
-                    socks5ConfigHint: 'Format: user:pass@host:port. Worker will connect to target via this proxy.',
-                    saveConfig: 'Save Config',
-                    advancedControl: 'Advanced Control',
-                    subscriptionConverter: 'Sub Converter URL:',
-                    builtinPreferred: 'Built-in Preferred Type:',
-                    enablePreferredDomain: 'Enable Preferred Domain',
-                    enablePreferredIP: 'Enable Preferred IP',
-                    enableGitHubPreferred: 'Enable GitHub Default Preferred',
-                    allowAPIManagement: 'Allow API Management (ae):',
-                    regionMatching: 'Region Matching (rm):',
-                    downgradeControl: 'Downgrade Control (qj):',
-                    tlsControl: 'TLS Control (dkby):',
-                    preferredControl: 'Preferred Control (yxby):',
-                    saveAdvanced: 'Save Advanced Config',
-                    loading: 'Loading...',
-                    currentConfig: '📍 Current Path Config',
-                    refreshConfig: 'Refresh Config',
-                    resetConfig: 'Reset Config',
-                    subscriptionCopied: 'Subscription Link Copied',
-                    autoSubscriptionCopied: 'Auto-detected subscription link copied. Client will be recognized by User-Agent.',
-                    trojanPasswordPlaceholder: 'Leave empty to use UUID',
-                    trojanPasswordHint: 'Set custom Trojan password. Leave empty to use UUID. Client will auto-hash password with SHA224.',
-                    protocolHint: 'Multiple protocols can be enabled.<br>• VLESS WS: Standard WebSocket protocol<br>• VMess WS: WebSocket-based VMess (link generation)<br>• Shadowsocks: WebSocket-based SS (link generation)<br>• Trojan: Uses SHA224 password auth<br>• xhttp: HTTP POST camouflage (requires custom domain & gRPC)',
-                    enableECH: 'Enable ECH (Encrypted Client Hello)',
-                    enableECHHint: 'When enabled, ECH config is fetched from DoH and added to links on every sub refresh',
-                    customDNS: 'Custom DNS Server',
-                    customDNSPlaceholder: 'e.g., https://dns.joeyblog.eu.org/joeyblog',
-                    customDNSHint: 'DNS server for ECH config query (DoH format)',
-                    customECHDomain: 'Custom ECH Domain',
-                    customECHDomainPlaceholder: 'e.g., cloudflare-ech.com',
-                    customECHDomainHint: 'Domain used in ECH config, leave empty for default',
-                    saveProtocol: 'Save Protocol Config',
-                    subscriptionConverterPlaceholder: 'Default: https://url.v1.mk/sub',
-                    subscriptionConverterHint: 'Custom subscription converter API, leave empty for default',
-                    builtinPreferredHint: 'Control which built-in preferred nodes are included. Default all enabled.',
-                    apiEnabledDefault: 'Default (API Disabled)',
-                    apiEnabledYes: 'Enable API Management',
-                    apiEnabledHint: '⚠️ Security Warning: Enabling API allows dynamic preferred IP addition. Use only if needed.',
-                    regionMatchingDefault: 'Default (Enable Region Match)',
-                    regionMatchingNo: 'Disable Region Match',
-                    regionMatchingHint: 'Smart region matching disabled when set to "Disable"',
-                    downgradeControlDefault: 'Default (Disable Downgrade)',
-                    downgradeControlNo: 'Enable Downgrade Mode',
-                    downgradeControlHint: 'When enabled: CF Direct Fail -> SOCKS5 -> Fallback',
-                    tlsControlDefault: 'Default (Keep All Nodes)',
-                    tlsControlYes: 'TLS Nodes Only',
-                    tlsControlHint: 'When set to "TLS Nodes Only", non-TLS nodes (e.g., port 80) are not generated',
-                    preferredControlDefault: 'Default (Enable Preferred)',
-                    preferredControlYes: 'Disable Preferred',
-                    preferredControlHint: 'When set to "Disable Preferred", only native address is used',
-                    regionNames: {
-                        US: '🇺🇸 US', SG: '🇸🇬 Singapore', JP: '🇯🇵 Japan',
-                        KR: '🇰🇷 South Korea', DE: '🇩🇪 Germany', SE: '🇸🇪 Sweden', NL: '🇳🇱 Netherlands',
-                        FI: '🇫🇮 Finland', GB: '🇬🇧 UK', FR: '🇫🇷 France', CA: '🇨🇦 Canada',
-                        AU: '🇦🇺 Australia', HK: '🇭🇰 Hong Kong', TW: '🇹🇼 Taiwan'
-                    },
-                    terminal: 'Terminal v2.9.3',
-                    githubProject: 'GitHub Project',
-                    autoDetectClient: 'Auto Detect',
-                    selectionLogicText: 'Same Region -> Nearby Region -> Other Regions',
-                    customIPDisabledHint: 'Region selection disabled when using Custom ProxyIP',
-                    customIPMode: 'Custom ProxyIP Mode (p variable enabled)',
-                    customIPModeDesc: 'Custom IP Mode (Region match disabled)',
-                    usingCustomProxyIP: 'Using Custom ProxyIP: ',
-                    customIPConfig: ' (p variable config)',
-                    customIPModeDisabled: 'Custom IP Mode, region selection disabled',
-                    manualRegion: 'Manual Region',
-                    manualRegionDesc: ' (Manual)',
-                    proxyIPAvailable: '10/10 Available (ProxyIP Domain Pre-set)',
-                    smartSelection: 'Smart Nearby Selection',
-                    sameRegionIP: 'Same Region IP Available (1)',
-                    cloudflareDetection: 'Cloudflare Built-in Detection',
-                    detectionFailed: 'Detection Failed',
-                    apiTestResult: 'API Detection Result: ',
-                    apiTestTime: 'Detection Time: ',
-                    apiTestFailed: 'API Detection Failed: ',
-                    unknownError: 'Unknown Error',
-                    apiTestError: 'API Test Failed: ',
-                    kvNotConfigured: 'KV Storage not configured. Config management unavailable.\n\nPlease in Cloudflare Workers:\n1. Create KV Namespace\n2. Bind variable C\n3. Redeploy',
-                    kvNotEnabled: 'KV Storage Not Configured',
-                    kvCheckFailed: 'KV Check Failed: Invalid Response',
-                    kvCheckFailedStatus: 'KV Check Failed - Status: ',
-                    kvCheckFailedError: 'KV Check Failed - Error: '
-                },
-                    fa: {
-                        subscriptionCopied: 'لینک اشتراک کپی شد',
-                        autoSubscriptionCopied: 'لینک اشتراک تشخیص خودکار کپی شد، کلاینت هنگام دسترسی بر اساس User-Agent به طور خودکار تشخیص داده و قالب مربوطه را برمی‌گرداند'
-                    }
-                };
+                                const translations = ${JSON.stringify(translations)};
 
                 function getCookie(name) {
                     const value = '; ' + document.cookie;
@@ -3970,19 +4782,33 @@
                     return null;
                 }
 
-                const browserLang = navigator.language || navigator.userLanguage || '';
-                const savedLang = localStorage.getItem('preferredLanguage') || getCookie('preferredLanguage');
-                let isFarsi = false;
+                function getPreferredLanguage() {
+                    const savedLang = localStorage.getItem('preferredLanguage') || getCookie('preferredLanguage') || '';
+                    const browserLang = (navigator.language || navigator.userLanguage || '').toLowerCase();
 
-                if (savedLang === 'fa' || savedLang === 'fa-IR') {
-                    isFarsi = true;
-                } else if (savedLang === 'zh' || savedLang === 'en-US') {
-                    isFarsi = false;
-                } else {
-                    isFarsi = browserLang.includes('fa') || browserLang.includes('fa-IR');
+                    if (savedLang) {
+                        if (savedLang === 'fa' || savedLang === 'fa-IR') return 'fa';
+                        if (savedLang === 'zh' || savedLang === 'zh-CN' || savedLang === 'zh-Hans') return 'zh';
+                        return 'en';
+                    }
+
+                    if (browserLang.startsWith('fa')) return 'fa';
+                    if (browserLang.startsWith('zh')) return 'zh';
+                    return 'en';
                 }
 
-                const t = translations[isFarsi ? 'fa' : 'en'];
+                function getTranslations() {
+                    const lang = getPreferredLanguage();
+                    const base = translations.en || {};
+                    const current = translations[lang] || {};
+                    const merged = Object.assign({}, base, current);
+                    if (base.regionNames || current.regionNames) {
+                        merged.regionNames = Object.assign({}, base.regionNames || {}, current.regionNames || {});
+                    }
+                    return merged;
+                }
+
+                t = getTranslations();
 
                 function changeLanguage(lang) {
                     localStorage.setItem('preferredLanguage', lang);
@@ -4340,7 +5166,7 @@
                     ipSource: 'IP Source:',
                     manualInput: 'Manual Input',
                     cfRandomIP: 'CF Random IP',
-                    urlFetch: 'URL Fetch',
+                    urlFetch: 'Fetch from URL',
                     randomCount: 'Generate Count:',
                     fetchURL: 'Fetch URL:',
                     fetchURLPlaceholder: 'Enter URL of IP list',
@@ -4478,7 +5304,7 @@
                             }
                         };
 
-                        const t = translations[isFarsi ? 'fa' : 'en'];
+                        const t = getTranslations();
 
                     let detectedRegion = 'US'; // 默认值
                     let isCustomIPMode = false;
@@ -4503,7 +5329,7 @@
                                 if (regionMatch) regionMatch.innerHTML = t.regionMatch + '<span style="color: #ffaa00;">⚠️ ' + t.customIPModeDisabled + '</span>';
 
                             return; // 提前返回，不执行后续的地区匹配逻辑
-                            } else if (data.detectionMethod === '手动指定地区' || data.detectionMethod === 'تعیین منطقه دستی') {
+                            } else if (data.detectionMethod === 'Manual Region' || data.detectionMethod === '手动指定地区' || data.detectionMethod === 'تعیین منطقه دستی') {
                             isManualRegionMode = true;
                             detectedRegion = data.region;
 
@@ -4542,6 +5368,7 @@
                     }
 
                 } catch (error) {
+                        debugConsolePush('checkSystemStatus failed: ' + (error && error.message ? error.message : error), 'error');
                         function getCookie(name) {
                             const value = '; ' + document.cookie;
                             const parts = value.split('; ' + name + '=');
@@ -4632,7 +5459,7 @@
                     ipSource: 'IP Source:',
                     manualInput: 'Manual Input',
                     cfRandomIP: 'CF Random IP',
-                    urlFetch: 'URL Fetch',
+                    urlFetch: 'Fetch from URL',
                     randomCount: 'Generate Count:',
                     fetchURL: 'Fetch URL:',
                     fetchURLPlaceholder: 'Enter URL of IP list',
@@ -4739,7 +5566,7 @@
                             }
                         };
 
-                        const t = translations[isFarsi ? 'fa' : 'en'];
+                        const t = getTranslations();
 
                         document.getElementById('regionStatus').innerHTML = t.workerRegion + '<span style="color: #ff4444;">❌ ' + t.detectionFailed + '</span>';
                         document.getElementById('geoInfo').innerHTML = t.detectionMethod + '<span style="color: #ff4444;">❌ ' + t.detectionFailed + '</span>';
@@ -4841,7 +5668,7 @@
                     ipSource: 'IP Source:',
                     manualInput: 'Manual Input',
                     cfRandomIP: 'CF Random IP',
-                    urlFetch: 'URL Fetch',
+                    urlFetch: 'Fetch from URL',
                     randomCount: 'Generate Count:',
                     fetchURL: 'Fetch URL:',
                     fetchURLPlaceholder: 'Enter URL of IP list',
@@ -4947,7 +5774,7 @@
                             }
                         };
 
-                        const t = translations[isFarsi ? 'fa' : 'en'];
+                        const t = getTranslations();
 
                     const response = await fetch(window.location.pathname + '/test-api');
                     const data = await response.json();
@@ -5048,7 +5875,7 @@
                     ipSource: 'IP Source:',
                     manualInput: 'Manual Input',
                     cfRandomIP: 'CF Random IP',
-                    urlFetch: 'URL Fetch',
+                    urlFetch: 'Fetch from URL',
                     randomCount: 'Generate Count:',
                     fetchURL: 'Fetch URL:',
                     fetchURLPlaceholder: 'Enter URL of IP list',
@@ -5148,7 +5975,7 @@
                             fa: { apiTestError: 'تست API ناموفق: ' }
                         };
 
-                        const t = translations[isFarsi ? 'fa' : 'en'];
+                        const t = getTranslations();
                         alert(t.apiTestError + error.message);
                 }
             }
@@ -5250,7 +6077,7 @@
                     ipSource: 'IP Source:',
                     manualInput: 'Manual Input',
                     cfRandomIP: 'CF Random IP',
-                    urlFetch: 'URL Fetch',
+                    urlFetch: 'Fetch from URL',
                     randomCount: 'Generate Count:',
                     fetchURL: 'Fetch URL:',
                     fetchURLPlaceholder: 'Enter URL of IP list',
@@ -5359,7 +6186,7 @@
                             }
                         };
 
-                        const t = translations[isFarsi ? 'fa' : 'en'];
+                        const t = getTranslations();
 
                         if (response.status === 503) {
                             // KV未配置
@@ -5392,6 +6219,7 @@
                         document.getElementById('currentConfig').textContent = t.kvCheckFailedStatus + response.status;
                     }
                 } catch (error) {
+                    debugConsolePush('checkKVStatus failed: ' + (error && error.message ? error.message : error), 'error');
                     function getCookie(name) {
                         const value = '; ' + document.cookie;
                         const parts = value.split('; ' + name + '=');
@@ -5482,7 +6310,7 @@
                     ipSource: 'IP Source:',
                     manualInput: 'Manual Input',
                     cfRandomIP: 'CF Random IP',
-                    urlFetch: 'URL Fetch',
+                    urlFetch: 'Fetch from URL',
                     randomCount: 'Generate Count:',
                     fetchURL: 'Fetch URL:',
                     fetchURLPlaceholder: 'Enter URL of IP list',
@@ -5585,7 +6413,7 @@
                         }
                     };
 
-                    const t = translations[isFarsi ? 'fa' : 'en'];
+                    const t = getTranslations();
 
                     document.getElementById('kvStatus').innerHTML = '<span style="color: #ffaa00;">' + t.kvDisabled + '</span>';
                     document.getElementById('configCard').style.display = 'block';
@@ -5600,12 +6428,12 @@
                     const response = await fetch(apiUrl);
 
                     if (response.status === 503) {
-                        document.getElementById('currentConfig').textContent = 'KV存储未配置，无法加载配置';
+                        document.getElementById('currentConfig').textContent = t.configNotConfigured;
                         return;
                     }
                     if (!response.ok) {
                         const errorText = await response.text();
-                        document.getElementById('currentConfig').textContent = '加载配置失败: ' + errorText;
+                        document.getElementById('currentConfig').textContent = t.configLoadFailedStatus + errorText;
                         return;
                     }
                     const config = await response.json();
@@ -5618,12 +6446,12 @@
                         }
                     }
 
-                    let configText = '当前配置:\\n';
+                    let configText = t.currentConfigLabel;
                     if (Object.keys(displayConfig).length === 0) {
-                        configText += '(暂无配置)';
+                        configText += t.currentConfigEmpty;
                     } else {
                         for (const [key, value] of Object.entries(displayConfig)) {
-                            configText += key + ': ' + (value || '(未设置)') + '\\n';
+                            configText += key + ': ' + (value || t.currentConfigUnset) + '\\n';
                         }
                     }
 
@@ -5671,7 +6499,7 @@
                     updateWkRegionState();
 
                 } catch (error) {
-                    document.getElementById('currentConfig').textContent = '加载配置失败: ' + error.message;
+                    document.getElementById('currentConfig').textContent = t.configLoadFailedStatus + error.message;
                 }
             }
 
@@ -5684,15 +6512,15 @@
 
                 if (cp && cp.trim()) {
                     // Use custom path (d)
-                    pathTypeStatus.innerHTML = '<div style="color: #44ff44;">使用类型: <strong>自定义路径 (d)</strong></div>' +
-                        '<div style="margin-top: 5px; color: #00ff00;">当前路径: <span style="color: #ffaa00;">' + cp + '</span></div>' +
-                        '<div style="margin-top: 5px; font-size: 0.9rem; color: #00aa00;">访问地址: ' +
+                    pathTypeStatus.innerHTML = '<div style="color: #44ff44;">' + t.pathTypeCustom + '</div>' +
+                        '<div style="margin-top: 5px; color: #00ff00;">' + t.currentPathLabel + ': <span style="color: #ffaa00;">' + cp + '</span></div>' +
+                        '<div style="margin-top: 5px; font-size: 0.9rem; color: #00aa00;">' + t.accessUrlLabel + ': ' +
                         (currentUrl.split('/')[0] + '//' + currentUrl.split('/')[2]) + cp + '/sub</div>';
                 } else {
                     // Use UUID (u)
-                    pathTypeStatus.innerHTML = '<div style="color: #44ff44;">使用类型: <strong>UUID 路径 (u)</strong></div>' +
-                        '<div style="margin-top: 5px; color: #00ff00;">当前路径: <span style="color: #ffaa00;">' + (currentPath || '(UUID)') + '</span></div>' +
-                        '<div style="margin-top: 5px; font-size: 0.9rem; color: #00aa00;">访问地址: ' + currentUrl.split('/sub')[0] + '/sub</div>';
+                    pathTypeStatus.innerHTML = '<div style="color: #44ff44;">' + t.pathTypeUUID + '</div>' +
+                        '<div style="margin-top: 5px; color: #00ff00;">' + t.currentPathLabel + ': <span style="color: #ffaa00;">' + (currentPath || '(UUID)') + '</span></div>' +
+                        '<div style="margin-top: 5px; font-size: 0.9rem; color: #00aa00;">' + t.accessUrlLabel + ': ' + currentUrl.split('/sub')[0] + '/sub</div>';
                 }
             }
 
@@ -5740,7 +6568,7 @@
 
 
                     if (response.status === 503) {
-                        showStatus('KV not configured, cannot save. Please configure KV in Cloudflare Workers.', 'error');
+                        showStatus(t.kvNotConfiguredSave, 'error');
                         return;
                     }
 
@@ -5750,10 +6578,10 @@
                         // Try parsing JSON error message
                         try {
                             const errorData = JSON.parse(errorText);
-                            showStatus(errorData.message || 'Save failed', 'error');
+                            showStatus(errorData.message || t.saveFailed, 'error');
                         } catch (parseError) {
                             // If not JSON, display text directly
-                            showStatus('Save failed: ' + errorText, 'error');
+                            showStatus(t.saveFailed + ': ' + errorText, 'error');
                         }
                         return;
                     }
@@ -5773,7 +6601,7 @@
                     } else {
                     }
                 } catch (error) {
-                    showStatus('Save failed: ' + error.message, 'error');
+                    showStatus(t.saveFailed + ': ' + error.message, 'error');
                 }
             }
 
@@ -5783,6 +6611,9 @@
                 statusDiv.style.display = 'block';
                 statusDiv.style.color = type === 'success' ? '#00ff00' : '#ff0000';
                 statusDiv.style.borderColor = type === 'success' ? '#00ff00' : '#ff0000';
+                if (type === 'error' || type === 'warn') {
+                    debugConsolePush(message, type === 'warn' ? 'warn' : 'error');
+                }
 
                 setTimeout(function() {
                     statusDiv.style.display = 'none';
@@ -5790,7 +6621,7 @@
             }
 
             async function resetAllConfig() {
-                if (confirm('Are you sure to reset all config? This will clear KV config and revert to env vars.')) {
+                if (confirm(t.resetConfirm)) {
                     try {
                         const response = await fetch(window.location.pathname + '/api/config', {
                             method: 'POST',
@@ -5812,7 +6643,7 @@
                         });
 
                         if (response.status === 503) {
-                            showStatus('KV not configured, cannot reset.', 'error');
+                            showStatus(t.kvNotConfiguredReset, 'error');
                             return;
                         }
 
@@ -5822,16 +6653,16 @@
                             // Try parsing JSON error message
                             try {
                                 const errorData = JSON.parse(errorText);
-                                showStatus(errorData.message || 'Reset failed', 'error');
+                                showStatus(errorData.message || t.resetFailed, 'error');
                             } catch (parseError) {
                                 // If not JSON, display text directly
-                                showStatus('Reset failed: ' + errorText, 'error');
+                                showStatus(t.resetFailed + ': ' + errorText, 'error');
                             }
                             return;
                         }
 
                         const result = await response.json();
-                        showStatus(result.message || 'Config reset', result.success ? 'success' : 'error');
+                        showStatus(result.message || t.resetSuccess, result.success ? 'success' : 'error');
 
                         if (result.success) {
                             await loadCurrentConfig();
@@ -5843,7 +6674,7 @@
                             }, 1500);
                         }
                     } catch (error) {
-                        showStatus('Reset failed: ' + error.message, 'error');
+                        showStatus(t.resetFailed + ': ' + error.message, 'error');
                     }
                 }
             }
@@ -5857,7 +6688,7 @@
                     const currentUrl = window.location.href;
                     const subscriptionUrl = currentUrl + '/sub';
 
-                    echStatusEl.innerHTML = 'ECH Status: <span style="color: #ffaa00;">Checking...</span>';
+                    echStatusEl.innerHTML = t.echStatusLabel + ' <span style="color: #ffaa00;">' + t.checking + '</span>';
 
                     const response = await fetch(subscriptionUrl, {
                         method: 'GET',
@@ -5870,16 +6701,18 @@
                     const echConfigLength = response.headers.get('X-ECH-Config-Length');
 
                     if (echStatusHeader === 'ENABLED') {
-                        echStatusEl.innerHTML = 'ECH Status: <span style="color: #44ff44;">✅ Enabled' + (echConfigLength ? ' (配置长度: ' + echConfigLength + ')' : '') + '</span>';
+                        echStatusEl.innerHTML = t.echStatusLabel + ' <span style="color: #44ff44;">✅ ' + t.statusEnabled + (echConfigLength ? ' (' + t.configLengthLabel + ': ' + echConfigLength + ')' : '') + '</span>';
                     } else {
-                        echStatusEl.innerHTML = 'ECH Status: <span style="color: #ffaa00;">⚠️ Disabled</span>';
+                        echStatusEl.innerHTML = t.echStatusLabel + ' <span style="color: #ffaa00;">⚠️ ' + t.statusDisabled + '</span>';
                     }
                 } catch (error) {
-                    echStatusEl.innerHTML = 'ECH Status: <span style="color: #ff4444;">❌ Check Failed: ' + error.message + '</span>';
+                    debugConsolePush('checkECHStatus failed: ' + (error && error.message ? error.message : error), 'error');
+                    echStatusEl.innerHTML = t.echStatusLabel + ' <span style="color: #ff4444;">❌ ' + t.statusCheckFailed + ': ' + error.message + '</span>';
                 }
             }
 
             document.addEventListener('DOMContentLoaded', function() {
+                initDebugConsole();
                 createMatrixRain();
                 checkSystemStatus();
                 checkKVStatus();
@@ -5942,9 +6775,12 @@
                         if (!document.getElementById('ev').checked &&
                             !document.getElementById('evm').checked &&
                             !document.getElementById('ess').checked &&
+                            !document.getElementById('etu').checked &&
+                            !document.getElementById('ehy').checked &&
+                            !document.getElementById('eg').checked &&
                             !document.getElementById('et').checked &&
                             !document.getElementById('ex').checked) {
-                            alert('At least one protocol must be enabled!');
+                            alert(t.selectAtLeastOne);
                             return;
                         }
 
@@ -5981,9 +6817,12 @@
                         if (!document.getElementById('ev').checked &&
                             !document.getElementById('evm').checked &&
                             !document.getElementById('ess').checked &&
+                            !document.getElementById('etu').checked &&
+                            !document.getElementById('ehy').checked &&
+                            !document.getElementById('eg').checked &&
                             !document.getElementById('et').checked &&
                             !document.getElementById('ex').checked) {
-                            alert('At least one protocol must be enabled!');
+                            alert(t.selectAtLeastOne);
                             return;
                         }
 
@@ -6141,7 +6980,7 @@
                         const ips = generateCFRandomIPs(count, port);
                         document.getElementById('latencyTestInput').value = ips.join(',');
                         manualInputDiv.style.display = 'block';
-                        showStatus('${isFarsi ? 'تولید شد' : 'Generated'} ' + count + ' ${isFarsi ? 'IP تصادفی CF' : ' CF Random IPs'}', 'success');
+                        showStatus(t.generated + ' ' + count + ' ' + t.cfRandomIPs, 'success');
                     });
                 }
 
@@ -6150,12 +6989,12 @@
                         const urlInput = document.getElementById('fetchURLInput');
                         const fetchUrl = urlInput.value.trim();
                         if (!fetchUrl) {
-                            alert('${isFarsi ? 'لطفا URL را وارد کنید' : 'Please enter URL'}');
+                            alert(t.pleaseEnterUrl);
                             return;
                         }
 
                         fetchIPBtn.disabled = true;
-                        fetchIPBtn.textContent = '${isFarsi ? 'در حال دریافت...' : 'Fetching...'}';
+                        fetchIPBtn.textContent = t.fetching;
 
                         try {
                             // Support multiple URLs (comma separated) and multiple IPs/nodes (comma separated) in response
@@ -6185,15 +7024,15 @@
                             if (allItems.length > 0) {
                                 document.getElementById('latencyTestInput').value = allItems.join(',');
                                 manualInputDiv.style.display = 'block';
-                                showStatus('${isFarsi ? 'دریافت شد' : 'Fetched'} ' + allItems.length + ' ${isFarsi ? 'IP' : ' IPs'}', 'success');
+                                showStatus(t.fetched + ' ' + allItems.length + ' ' + t.ipCountSuffix, 'success');
                             } else {
-                                showStatus('${isFarsi ? 'داده‌ای یافت نشد' : 'No data found'}', 'error');
+                                showStatus(t.noDataFound, 'error');
                             }
                         } catch (err) {
-                            showStatus('${isFarsi ? 'خطا در دریافت' : 'Fetch failed'}: ' + err.message, 'error');
+                            showStatus(t.fetchFailed + ': ' + err.message, 'error');
                         } finally {
                             fetchIPBtn.disabled = false;
-                            fetchIPBtn.textContent = '⬇ ${isFarsi ? 'دریافت IP' : 'Fetch IP'}';
+                            fetchIPBtn.textContent = '⬇ ' + t.fetchIP;
                         }
                     });
                 }
@@ -6208,7 +7047,7 @@
                         const threads = parseInt(threadsField.value) || 5;
 
                         if (!inputValue) {
-                            showStatus('${isFarsi ? 'لطفا IP یا دامنه وارد کنید' : 'Please enter IP or Domain'}', 'error');
+                            showStatus(t.pleaseEnterIPOrDomain, 'error');
                             return;
                         }
 
@@ -6304,7 +7143,7 @@
                             if (testAbortController.signal.aborted) break;
 
                             const batch = targets.slice(i, Math.min(i + threads, total));
-                            testStatus.textContent = '${isFarsi ? 'در حال تست' : 'Testing'}: ' + (i + 1) + '-' + Math.min(i + threads, total) + '/' + total + ' (${isFarsi ? 'رشته‌ها' : '线程'}: ' + threads + ')';
+                            testStatus.textContent = t.testing + ': ' + (i + 1) + '-' + Math.min(i + threads, total) + '/' + total + ' (' + t.threadsLabel + ': ' + threads + ')';
 
                             const results = await Promise.all(batch.map(t => testOne(t)));
 
@@ -6318,7 +7157,7 @@
                             }
                         }
 
-                        testStatus.textContent = '${isFarsi ? 'تست کامل شد' : 'Test Complete'}: ' + completed + '/' + total;
+                        testStatus.textContent = t.testComplete + ': ' + completed + '/' + total;
                         startTestBtn.style.display = 'inline-block';
                         stopTestBtn.style.display = 'none';
 
@@ -6334,7 +7173,7 @@
                         }
                         startTestBtn.style.display = 'inline-block';
                         stopTestBtn.style.display = 'none';
-                        testStatus.textContent = '${isFarsi ? 'تست متوقف شد' : 'Test Stopped'}';
+                        testStatus.textContent = t.testStopped;
                     });
                 }
 
@@ -6356,7 +7195,7 @@
                 function getSelectedItems() {
                     const checkboxes = resultsList.querySelectorAll('input[type="checkbox"]:checked');
                     if (checkboxes.length === 0) {
-                        showStatus('${isFarsi ? 'لطفا حداقل یک مورد انتخاب کنید' : 'Please select at least one item'}', 'error');
+                        showStatus(t.selectAtLeastOne, 'error');
                         return null;
                     }
 
@@ -6386,7 +7225,7 @@
 
                         overwriteSelectedBtn.disabled = true;
                         appendSelectedBtn.disabled = true;
-                        overwriteSelectedBtn.textContent = '${isFarsi ? 'در حال ذخیره...' : 'Saving...'}';
+                        overwriteSelectedBtn.textContent = t.saving;
 
                         try {
                             const configData = {
@@ -6396,13 +7235,13 @@
                                 s: document.getElementById('socksConfig').value
                             };
                             await saveConfig(configData);
-                            showStatus('${isFarsi ? 'موفقیت‌آمیز بود' : 'Overwritten'} ' + selectedItems.length + ' ${isFarsi ? 'مورد و ذخیره شد' : ' items saved'}', 'success');
+                            showStatus(t.overwritten + ' ' + selectedItems.length + t.itemsSaved, 'success');
                         } catch (err) {
-                            showStatus('${isFarsi ? 'خطا در ذخیره' : 'Save failed'}: ' + err.message, 'error');
+                            showStatus(t.saveFailed + ': ' + err.message, 'error');
                         } finally {
                             overwriteSelectedBtn.disabled = false;
                             appendSelectedBtn.disabled = false;
-                            overwriteSelectedBtn.textContent = '${isFarsi ? '覆盖添加' : 'Overwrite Add'}';
+                            overwriteSelectedBtn.textContent = t.overwriteAdd;
                         }
                     });
                 }
@@ -6421,7 +7260,7 @@
 
                         overwriteSelectedBtn.disabled = true;
                         appendSelectedBtn.disabled = true;
-                        appendSelectedBtn.textContent = '${isFarsi ? 'در حال ذخیره...' : 'Saving...'}';
+                        appendSelectedBtn.textContent = t.saving;
 
                         try {
                             const configData = {
@@ -6431,13 +7270,13 @@
                                 s: document.getElementById('socksConfig').value
                             };
                             await saveConfig(configData);
-                            showStatus('${isFarsi ? 'موفقیت‌آمیز بود' : 'Appended'} ' + selectedItems.length + ' ${isFarsi ? 'مورد و ذخیره شد' : ' items saved'}', 'success');
+                            showStatus(t.appended + ' ' + selectedItems.length + t.itemsSaved, 'success');
                         } catch (err) {
-                            showStatus('${isFarsi ? 'خطا در ذخیره' : 'Save failed'}: ' + err.message, 'error');
+                            showStatus(t.saveFailed + ': ' + err.message, 'error');
                         } finally {
                             overwriteSelectedBtn.disabled = false;
                             appendSelectedBtn.disabled = false;
-                            appendSelectedBtn.textContent = '${isFarsi ? '追加添加' : 'Append Add'}';
+                            appendSelectedBtn.textContent = t.appendAdd;
                         }
                     });
                 }
@@ -6512,6 +7351,7 @@
                 };
 
                 function getColoName(colo) {
+                    if (getPreferredLanguage() !== 'zh') return colo;
                     return coloMap[colo] || colo;
                 }
 
@@ -6718,7 +7558,7 @@
 
                         return { success: true, latency: latency, colo: colo, testUrl: testUrl };
                     } catch (error) {
-                        const errorMsg = error.name === 'AbortError' ? '${isFarsi ? 'زمان تمام شد' : 'Timeout'}' : error.message;
+                        const errorMsg = error.name === 'AbortError' ? t.timeoutLabel : error.message;
                         console.log('[LatencyTest] Error:', errorMsg, 'URL:', testUrl);
                         return { success: false, latency: -1, error: errorMsg, colo: '', testUrl: testUrl };
                     }

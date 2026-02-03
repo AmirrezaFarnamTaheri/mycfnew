@@ -1,127 +1,148 @@
-# Deployment Guide 🔧
+# Deployment Guide
 
-This guide provides step-by-step instructions for deploying the Cloudflare Worker VLESS Proxy & DoH Ultimate script.
-
----
-
-## Method 1: Cloudflare Dashboard (Easy) 🖥️
-
-### 1. Create a Worker
-1.  Log in to your [Cloudflare Dashboard](https://dash.cloudflare.com/).
-2.  Navigate to **Workers & Pages** > **Create Application**.
-3.  Click **Create Worker**.
-4.  Give your worker a name (e.g., `vless-proxy`) and click **Deploy**.
-
-### 2. Install the Code
-1.  Click **Edit Code**.
-2.  Delete the existing content in `worker.js`.
-3.  Copy the entire content of the provided `worker.js` (from this repository) and paste it into the editor.
-4.  Click **Save and Deploy**.
-
-### 3. Configure Variables (Important!) 🔑
-1.  Go back to your Worker's settings page.
-2.  Go to **Settings** > **Variables and Secrets**.
-3.  Add the following variables:
-
-| Variable | Type | Description | Example Value |
-| :--- | :--- | :--- | :--- |
-| `u` | **Environment Variable** | **Required.** Your VLESS/Trojan User ID (UUID). | `de305d54-75b4-431b-adb2-eb6b9e546014` |
-| `p` | Text | *(Optional)* Custom Proxy IP/Domain. | `ts.hpc.tw` |
-| `s` | Secret | *(Optional)* SOCKS5 Proxy for fallback. | `user:pass@1.2.3.4:1080` |
-
-> [!WARNING]
-> **Security Risk**: Do NOT use the default UUID. Generate a new one using a tool like `uuidgenerator.net` or run `uuidgen` in your terminal.
-
-### 4. Setup KV Storage (Optional but Recommended) 💾
-To use the "Save Config" feature in the UI and Advanced IP Filtering:
-1.  Go to **Workers & Pages** > **KV**.
-2.  Click **Create a Namespace**.
-    *   *Recommendation*: Name it `CONFIG` (or `WORKER_CONFIG`).
-    *   Click **Add**.
-3.  Go back to your Worker > **Settings** > **Variables and Secrets**.
-4.  Scroll to **KV Namespace Bindings**.
-5.  Click **Add Binding**.
-    *   **Variable name**: `C` (Must be exactly `C`).
-    *   **KV Namespace**: Select the namespace you just created (e.g., `CONFIG`).
-6.  Click **Save and Deploy**.
-
-### 5. Access the UI 🌐
-Visit your worker's URL with your UUID:
-`https://<your-worker-name>.<your-subdomain>.workers.dev/<YOUR_UUID>`
+This document explains deployment options, environment variables, KV binding, and update/rollback practices.
 
 ---
 
-## Method 2: Wrangler CLI (Advanced) 💻
+## 1) Cloudflare Dashboard Deployment (Recommended)
 
-For developers who prefer the command line.
+### 1.1 Create Worker
+1. Dashboard → **Workers & Pages** → **Create Application** → **Create Worker**
+2. Name it (random names reduce attention)
+3. Click **Deploy**
 
-1.  **Install Wrangler**:
-    ```bash
-    npm install -g wrangler
-    ```
-
-2.  **Login**:
-    ```bash
-    wrangler login
-    ```
-
-3.  **Deploy**:
-    Run this command in the project directory:
-    ```bash
-    wrangler deploy worker.js --name my-proxy-worker
-    ```
-
-4.  **Set Secrets**:
-    ```bash
-    wrangler secret put u
-    # Enter your UUID when prompted
-    ```
+### 1.2 Paste Code
+1. Click **Edit Code**
+2. Replace default content with `worker.js` (or `worker_obfuscated.js`)
+3. **Save and Deploy**
 
 ---
 
-## Custom Domain Setup 🔗
+## 2) Configure Environment Variables
 
-To use a custom domain (e.g., `proxy.yourdomain.com`) instead of `workers.dev`:
+Open **Settings → Variables and Secrets**:
 
-1.  Add your domain to Cloudflare.
-2.  Go to your Worker > **Settings** > **Triggers**.
-3.  Click **Add Custom Domain**.
-4.  Enter the subdomain you want (e.g., `vpn.example.com`).
-5.  Cloudflare will automatically handle the DNS records and SSL certificates.
+- `u`: **required** (UUID)
+- `d`: optional custom path
+- `p`: optional ProxyIP
+- `s`: optional SOCKS5
+
+After changes, click **Deploy**.
+
+### 2.1 Full Variable Reference
+
+| Variable | Purpose | Example |
+|---|---|---|
+| `u` | UUID (your secret) | `8485...5823` |
+| `d` | Custom dashboard path | `/secret-panel` |
+| `p` | ProxyIP (hide Worker IP) | `1.2.3.4:443` |
+| `s` | SOCKS5 upstream | `user:pass@host:port` |
+| `wk` | Manual Worker region | `US` / `SG` / `JP` |
+| `yx` | Preferred IP list | `1.1.1.1:443#HK,...` |
+| `yxURL` | Preferred IP source URL | `https://example.com/ips.txt` |
+| `rm` | Region matching | `no` disables |
+| `qj` | Downgrade flow | `no` enables (Direct → SOCKS5 → Fallback) |
+| `dkby` | TLS-only nodes | `yes` enables |
+| `yxby` | Disable preferred nodes | `yes` disables |
+| `ae` | Allow API management | `yes` enables |
+| `ech` | Enable ECH | `yes` enables |
+| `customDNS` | DoH DNS for ECH | `https://dns.example/dns-query` |
+| `customECHDomain` | ECH domain | `cloudflare-ech.com` |
+| `tp` | Trojan password | `custom-pass` |
+| `homepage` | Fake homepage URL | `https://example.com` |
+| `scu` | Subscription converter | `https://url.v1.mk/sub` |
+| `ev` | VLESS enabled | `yes` / `no` |
+| `et` | Trojan enabled | `yes` / `no` |
+| `ex` | xhttp enabled | `yes` / `no` |
+| `evm` | VMess (link-only) | `yes` / `no` |
+| `ess` | Shadowsocks (link-only) | `yes` / `no` |
+| `etu` | TUIC (link-only) | `yes` / `no` |
+| `ehy` | Hysteria2 (link-only) | `yes` / `no` |
+| `eg` | VLESS gRPC (link-only) | `yes` / `no` |
+| `epd` | Preferred domain list | `yes` / `no` |
+| `epi` | Preferred IP list | `yes` / `no` |
+| `egi` | GitHub default list | `yes` / `no` |
+| `edp` | Diverse ports | `yes` / `no` |
+| `ipv4` | IPv4 filtering | `yes` / `no` |
+| `ipv6` | IPv6 filtering | `yes` / `no` |
+| `ispMobile` | ISP filter: Mobile | `yes` / `no` |
+| `ispUnicom` | ISP filter: Unicom | `yes` / `no` |
+| `ispTelecom` | ISP filter: Telecom | `yes` / `no` |
+
+### 2.2 Dashboard vs Environment (Precedence)
+
+- Environment variables act as defaults.
+- Dashboard writes to **KV** and overrides env values.
+- **Reset** in the dashboard clears KV and returns to env defaults.
 
 ---
 
-## Optimization: Finding ProxyIPs ⚡
+## 3) KV Namespace Binding (Required for Dashboard)
 
-If the default connection is slow or blocked, you need a "Clean IP" (ProxyIP).
-This is an IP address that Cloudflare trusts but is not blocked by your ISP.
+1. **Workers & Pages** → **KV** → **Create Namespace**
+2. Bind it in Worker Settings:
+   - Variable name: `C`
+   - KV namespace: your new namespace
+3. **Save and Deploy**
 
-1.  **What is it?**: A backend IP address that your Worker routes traffic through.
-2.  **How to find one?**:
-    *   Search for "Cloudflare clean IP" or "优选IP" on GitHub or Telegram.
-    *   Use tools like `CloudflareSpeedTest`.
-3.  **How to use?**:
-    *   Set the `p` variable in your Worker settings to the IP address (e.g., `104.16.x.x` or `domain.com`).
+> Without KV, dashboard settings cannot be saved.
 
 ---
 
-## Troubleshooting 🛠️
+## 4) Optional Wrangler Deployment (CLI)
 
-| Error Code | Meaning | Solution |
-| :--- | :--- | :--- |
-| **1101** | Worker Exception | The code crashed. Check if you modified `worker.js` incorrectly. Check logs. |
-| **1033** | Tunnel Error | Cloudflare Tunnel failed. Usually a network issue or bad ProxyIP (`p`). Try removing `p`. |
-| **522** | Connection Timed Out | The Worker cannot reach the destination. The destination might be blocking Cloudflare. |
-| **UUID Invalid** | Authentication Failed | Ensure your UUID in the URL matches the `u` variable exactly. |
-| **KV Error** | Storage Missing | You didn't bind the KV namespace `C`. See Step 4 in Method 1. |
+If you prefer CLI:
 
-**Common Fixes:**
-*   **"I can't open Google":** Your ProxyIP might be bad. Clear the `p` variable to test.
-*   **"Speed is slow":** Your ISP is throttling Cloudflare. Find a better ProxyIP or use a custom domain.
+1. Install Wrangler: `npm i -g wrangler`
+2. Login: `wrangler login`
+3. Publish: `wrangler publish`
+4. Add vars:
+   - `wrangler secret put u`
+
+KV binding via Wrangler depends on your `wrangler.toml`.
 
 ---
 
-**Credits**:
--   Original VLESS script by `3Kmfi6HP`.
--   DoH Proxy logic by `Hossein Pira`.
--   UI & Integrations by `Tehran Network` & Contributors.
+## 5) Custom Domain (Optional)
+
+1. Add a custom domain to the Worker
+2. Verify DNS in Cloudflare
+3. Update your client URLs to the custom domain
+
+---
+
+## 6) Updating the Worker
+
+- Replace code with a new version of `worker.js`
+- Re-deploy
+- KV data is preserved
+
+### Rollback
+- Keep a copy of your last known good `worker.js`
+- Re-deploy if needed
+
+---
+
+## 7) Logs & Debugging
+
+- Use **Workers → Logs** to inspect server errors
+- Use the in-dashboard debug console to view JS errors
+
+---
+
+## 8) Troubleshooting
+
+**Error 1101**
+- Usually a syntax error or missing binding
+
+**KV Not Configured**
+- Ensure binding name is exactly `C`
+
+**UUID Invalid**
+- Confirm variable name is `u`
+
+---
+
+For more details, see the Walkthrough.
+
+Full variable and API reference: `docs/REFERENCE.md`.
