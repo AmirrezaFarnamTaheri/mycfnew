@@ -7,9 +7,7 @@ This document is the full, end‑to‑end reference for everything in this repo:
 ## 1) Which file should I deploy?
 
 - `worker.js` (recommended): main Worker code (readable)
-- `worker_source.js`: source version (same behavior as `worker.js`)
 - `worker_obfuscated.js`: obfuscated build (harder to read, same behavior)
-- `worker_source.broken.js`: **do not use** (intentionally broken/old)
 
 ---
 
@@ -143,7 +141,7 @@ Notes:
 - `v2ray`
 - `loon`
 
-Note: The dashboard’s converter flow uses a built‑in `REMOTE_CONFIG_URL` (hardcoded in `worker_source.js`). If you want a different converter config, update that constant in the source.
+Note: The dashboard’s converter flow uses a built‑in `REMOTE_CONFIG_URL` (hardcoded in `worker.js`). If you want a different converter config, update that constant in the source.
 
 ECH response headers:
 - `X-ECH-Status: ENABLED`

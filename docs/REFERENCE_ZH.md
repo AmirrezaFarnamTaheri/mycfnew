@@ -7,9 +7,7 @@
 ## 1) 应该部署哪个文件？
 
 - `worker.js`（推荐）：主 Worker 代码（可读）
-- `worker_source.js`：源代码版本（与 `worker.js` 行为一致）
 - `worker_obfuscated.js`：混淆版（难读，但行为一致）
-- `worker_source.broken.js`：**不要使用**（旧/破坏版本）
 
 ---
 
@@ -143,7 +141,7 @@
 - `v2ray`
 - `loon`
 
-说明：面板里的转换流程会使用内置的 `REMOTE_CONFIG_URL`（写死在 `worker_source.js` 中）。如需自定义转换配置，请修改该常量。
+说明：面板里的转换流程会使用内置的 `REMOTE_CONFIG_URL`（写死在 `worker.js` 中）。如需自定义转换配置，请修改该常量。
 
 ECH 响应头：
 - `X-ECH-Status: ENABLED`

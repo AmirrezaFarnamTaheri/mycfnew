@@ -681,7 +681,10 @@
 
             if (request.method === 'POST' && ex) {
                 const r = await handleXhttpPost(request);
-                if (r) {
+                if (r instanceof Response) {
+                    return r;
+                }
+                if (r && typeof r === 'object' && 'readable' in r && 'closed' in r) {
                     ctx.waitUntil(r.closed);
                     return new Response(r.readable, {
                         headers: {
@@ -1414,7 +1417,7 @@
             function getCookie(name) {
                 const value = '; ' + document.cookie;
                 const parts = value.split('; ' + name + '=');
-                if (parts.length === 2) return parts.pop().split(';').shift();
+                if (parts.length === 2) return parts.pop()?.split(';').shift();
                 return null;
             }
 
@@ -1942,7 +1945,7 @@
                     function getCookie(name) {
                         const value = '; ' + document.cookie;
                         const parts = value.split('; ' + name + '=');
-                        if (parts.length === 2) return parts.pop().split(';').shift();
+                        if (parts.length === 2) return parts.pop()?.split(';').shift();
                         return null;
                     }
 
@@ -2471,8 +2474,7 @@
 
         const hasCustomPreferred = customPreferredIPs.length > 0 || customPreferredDomains.length > 0;
 
-        if (disablePreferred) {
-        } else if (hasCustomPreferred) {
+        if (!disablePreferred && hasCustomPreferred) {
 
             if (customPreferredIPs.length > 0 && epi) {
                 await addNodesFromList(customPreferredIPs);
@@ -2482,7 +2484,7 @@
                 const customDomainList = customPreferredDomains.map(d => ({ ip: d.domain, isp: d.name || d.domain }));
                 await addNodesFromList(customDomainList);
             }
-        } else {
+        } else if (!disablePreferred) {
 
             if (epd) {
             const domainList = directDomains.map(d => ({ ip: d.domain, isp: d.name || d.domain }));
@@ -3142,7 +3144,11 @@
         const optLen = new Uint8Array(chunk.slice(17, 18))[0];
         const cmd = new Uint8Array(chunk.slice(18 + optLen, 19 + optLen))[0];
         let isUDP = false;
-        if (cmd === 1) {} else if (cmd === 2) { isUDP = true; } else { return { hasError: true, message: E_UNSUPPORTED_CMD }; }
+        if (cmd === 2) {
+            isUDP = true;
+        } else if (cmd !== 1) {
+            return { hasError: true, message: E_UNSUPPORTED_CMD };
+        }
         const portIdx = 19 + optLen;
         const port = new DataView(chunk.slice(portIdx, portIdx + 2)).getUint16(0);
         let addrIdx = portIdx + 2, addrLen = 0, addrValIdx = addrIdx + 1, hostname = '';
@@ -4778,7 +4784,7 @@
                 function getCookie(name) {
                     const value = '; ' + document.cookie;
                     const parts = value.split('; ' + name + '=');
-                    if (parts.length === 2) return parts.pop().split(';').shift();
+                    if (parts.length === 2) return parts.pop()?.split(';').shift();
                     return null;
                 }
 
@@ -5077,7 +5083,7 @@
                         function getCookie(name) {
                             const value = '; ' + document.cookie;
                             const parts = value.split('; ' + name + '=');
-                            if (parts.length === 2) return parts.pop().split(';').shift();
+                            if (parts.length === 2) return parts.pop()?.split(';').shift();
                             return null;
                         }
 
@@ -5372,7 +5378,7 @@
                         function getCookie(name) {
                             const value = '; ' + document.cookie;
                             const parts = value.split('; ' + name + '=');
-                            if (parts.length === 2) return parts.pop().split(';').shift();
+                            if (parts.length === 2) return parts.pop()?.split(';').shift();
                             return null;
                         }
 
@@ -5581,7 +5587,7 @@
                         function getCookie(name) {
                             const value = '; ' + document.cookie;
                             const parts = value.split('; ' + name + '=');
-                            if (parts.length === 2) return parts.pop().split(';').shift();
+                            if (parts.length === 2) return parts.pop()?.split(';').shift();
                             return null;
                         }
 
@@ -5788,7 +5794,7 @@
                         function getCookie(name) {
                             const value = '; ' + document.cookie;
                             const parts = value.split('; ' + name + '=');
-                            if (parts.length === 2) return parts.pop().split(';').shift();
+                            if (parts.length === 2) return parts.pop()?.split(';').shift();
                             return null;
                         }
 
@@ -5990,7 +5996,7 @@
                         function getCookie(name) {
                             const value = '; ' + document.cookie;
                             const parts = value.split('; ' + name + '=');
-                            if (parts.length === 2) return parts.pop().split(';').shift();
+                            if (parts.length === 2) return parts.pop()?.split(';').shift();
                             return null;
                         }
 
@@ -6223,7 +6229,7 @@
                     function getCookie(name) {
                         const value = '; ' + document.cookie;
                         const parts = value.split('; ' + name + '=');
-                        if (parts.length === 2) return parts.pop().split(';').shift();
+                        if (parts.length === 2) return parts.pop()?.split(';').shift();
                         return null;
                     }
 

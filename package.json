@@ -1,4 +1,8 @@
 {
+  "scripts": {
+    "test": "node --check worker.js",
+    "qa": "node --check worker.js"
+  },
   "dependencies": {
     "terser": "^5.46.0"
   }
