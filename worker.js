@@ -1400,6 +1400,7 @@
                 <div class="terminal-line">
                     <span class="terminal-prompt">root:~$</span>
                         <input type="text" class="terminal-input" id="uuidInput" placeholder="${cp && cp.trim() ? t.inputD : t.inputU}" autofocus>
+                        <button id="uuidBtn" type="button" style="background: var(--accent); color: #000; border: none; padding: 2px 8px; font-family: inherit; font-size: 0.8rem; cursor: pointer; margin-left: 5px; text-transform: uppercase;">ENTER</button>
                     <span class="terminal-cursor"></span>
                 </div>
             </div>
@@ -1672,7 +1673,7 @@
             function handleUUIDInput() {
                 const input = document.getElementById('uuidInput');
                 const inputValue = input.value.trim();
-                const cp = '${ cp }';
+                const cp = ${JSON.stringify(cp)};
 
                 if (inputValue) {
                     const basePath = window.location.pathname.replace(/\/$/, '');
@@ -2005,6 +2006,12 @@
                 createMatrixRain();
                 const input = document.getElementById('uuidInput');
                 input.focus();
+                const btn = document.getElementById('uuidBtn');
+                if (btn) {
+                    btn.addEventListener('click', function() {
+                        handleUUIDInput();
+                    });
+                }
                 input.addEventListener('keydown', function(e) {
                     if (e.key === 'Enter' || e.keyCode === 13) {
                         handleUUIDInput();
