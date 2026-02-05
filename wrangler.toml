@@ -1,3 +1,11 @@
 name = "cfnew-local"
 main = "worker.js"
 compatibility_date = "2024-11-01"
+
+[vars]
+u = "03af76f9-e3d3-4a9b-9f08-c7f2ffc20356"
+
+[[kv_namespaces]]
+binding = "C"
+id = "local-kv"
+preview_id = "local-kv-preview"

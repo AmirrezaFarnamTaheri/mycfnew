@@ -2,7 +2,7 @@
     // CFnew - Terminal v2.9.3
     // Version: v2.9.3
     import { connect } from 'cloudflare:sockets';
-    let at = 'uuid';
+    let at = '';
     let fallbackAddress = '';
     let socks5Config = '';
     let customPreferredIPs = [];
@@ -35,7 +35,7 @@
 
     let scu = 'https://url.v1.mk/sub';
     // Remote config URL (Hardcoded)
-    const remoteConfigUrl = 'https://raw.githubusercontent.com/byJoey/test/refs/heads/main/tist.ini';
+    const defaultRemoteConfigUrl = 'https://raw.githubusercontent.com/byJoey/test/refs/heads/main/tist.ini';
 
     let epd = false;   // Preferred domains disabled by default
     let epi = true;
@@ -406,7 +406,7 @@
 
                 await initKVStore(env);
 
-                at = (env.u || env.U || at).toLowerCase();
+                at = (env.u || env.U || at).toLowerCase(); if (!at) { return new Response('UUID not set', { status: 500 }); }
                 const subPath = (env.d || env.D || at).toLowerCase();
 
                 const ci = getConfigValue('p', env.p || env.P);
@@ -598,6 +598,7 @@
                 }
 
             piu = getConfigValue('yxURL', env.yxURL || env.YXURL) || 'https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt';
+                const rcu = getConfigValue('rcu', env.rcu || env.RCU) || defaultRemoteConfigUrl;
 
             cp = getConfigValue('d', env.d || env.D) || '';
 
@@ -2029,7 +2030,7 @@
                 }
 
                 if (matchesCustomPath(pathParts, cp)) {
-                    return await handleSubscriptionPage(request, at);
+                    return await handleSubscriptionPage(request, at, rcu);
                 }
 
                 const user = extractUuidFromPathParts(pathParts);
@@ -2062,7 +2063,7 @@
                     const user = extractUuidFromPathParts(pathParts);
                     if (user) {
                         if (user === at) {
-                            return await handleSubscriptionPage(request, user);
+                            return await handleSubscriptionPage(request, user, rcu);
                         } else {
                             return new Response(JSON.stringify({ error: 'UUID Error: Please note the variable name is u, not uuid' }), {
                                 status: 403,
@@ -3286,7 +3287,12 @@
         return { username, password, hostname, socksPort };
     }
 
-    async function handleSubscriptionPage(request, user = null) {
+    async function handleSubscriptionPage(request, user = null, remoteConfigUrl = defaultRemoteConfigUrl) {
+      try {
+        new URL(remoteConfigUrl);
+      } catch {
+        return new Response('Invalid remoteConfigUrl', { status: 400 });
+      }
         if (!user) user = at;
 
         const url = new URL(request.url);
