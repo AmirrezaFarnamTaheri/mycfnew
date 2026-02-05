@@ -1160,6 +1160,15 @@
             .terminal-success {
                 color: #44ff44; margin: 5px 0;
             }
+            .terminal-button-connect {
+                background: #003300; border: 1px solid #00ff00; color: #00ff00;
+                padding: 2px 8px; font-family: "Courier New", monospace;
+                cursor: pointer; margin-left: 10px; font-size: 12px;
+                transition: all 0.3s; vertical-align: middle;
+            }
+            .terminal-button-connect:hover {
+                background: #00ff00; color: #000000; box-shadow: 0 0 10px #00ff00;
+            }
             .matrix-text {
                 position: fixed; top: 20px; right: 20px;
                 color: #00ff00; font-family: "Courier New", monospace;
@@ -1208,6 +1217,7 @@
                     <span class="terminal-prompt">root:~$</span>
                         <input type="text" class="terminal-input" id="uuidInput" placeholder="${cp && cp.trim() ? t.inputD : t.inputU}" autofocus>
                     <span class="terminal-cursor"></span>
+                    <button id="connectBtn" class="terminal-button-connect">[ ENTER ]</button>
                 </div>
             </div>
         </div>
@@ -1544,12 +1554,18 @@
 
             document.addEventListener('DOMContentLoaded', function() {
                 const input = document.getElementById('uuidInput');
+                const btn = document.getElementById('connectBtn');
                 input.focus();
-                input.addEventListener('keypress', function(e) {
+                input.addEventListener('keydown', function(e) {
                     if (e.key === 'Enter') {
                         handleUUIDInput();
                     }
                 });
+                if (btn) {
+                    btn.addEventListener('click', function() {
+                        handleUUIDInput();
+                    });
+                }
             });
         </script>
     </body>
