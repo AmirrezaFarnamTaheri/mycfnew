@@ -3288,6 +3288,11 @@
     }
 
     async function handleSubscriptionPage(request, user = null, remoteConfigUrl = defaultRemoteConfigUrl) {
+      try {
+        new URL(remoteConfigUrl);
+      } catch {
+        return new Response('Invalid remoteConfigUrl', { status: 400 });
+      }
         if (!user) user = at;
 
         const url = new URL(request.url);
