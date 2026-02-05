@@ -2,7 +2,7 @@
     // CFnew - Terminal v2.9.3
     // Version: v2.9.3
     import { connect } from 'cloudflare:sockets';
-    let at = 'uuid';
+    let at = '';
     let fallbackAddress = '';
     let socks5Config = '';
     let customPreferredIPs = [];
@@ -406,7 +406,7 @@
 
                 await initKVStore(env);
 
-                at = (env.u || env.U || at).toLowerCase();
+                at = (env.u || env.U || at).toLowerCase(); if (!at) { return new Response('UUID not set', { status: 500 }); }
                 const subPath = (env.d || env.D || at).toLowerCase();
 
                 const ci = getConfigValue('p', env.p || env.P);
