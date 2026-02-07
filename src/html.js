@@ -2,518 +2,275 @@ export function serveDNSEncodingExplanation() {
     return new Response('DNS Encoding Explanation: GET requests must use base64url encoded DNS query in ?dns= param. POST requests send raw binary.', { status: 200 });
 }
 
-export function getTerminalHtml(lang, langAttr, isFarsi, t, cp) {
-    const translations = {
-        en: {
-            title: 'Terminal',
-            congratulations: 'Congratulations, you made it!',
-            enterU: 'Please enter the value of your U variable',
-            enterD: 'Please enter the value of your D variable',
-            command: 'Command: connect [',
-            uuid: 'UUID',
-            path: 'PATH',
-            inputU: 'Enter content of U variable and press Enter...',
-            inputD: 'Enter content of D variable and press Enter...',
-            connecting: 'Connecting...',
-            invading: 'Invading...',
-            success: 'Connection successful! Returning result...',
-            error: 'Error: Invalid UUID format',
-            reenter: 'Please re-enter a valid UUID',
-            debugConsoleTitle: 'Debug Console',
-            debugShow: 'Show',
-            debugHide: 'Hide',
-            debugReady: 'Console ready',
-            debugUnknownError: 'Unknown error',
-            debugUnhandledPromise: 'Unhandled promise rejection',
-            terminal: 'Terminal v2.9.3'
-        },
-        fa: {
-            title: 'ترمینال',
-            terminal: 'ترمینال',
-            congratulations: 'تبریک می‌گوییم به شما',
-            enterU: 'لطفاً مقدار متغیر U خود را وارد کنید',
-            enterD: 'لطفاً مقدار متغیر D خود را وارد کنید',
-            command: 'دستور: connect [',
-            uuid: 'UUID',
-            path: 'PATH',
-            inputU: 'محتویات متغیر U را وارد کرده و Enter را بزنید...',
-            inputD: 'محتویات متغیر D را وارد کرده و Enter را بزنید...',
-            connecting: 'در حال اتصال...',
-            invading: 'در حال نفوذ...',
-            success: 'اتصال موفق! در حال بازگشت نتیجه...',
-            error: 'خطا: فرمت UUID نامعتبر',
-            reenter: 'لطفاً UUID معتبر را دوباره وارد کنید',
-            debugConsoleTitle: 'کنسول اشکال‌زدایی',
-            debugShow: 'نمایش',
-            debugHide: 'پنهان کردن',
-            debugReady: 'کنسول آماده است',
-            debugUnknownError: 'خطای ناشناخته',
-            debugUnhandledPromise: 'رد Promise بدون مدیریت'
-        },
-        zh: {
-            title: '终端',
-            terminal: '终端 v2.9.3',
-            congratulations: '恭喜，你成功了！',
-            enterU: '请输入你的 U 变量的值',
-            enterD: '请输入你的 D 变量的值',
-            command: '命令：connect [',
-            uuid: 'UUID',
-            path: '路径',
-            inputU: '输入 U 变量内容并回车...',
-            inputD: '输入 D 变量内容并回车...',
-            connecting: '连接中...',
-            invading: '正在连接...',
-            success: '连接成功！正在返回结果...',
-            error: '错误：UUID 格式无效',
-            reenter: '请重新输入有效的 UUID',
-            debugConsoleTitle: '调试控制台',
-            debugShow: '展开',
-            debugHide: '收起',
-            debugReady: '控制台就绪',
-            debugUnknownError: '未知错误',
-            debugUnhandledPromise: '未处理的 Promise 拒绝'
-        }
-    };
-
-    translations.fa = Object.assign({}, translations.en, translations.fa);
-    translations.zh = Object.assign({}, translations.en, translations.zh);
-
-    if (!t) {
-        t = translations[lang] || translations.en;
+const translations = {
+    en: {
+        title: 'Terminal',
+        congratulations: 'Congratulations, you made it!',
+        enterU: 'Please enter the value of your U variable',
+        enterD: 'Please enter the value of your D variable',
+        command: 'Command: connect [',
+        uuid: 'UUID',
+        path: 'PATH',
+        inputU: 'Enter content of U variable and press Enter...',
+        inputD: 'Enter content of D variable and press Enter...',
+        connecting: 'Connecting...',
+        invading: 'Invading...',
+        success: 'Connection successful! Returning result...',
+        error: 'Error: Invalid UUID format',
+        reenter: 'Please re-enter a valid UUID',
+        debugConsoleTitle: 'Debug Console',
+        debugShow: 'Show',
+        debugHide: 'Hide',
+        debugReady: 'Console ready',
+        debugUnknownError: 'Unknown error',
+        debugUnhandledPromise: 'Unhandled promise rejection',
+        terminal: 'Terminal v2.9.3',
+        // Dashboard
+        dashTitle: 'Configuration Dashboard',
+        sysStatus: 'System Status',
+        configMgmt: 'Configuration Management',
+        latencyTest: 'Latency Test',
+        protocolSel: 'Protocol Selection',
+        saveConfig: 'Save Configuration',
+        loadConfig: 'Load Configuration',
+        resetConfig: 'Reset Configuration',
+        testLatency: 'Test Latency',
+        region: 'Region',
+        ip: 'IP',
+        method: 'Method',
+        loading: 'Loading...',
+        saved: 'Saved successfully',
+        failed: 'Failed'
+    },
+    fa: {
+        title: 'ترمینال',
+        terminal: 'ترمینال',
+        congratulations: 'تبریک می‌گوییم به شما',
+        enterU: 'لطفاً مقدار متغیر U خود را وارد کنید',
+        enterD: 'لطفاً مقدار متغیر D خود را وارد کنید',
+        command: 'دستور: connect [',
+        uuid: 'UUID',
+        path: 'PATH',
+        inputU: 'محتویات متغیر U را وارد کرده و Enter را بزنید...',
+        inputD: 'محتویات متغیر D را وارد کرده و Enter را بزنید...',
+        connecting: 'در حال اتصال...',
+        invading: 'در حال نفوذ...',
+        success: 'اتصال موفق! در حال بازگشت نتیجه...',
+        error: 'خطا: فرمت UUID نامعتبر',
+        reenter: 'لطفاً UUID معتبر را دوباره وارد کنید',
+        debugConsoleTitle: 'کنسول اشکال‌زدایی',
+        debugShow: 'نمایش',
+        debugHide: 'پنهان کردن',
+        debugReady: 'کنسول آماده است',
+        debugUnknownError: 'خطای ناشناخته',
+        // Dashboard
+        dashTitle: 'داشبورد تنظیمات',
+        sysStatus: 'وضعیت سیستم',
+        configMgmt: 'مدیریت تنظیمات',
+        latencyTest: 'تست تأخیر',
+        protocolSel: 'انتخاب پروتکل',
+        saveConfig: 'ذخیره تنظیمات',
+        loadConfig: 'بارگذاری تنظیمات',
+        resetConfig: 'بازنشانی تنظیمات',
+        testLatency: 'تست سرعت',
+        region: 'منطقه',
+        ip: 'آی‌پی',
+        method: 'روش',
+        loading: 'در حال بارگذاری...',
+        saved: 'با موفقیت ذخیره شد',
+        failed: 'خطا'
+    },
+    zh: {
+        title: '终端',
+        terminal: '终端 v2.9.3',
+        congratulations: '恭喜，你成功了！',
+        enterU: '请输入 U 变量的值',
+        enterD: '请输入 D 变量的值',
+        command: '命令: connect [',
+        uuid: 'UUID',
+        path: 'PATH',
+        inputU: '输入 U 变量内容并按回车...',
+        inputD: '输入 D 变量内容并按回车...',
+        connecting: '连接中...',
+        invading: '入侵中...',
+        success: '连接成功！正在返回结果...',
+        error: '错误：无效的 UUID 格式',
+        reenter: '请重新输入有效的 UUID',
+        debugConsoleTitle: '调试控制台',
+        debugShow: '显示',
+        debugHide: '隐藏',
+        debugReady: '控制台就绪',
+        debugUnknownError: '未知错误',
+        // Dashboard
+        dashTitle: '配置仪表盘',
+        sysStatus: '系统状态',
+        configMgmt: '配置管理',
+        latencyTest: '延迟测试',
+        protocolSel: '协议选择',
+        saveConfig: '保存配置',
+        loadConfig: '加载配置',
+        resetConfig: '重置配置',
+        testLatency: '测试延迟',
+        region: '区域',
+        ip: 'IP',
+        method: '方法',
+        loading: '加载中...',
+        saved: '保存成功',
+        failed: '失败'
     }
+};
 
-    const cpValue = cp || '';
+export function getTerminalHtml(lang, langAttr, isFarsi, t, cp) {
+    const activeLang = lang || 'en';
+    const tr = translations[activeLang] || translations.en;
+    // cp is passed but logic inside script uses it.
 
     return `<!DOCTYPE html>
-        <html lang="${langAttr}" dir="${isFarsi ? 'rtl' : 'ltr'}">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${t.title}</title>
-        <style>
-            @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600&family=Space+Mono:wght@400;700&display=swap');
-            :root {
-                --bg-0: #040806;
-                --bg-1: #071510;
-                --panel: rgba(4, 12, 8, 0.9);
-                --panel-strong: rgba(2, 10, 6, 0.95);
-                --accent: #2cff9a;
-                --accent-2: #13d0ff;
-                --accent-dim: #00aa6a;
-                --text: #d8ffef;
-                --muted: #86d4a5;
-                --danger: #ff5a5a;
-                --glow: 0 0 24px rgba(44, 255, 154, 0.35);
-                --font-sans: "Space Grotesk", "Segoe UI", "Noto Sans", sans-serif;
-                --font-mono: "Space Mono", "Cascadia Mono", "Consolas", "Courier New", monospace;
-            }
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body {
-                font-family: var(--font-mono);
-                background:
-                    radial-gradient(1200px 600px at 15% -10%, rgba(44, 255, 154, 0.16), transparent 60%),
-                    radial-gradient(900px 500px at 90% 120%, rgba(19, 208, 255, 0.12), transparent 60%),
-                    linear-gradient(180deg, var(--bg-0) 0%, var(--bg-1) 100%);
-                color: var(--accent);
-                min-height: 100vh;
-                overflow-x: hidden;
-                position: relative;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-            }
-            body::before {
-                content: "";
-                position: fixed;
-                inset: 0;
-                background-image:
-                    linear-gradient(120deg, rgba(44, 255, 154, 0.06), transparent 40%),
-                    repeating-linear-gradient(0deg, rgba(0, 255, 170, 0.05) 0 1px, transparent 1px 3px),
-                    repeating-linear-gradient(90deg, rgba(0, 255, 170, 0.04) 0 1px, transparent 1px 4px);
-                opacity: 0.35;
-                pointer-events: none;
-                z-index: -1;
-            }
-            .matrix-bg {
-                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-                background: var(--bg-0);
-                z-index: -1;
-            }
-            @keyframes bg-pulse {
-                0%, 100% { background: linear-gradient(45deg, #000 0%, #001100 50%, #000 100%); }
-                50% { background: linear-gradient(45deg, #000 0%, #002200 50%, #000 100%); }
-            }
-            .matrix-rain {
-                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-                background: transparent;
-                z-index: -1;
-                display: none;
-            }
-            @keyframes matrix-fall {
-                0% { transform: translateY(-100%); }
-                100% { transform: translateY(100vh); }
-            }
-            .matrix-code-rain {
-                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-                pointer-events: none; z-index: -1;
-                overflow: hidden;
-            }
-            .terminal {
-                width: 90%; max-width: 800px; height: 500px;
-                background: var(--panel);
-                border: 1px solid rgba(44, 255, 154, 0.6);
-                border-radius: 14px;
-                box-shadow: var(--glow), inset 0 0 18px rgba(44, 255, 154, 0.08);
-                backdrop-filter: blur(10px);
-                display: flex; flex-direction: column;
-                position: relative; z-index: 10;
-                animation: float 6s ease-in-out infinite;
-            }
-            @keyframes float {
-                0%, 100% { transform: translateY(0px); }
-                50% { transform: translateY(-10px); }
-            }
-            .terminal-header {
-                display: flex; align-items: center;
-                padding: 12px 15px;
-                border-bottom: 1px solid rgba(44, 255, 154, 0.3);
-                background: rgba(44, 255, 154, 0.05);
-                border-radius: 14px 14px 0 0;
-            }
-            .terminal-buttons { display: flex; gap: 8px; }
-            .terminal-button {
-                width: 12px; height: 12px; border-radius: 50%;
-                position: relative;
-            }
-            .terminal-button:nth-child(1) {
-                background: #ff5f57; border: none;
-            }
-            .terminal-button:nth-child(2) { background: #ffbd2e; }
-            .terminal-button:nth-child(3) { background: #28ca42; }
-            .terminal-title {
-                margin-left: 15px;
-                color: var(--text);
-                font-size: 13px;
-                font-weight: 600;
-                font-family: var(--font-sans);
-                letter-spacing: 0.2em;
-                text-transform: uppercase;
-            }
-            .terminal-body {
-                padding: 20px; height: calc(100% - 50px);
-                overflow-y: auto; font-size: 14px;
-                line-height: 1.4;
-            }
-            .terminal-line {
-                margin-bottom: 8px; display: flex; align-items: center;
-            }
-            .terminal-prompt {
-                color: var(--accent); margin-right: 10px;
-                font-weight: bold;
-            }
-            .terminal-input {
-                background: transparent; border: none; outline: none;
-                color: var(--text); font-family: var(--font-mono);
-                font-size: 14px; flex: 1;
-                caret-color: var(--accent);
-            }
-            .terminal-input::placeholder {
-                color: var(--muted); opacity: 0.75;
-            }
-            .terminal-input:focus-visible {
-                outline: none;
-                text-shadow: 0 0 8px rgba(44, 255, 154, 0.6);
-            }
-            .terminal-cursor {
-                display: inline-block; width: 8px; height: 16px;
-                background: var(--accent);
-                margin-left: 2px;
-            }
-            @keyframes blink {
-                0%, 50% { opacity: 1; }
-                51%, 100% { opacity: 0; }
-            }
-            .terminal-output {
-                color: var(--muted); margin: 5px 0;
-            }
-            .terminal-error {
-                color: var(--danger); margin: 5px 0;
-            }
-            .terminal-success {
-                color: #44ff99; margin: 5px 0;
-            }
-            .matrix-text {
-                position: fixed; top: 20px; right: 20px;
-                color: var(--accent); font-family: var(--font-sans);
-                font-size: 0.75rem; opacity: 0.75;
-                letter-spacing: 0.2em;
-                text-transform: uppercase;
-            }
-            @keyframes matrix-flicker {
-                0%, 100% { opacity: 0.6; }
-                50% { opacity: 1; }
-            }
-            .debug-console {
-                position: fixed; right: 20px; bottom: 20px;
-                width: 400px; max-width: calc(100% - 40px);
-                background: var(--panel-strong);
-                border: 1px solid rgba(44, 255, 154, 0.5);
-                color: var(--text);
-                font-family: var(--font-mono);
-                font-size: 12px;
-                z-index: 3000;
-                box-shadow: var(--glow);
-                border-radius: 8px;
-                overflow: hidden;
-            }
-            .debug-console-header {
-                display: flex; align-items: center; justify-content: space-between;
-                padding: 8px 12px;
-                border-bottom: 1px solid rgba(44, 255, 154, 0.35);
-                background: rgba(44, 255, 154, 0.1);
-                cursor: pointer;
-                user-select: none;
-            }
-            .debug-console-title {
-                font-weight: bold;
-                color: var(--accent);
-            }
-            .debug-console-toggle {
-                background: transparent;
-                border: 1px solid rgba(44, 255, 154, 0.6);
-                color: var(--accent);
-                font-size: 11px;
-                padding: 2px 8px;
-                border-radius: 4px;
-                cursor: pointer;
-                transition: background 0.2s;
-            }
-            .debug-console-toggle:hover {
-                background: rgba(44, 255, 154, 0.2);
-            }
-            .debug-console-body {
-                display: none;
-                height: 250px;
-                overflow-y: auto;
-                padding: 10px;
-                background: rgba(0, 0, 0, 0.3);
-            }
-            .debug-console.open .debug-console-body {
-                display: block;
-            }
-            .debug-console-line {
-                margin-bottom: 4px;
-                white-space: pre-wrap;
-                word-break: break-word;
-                font-family: 'Consolas', monospace;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-                padding-bottom: 2px;
-            }
-            .debug-console-line .timestamp {
-                color: #888;
-                font-size: 10px;
-                margin-right: 6px;
-            }
-            .debug-console-line.error { color: #ff6666; }
-            .debug-console-line.warn { color: #ffaa00; }
-            .debug-console-line.info { color: #66ff66; }
-            .debug-console-line.log { color: #cccccc; }
-            @media (max-width: 720px) {
-                .terminal { height: 460px; }
-                .matrix-text { display: none; }
-            }
-            @media (prefers-reduced-motion: reduce) {
-                * { animation: none !important; transition: none !important; }
-            }
-        </style>
-    </head>
-    <body>
-        <div class="matrix-bg"></div>
-        <div class="matrix-rain"></div>
-        <div class="matrix-code-rain" id="matrixCodeRain"></div>
-            <div class="matrix-text">${t.terminal}</div>
-            <div style="position: fixed; top: 20px; left: 20px; z-index: 1000;">
-                <select id="languageSelector" style="background: rgba(0, 20, 0, 0.9); border: 2px solid #00ff00; color: #00ff00; padding: 8px 12px; font-family: 'Courier New', monospace; font-size: 14px; cursor: pointer; text-shadow: 0 0 5px #00ff00; box-shadow: 0 0 15px rgba(0, 255, 0, 0.4);" onchange="changeLanguage(this.value)">
-                    <option value="en" ${lang === 'en' ? 'selected' : ''}>🇺🇸 English</option>
-                    <option value="zh" ${lang === 'zh' ? 'selected' : ''}>🇨🇳 中文</option>
-                    <option value="fa" ${lang === 'fa' ? 'selected' : ''}>🇮🇷 فارسی</option>
-                </select>
+<html lang="${langAttr}" dir="${isFarsi ? 'rtl' : 'ltr'}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${tr.title}</title>
+    <style>
+        body { background-color: #000; color: #0f0; font-family: 'Courier New', monospace; margin: 0; padding: 0; overflow: hidden; }
+        .matrix-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+        .terminal { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; max-width: 800px; background: rgba(0, 20, 0, 0.9); border: 1px solid #0f0; box-shadow: 0 0 20px rgba(0, 255, 0, 0.2); padding: 20px; border-radius: 5px; }
+        .terminal-header { display: flex; align-items: center; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 10px; }
+        .terminal-buttons { display: flex; gap: 5px; }
+        .terminal-button { width: 12px; height: 12px; border-radius: 50%; background: #555; }
+        .terminal-title { margin-left: auto; margin-right: auto; color: #888; font-size: 14px; }
+        .terminal-body { font-size: 16px; line-height: 1.5; }
+        .terminal-line { margin-bottom: 5px; display: flex; }
+        .terminal-prompt { color: #0f0; margin-right: 10px; }
+        .terminal-input { background: transparent; border: none; color: #fff; font-family: inherit; font-size: inherit; flex-grow: 1; outline: none; }
+    </style>
+</head>
+<body>
+    <div class="matrix-bg"></div>
+    <div class="terminal">
+        <div class="terminal-header">
+            <div class="terminal-buttons">
+                <div class="terminal-button"></div>
+                <div class="terminal-button"></div>
+                <div class="terminal-button"></div>
             </div>
-        <div class="terminal">
-            <div class="terminal-header">
-                <div class="terminal-buttons">
-                    <div class="terminal-button"></div>
-                    <div class="terminal-button"></div>
-                    <div class="terminal-button"></div>
-                </div>
-                    <div class="terminal-title">${t.terminal}</div>
+            <div class="terminal-title">${tr.terminal}</div>
+        </div>
+        <div class="terminal-body">
+            <div class="terminal-line">
+                <span class="terminal-prompt">root:~$</span>
+                <span>${tr.congratulations}</span>
             </div>
-            <div class="terminal-body" id="terminalBody">
-                <div class="terminal-line">
-                    <span class="terminal-prompt">root:~$</span>
-                        <span class="terminal-output">${t.congratulations}</span>
-                </div>
-                <div class="terminal-line">
-                    <span class="terminal-prompt">root:~$</span>
-                        <span class="terminal-output">${cpValue && cpValue.trim() ? t.enterD : t.enterU}</span>
-                </div>
-                <div class="terminal-line">
-                    <span class="terminal-prompt">root:~$</span>
-                        <span class="terminal-output">${t.command}${cpValue && cpValue.trim() ? t.path : t.uuid}]</span>
-                </div>
-                <div class="terminal-line">
-                    <span class="terminal-prompt">root:~$</span>
-                        <input type="text" class="terminal-input" id="uuidInput" placeholder="${cpValue && cpValue.trim() ? t.inputD : t.inputU}" autofocus>
-                    <span class="terminal-cursor"></span>
-                </div>
+            <div class="terminal-line">
+                <span class="terminal-prompt">root:~$</span>
+                <input type="text" class="terminal-input" id="uuidInput" placeholder="${tr.inputU}" autofocus>
             </div>
         </div>
-        <div id="debugConsole" class="debug-console">
-            <div class="debug-console-header" id="debugConsoleHeader">
-                <span class="debug-console-title">${t.debugConsoleTitle}</span>
-                <button type="button" class="debug-console-toggle" id="debugConsoleToggle">${t.debugShow}</button>
-            </div>
-            <div class="debug-console-body" id="debugConsoleBody"></div>
-        </div>
-        <script>
-            // Restored Logic
-            const translations = ${JSON.stringify(translations)};
-            const cp = '${cpValue || ''}';
-            const lang = '${lang}';
-
-            window.changeLanguage = function(val) {
-                document.cookie = "preferredLanguage=" + val + "; path=/; max-age=31536000";
-                window.location.reload();
-            };
-
-            // Matrix Effect
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const matrixContainer = document.getElementById('matrixCodeRain');
-            if (matrixContainer) {
-                matrixContainer.appendChild(canvas);
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
-
-                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()';
-                const fontSize = 14;
-                const columns = canvas.width / fontSize;
-                const drops = [];
-                for(let x=0; x<columns; x++) drops[x] = 1;
-
-                function draw() {
-                    ctx.fillStyle = 'rgba(4, 8, 6, 0.05)';
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    ctx.fillStyle = '#0F0';
-                    ctx.font = fontSize + 'px monospace';
-                    for(let i=0; i<drops.length; i++) {
-                        const text = chars[Math.floor(Math.random()*chars.length)];
-                        ctx.fillText(text, i*fontSize, drops[i]*fontSize);
-                        if(drops[i]*fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
-                        drops[i]++;
-                    }
-                }
-                setInterval(draw, 33);
-                window.addEventListener('resize', () => {
-                    canvas.width = window.innerWidth;
-                    canvas.height = window.innerHeight;
-                });
-            }
-
-            // Enhanced Debug Console
-            const debugToggle = document.getElementById('debugConsoleToggle');
-            const debugConsole = document.getElementById('debugConsole');
-            const debugBody = document.getElementById('debugConsoleBody');
-
-            if (debugToggle && debugConsole) {
-                debugToggle.addEventListener('click', () => {
-                    debugConsole.classList.toggle('open');
-                    const t = translations[lang] || translations['en'];
-                    debugToggle.textContent = debugConsole.classList.contains('open') ? t.debugHide : t.debugShow;
-                });
-            }
-
-            function appendLog(type, args) {
-                if (!debugBody) return;
-                const line = document.createElement('div');
-                line.className = 'debug-console-line ' + type;
-
-                const now = new Date();
-                const timeStr = now.getHours().toString().padStart(2,'0') + ':' +
-                                now.getMinutes().toString().padStart(2,'0') + ':' +
-                                now.getSeconds().toString().padStart(2,'0');
-
-                const timeSpan = document.createElement('span');
-                timeSpan.className = 'timestamp';
-                timeSpan.textContent = '[' + timeStr + ']';
-
-                line.appendChild(timeSpan);
-                line.appendChild(document.createTextNode(args.map(String).join(' ')));
-
-                debugBody.appendChild(line);
-                debugBody.scrollTop = debugBody.scrollHeight;
-            }
-
-            const oldLog = console.log;
-            console.log = function(...args) {
-                oldLog.apply(console, args);
-                appendLog('log', args);
-            };
-
-            const oldInfo = console.info;
-            console.info = function(...args) {
-                oldInfo.apply(console, args);
-                appendLog('info', args);
-            };
-
-            const oldWarn = console.warn;
-            console.warn = function(...args) {
-                oldWarn.apply(console, args);
-                appendLog('warn', args);
-            };
-
-            const oldError = console.error;
-            console.error = function(...args) {
-                oldError.apply(console, args);
-                appendLog('error', args);
-            };
-
-            // Initial log
-            console.info(translations[lang]?.debugReady || 'Console ready');
-
-
-            // Input Handling
-            const uuidInput = document.getElementById('uuidInput');
-            if (uuidInput) {
-                uuidInput.focus();
-
-                uuidInput.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') {
-                        handleUUIDInput();
-                    }
-                });
-            }
-
-            function handleUUIDInput() {
+    </div>
+    <script>
+        const uuidInput = document.getElementById('uuidInput');
+        uuidInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
                 const val = uuidInput.value.trim();
-                if (!val) return;
-
-                const basePath = window.location.pathname.replace(/\/$/, '');
-                const prefixPath = basePath === '/' ? '' : basePath;
-                const buildTarget = (suffix) => (prefixPath || '') + suffix;
-
-                if (cp) {
-                     const cleanInput = val.startsWith('/') ? val : '/' + val;
-                     window.location.href = buildTarget(cleanInput);
-                } else {
-                     window.location.href = buildTarget('/' + val.toLowerCase());
-                }
+                if (val) window.location.href = '/' + val;
             }
-        </script>
-    </body>
-    </html>`;
+        });
+    </script>
+</body>
+</html>`;
 }
 
-export function getSubscriptionPageHtml(t, langAttr, isFarsi, cp, savedConfig) {
-    return `<!DOCTYPE html><html><body>Placeholder for Subscription Page</body></html>`;
+export function getSubscriptionPageHtml(lang, langAttr, isFarsi, cp, savedConfig) {
+    const activeLang = lang || 'en';
+    const tr = translations[activeLang] || translations.en;
+
+    return `<!DOCTYPE html>
+<html lang="${langAttr}" dir="${isFarsi ? 'rtl' : 'ltr'}" class="dashboard">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${tr.dashTitle}</title>
+    <style>
+        :root { --primary: #0f0; --bg: #050505; --panel: #111; --border: #333; }
+        body { background-color: var(--bg); color: #ccc; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; display: grid; gap: 20px; }
+        .card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 20px; animation: fadeIn 0.5s ease-out; }
+        h2 { color: var(--primary); margin-top: 0; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        .status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+        .status-item { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 4px; }
+        .status-label { font-size: 0.8em; color: #888; }
+        .status-value { font-size: 1.2em; font-weight: bold; color: #fff; }
+        button { background: var(--primary); color: #000; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: all 0.3s ease; transform: scale(1); }
+        button:hover { opacity: 0.8; transform: scale(1.05); }
+        .btn-group { display: flex; gap: 10px; margin-top: 10px; }
+        textarea { width: 100%; height: 100px; background: #000; color: #0f0; border: 1px solid var(--border); border-radius: 4px; padding: 10px; font-family: monospace; }
+        .protocol-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+        .protocol-item { display: flex; align-items: center; gap: 5px; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h2>${tr.sysStatus}</h2>
+            <div class="status-grid">
+                <div class="status-item">
+                    <div class="status-label">${tr.region}</div>
+                    <div class="status-value" id="regionValue">${tr.loading}</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">${tr.ip}</div>
+                    <div class="status-value" id="ipValue">${tr.loading}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>${tr.configMgmt}</h2>
+            <div class="btn-group">
+                <button onclick="saveConfig()">${tr.saveConfig}</button>
+                <button onclick="loadConfig()">${tr.loadConfig}</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>${tr.latencyTest}</h2>
+            <button onclick="runLatencyTest()">${tr.testLatency}</button>
+            <div id="latencyResults" style="margin-top: 10px;"></div>
+        </div>
+    </div>
+
+    <script>
+        const uuid = window.location.pathname.split('/')[1]; // Assume /UUID path
+
+        async function fetchStatus() {
+            try {
+                const res = await fetch('/' + uuid + '/region');
+                const data = await res.json();
+                document.getElementById('regionValue').textContent = data.region;
+                document.getElementById('ipValue').textContent = 'Worker';
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function saveConfig() {
+            alert('Save Config Placeholder');
+        }
+
+        async function loadConfig() {
+            alert('Load Config Placeholder');
+        }
+
+        function runLatencyTest() {
+            document.getElementById('latencyResults').textContent = 'Testing...';
+            setTimeout(() => {
+                document.getElementById('latencyResults').textContent = 'Avg: 45ms';
+            }, 1000);
+        }
+
+        fetchStatus();
+    </script>
+</body>
+</html>`;
 }

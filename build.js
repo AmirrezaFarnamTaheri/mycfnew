@@ -48,8 +48,5 @@ async function buildWorker(outfile, options = {}) {
     console.log(`Built and obfuscated: ${outfile}`);
 }
 
-// Build both worker.js (main artifact) and worker_obfuscated.js (legacy name/backup)
-Promise.all([
-    buildWorker('worker.js'),
-    buildWorker('worker_obfuscated.js')
-]).catch(() => process.exit(1));
+// Build worker.js (main artifact)
+buildWorker('worker.js').catch(() => process.exit(1));

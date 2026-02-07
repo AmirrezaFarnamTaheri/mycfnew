@@ -8,7 +8,7 @@
 
 ## TL;DR（快速开始）
 
-1. 将 `worker.js`（或 `worker_obfuscated.js`）部署到新的 Cloudflare Worker。
+1. 将 `worker.js`部署到新的 Cloudflare Worker。
 2. 设置环境变量 `u` = 你的 UUID。
 3. 绑定 KV 命名空间为变量 `C`。
 4. 访问 `https://<你的worker>.workers.dev/<你的UUID>`。
