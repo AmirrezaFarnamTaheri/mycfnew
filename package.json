@@ -1,6 +1,7 @@
 {
   "scripts": {
-    "test": "node --check worker.js",
+    "test": "vitest run --coverage",
+    "build": "node build.js",
     "qa": "node --check worker.js",
     "dev": "wrangler dev worker.js --local",
     "deploy": "wrangler deploy worker.js"
@@ -9,6 +10,9 @@
     "terser": "^5.46.0"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "^4.0.18",
+    "esbuild": "^0.27.3",
+    "vitest": "^4.0.18",
     "wrangler": "^4.62.0"
   }
 }
