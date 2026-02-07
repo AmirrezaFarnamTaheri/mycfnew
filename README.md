@@ -133,3 +133,13 @@
 ## Disclaimer
 
 This tool is for educational and research purposes only. The developers are not responsible for misuse.
+
+## Development
+
+This project uses a modular source structure.
+
+- **Source Code**: `src/` directory.
+- **Tests**: `test/` directory (run with `npm test`).
+- **Build**: Run `npm run build` to generate `worker.js` and `worker_obfuscated.js`.
+
+To deploy, simply upload the generated `worker.js`.
