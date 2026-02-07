@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateLinksFromSource, generateVMessLinksFromSource, generateShadowsocksLinksFromSource } from '../src/protocols.js';
+import { generateLinksFromSource, generateVMessLinksFromSource, generateShadowsocksLinksFromSource, generateTrojanLinksFromSource } from '../src/protocols.js';
 
 describe('protocols.js', () => {
     const list = [{ ip: '1.1.1.1', port: 443, isp: 'Cloudflare', colo: 'LAX' }];
@@ -44,6 +44,37 @@ describe('protocols.js', () => {
             const links = generateShadowsocksLinksFromSource(list, user, workerDomain);
             expect(links.length).toBeGreaterThan(0);
             expect(links[0]).toContain('ss://');
+        });
+    });
+
+    describe('generateTrojanLinksFromSource', () => {
+        it('should generate valid Trojan links', async () => {
+            const links = await generateTrojanLinksFromSource(list, user, workerDomain);
+            expect(links.length).toBeGreaterThan(0);
+            const link = links[0];
+            expect(link).toContain('trojan://');
+            expect(link).toContain('@1.1.1.1:443');
+            expect(link).toContain('security=tls');
+            expect(link).toContain('type=ws');
+            expect(link).toContain('path=%2Ftr%3Fed%3D2048');
+            expect(link).toContain('#Cloudflare-LAX');
+
+            // Verify password hash length (SHA-224 is 56 hex chars)
+            const match = link.match(/trojan:\/\/([a-f0-9]+)@/);
+            expect(match).not.toBeNull();
+            expect(match[1].length).toBe(56);
+        });
+
+        it('should respect disableNonTLS for Trojan', async () => {
+             const httpList = [{ ip: '1.1.1.1', port: 80, isp: 'Cloudflare' }];
+             const links = await generateTrojanLinksFromSource(httpList, user, workerDomain, null, { disableNonTLS: true });
+             expect(links.length).toBe(0);
+        });
+
+        it('should add ECH config if provided', async () => {
+             const ech = 'test-ech-config';
+             const links = await generateTrojanLinksFromSource(list, user, workerDomain, ech);
+             expect(links[0]).toContain(`ech=${encodeURIComponent(ech)}`);
         });
     });
 });

@@ -1,4 +1,4 @@
-const DOH_PROVIDERS = [
+export const DOH_PROVIDERS = [
   { name: "Cloudflare", url: "https://cloudflare-dns.com/dns-query", weight: 20 },
   { name: "Google", url: "https://dns.google/dns-query", weight: 15 },
   { name: "Quad9", url: "https://dns.quad9.net/dns-query", weight: 15 },
@@ -8,6 +8,7 @@ const DOH_PROVIDERS = [
   { name: "Mullvad", url: "https://adblock.dns.mullvad.net/dns-query", weight: 10 },
   { name: "NextDNS", url: "https://dns.nextdns.io/dns-query", weight: 10 }
 ];
+
 const CACHE_TTL = 300;
 
 export async function handleDoHRequest(request, env, ctx) {
@@ -19,7 +20,6 @@ export async function handleDoHRequest(request, env, ctx) {
     if (!isGet && !isPost) return new Response('Method not allowed', { status: 405 });
     if (isGet && !url.searchParams.has('dns')) return new Response('Missing DNS query parameter', { status: 400 });
 
-    // Pre-read body to avoid stream consumption issues during retries
     let body = null;
     if (isPost) {
         try {
@@ -30,7 +30,6 @@ export async function handleDoHRequest(request, env, ctx) {
         }
     }
 
-    // Try to decode query for logging (best effort)
     let queryInfo = 'unknown';
     if (isGet) {
         queryInfo = url.searchParams.get('dns');
@@ -57,7 +56,7 @@ export async function handleDoHRequest(request, env, ctx) {
         const upstreamRequest = new Request(targetUrl, {
             method: request.method,
             headers: headers,
-            body: body, // Use pre-read body
+            body: body,
             redirect: 'follow'
         });
 
@@ -109,7 +108,8 @@ function handleCORS() {
     });
 }
 
-function selectProvider(providers) {
+export function selectProvider(providers) {
+    if (!providers || providers.length === 0) return null;
     const totalWeight = providers.reduce((sum, provider) => sum + provider.weight, 0);
     let random = Math.random() * totalWeight;
     for (const provider of providers) {
@@ -121,7 +121,6 @@ function selectProvider(providers) {
 
 async function tryFallbackProviders(request, url, failedProvider, body) {
     const fallbackProviders = DOH_PROVIDERS.filter(p => p.name !== failedProvider.name);
-    // Shuffle remaining providers to avoid thundering herd on second choice
     fallbackProviders.sort(() => Math.random() - 0.5);
 
     for (const provider of fallbackProviders.slice(0, 2)) {
@@ -141,7 +140,7 @@ async function tryFallbackProviders(request, url, failedProvider, body) {
             const upstreamRequest = new Request(targetUrl, {
                 method: request.method,
                 headers: headers,
-                body: body // Reuse body
+                body: body
             });
 
             const response = await fetch(upstreamRequest);

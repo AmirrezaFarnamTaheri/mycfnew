@@ -4,6 +4,14 @@ import { handleDoHRequest } from './dns.js';
 import { generateLinksFromSource, generateVMessLinksFromSource, generateShadowsocksLinksFromSource, generateTrojanLinksFromSource } from './protocols.js';
 import { isValidFormat, parseAddressAndPort, isValidIP, E_INVALID_ID_STR } from './utils.js';
 
+function checkAuth(request, uuid) {
+    const url = new URL(request.url);
+    if (url.searchParams.get('u') === uuid) return true;
+    const authHeader = request.headers.get('Authorization');
+    if (authHeader && authHeader.includes(uuid)) return true;
+    return false;
+}
+
 export async function handleRequest(request, env, ctx) {
     const startTime = Date.now();
     const url = new URL(request.url);
@@ -34,7 +42,14 @@ export async function handleRequest(request, env, ctx) {
             } else if (url.pathname === '/dns-encoding') {
                 response = serveDNSEncodingExplanation();
             } else if (url.pathname.includes('/api/config')) {
-                 response = await handleConfigAPI(request, env);
+                 if (!checkAuth(request, at)) {
+                     response = new Response(JSON.stringify({ error: 'Unauthorized' }), {
+                         status: 401,
+                         headers: { 'Content-Type': 'application/json' }
+                     });
+                 } else {
+                     response = await handleConfigAPI(request, env);
+                 }
             } else if (url.pathname === '/') {
                 // Language detection
                 const cookieHeader = request.headers.get('Cookie') || '';
@@ -118,7 +133,7 @@ async function handleConfigAPI(request, env) {
             });
         } catch (e) {
             console.error('Config API Error:', e);
-            return new Response(JSON.stringify({ success: false, message: e.message }), { status: 500 });
+            return new Response(JSON.stringify({ success: false, message: e.message || 'Invalid Request Body' }), { status: 500 });
         }
     }
     return new Response('Method Not Allowed', { status: 405 });
@@ -126,16 +141,10 @@ async function handleConfigAPI(request, env) {
 
 async function handleSubscription(request, env, uuid) {
     const url = new URL(request.url);
-    const userAgent = request.headers.get('User-Agent') || '';
     const workerDomain = url.hostname;
 
-    // For now, use dummy list if config doesn't have it, or implement fetch logic
-    // Assuming we fetch 'yx' (preferred IPs) or use worker itself.
-    // The previous implementation or documentation suggests fetching lists.
-    // For now, let's create a basic list with the worker itself.
-
     // Get stored preferred IPs or default
-    const preferredIPs = getConfigValue('yx') || ''; // Comma separated?
+    const preferredIPs = getConfigValue('yx') || ''; // Comma separated
 
     let list = [];
     if (preferredIPs) {
@@ -144,12 +153,8 @@ async function handleSubscription(request, env, uuid) {
          });
     }
 
-    // Fallback to worker domain if no list (though usually we need IPs)
+    // Fallback to worker domain if no list
     if (list.length === 0) {
-        // Just use a dummy IP or the worker domain if allowed by client (clients usually need IP)
-        // Let's assume we want to return at least something valid.
-        // We can't easily guess a valid IP for the worker without 'yx'.
-        // But for testing purposes, we can add a placeholder.
         list.push({ ip: '104.16.1.1', port: 443, isp: 'Cloudflare', colo: 'Auto' });
     }
 

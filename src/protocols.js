@@ -1,18 +1,10 @@
 import { getConfigValue } from './config.js';
+import { sha224Hash } from './utils.js';
 
 const CF_HTTP_PORTS = [80, 8080, 8880, 2052, 2082, 2086, 2095];
 const CF_HTTPS_PORTS = [443, 2053, 2083, 2087, 2096, 8443];
 
 // Helper to determine if Non-TLS is disabled
-function isNonTLSDisabled() {
-    // This logic relies on global or config state.
-    // In a pure function approach, we should pass this as an argument.
-    // For now, let's assume it's passed or available via config.
-    // Since we extracted config, we can check a config value if it was saved.
-    // However, the original code used a global 'disableNonTLS'.
-    // We will update functions to accept an 'options' object.
-    return false; // Default, should be overridden by options
-}
 
 export function generateLinksFromSource(list, user, workerDomain, echConfig = null, options = {}) {
     const { disableNonTLS = false, enableDiverseProxies = false } = options;
@@ -48,8 +40,6 @@ export function generateLinksFromSource(list, user, workerDomain, echConfig = nu
                         portsToGenerate.push({ port: port, tls: false });
                      }
                 } else {
-                     // Default behavior if port is custom/unknown but presumed TLS if not in HTTP list?
-                     // Original logic had fallback. Assuming TLS for custom ports usually.
                      portsToGenerate.push({ port: port, tls: true });
                 }
             } else {
@@ -139,7 +129,33 @@ export function generateShadowsocksLinksFromSource(list, user, workerDomain, opt
 }
 
 export async function generateTrojanLinksFromSource(list, user, workerDomain, echConfig = null, options = {}) {
-    // Trojan logic similar to VLESS
-    // ... Simplified for this step, but assuming similar structure to generateLinksFromSource
-    return []; // Placeholder to prevent errors if not fully implemented in this step
+    const { disableNonTLS = false } = options;
+    const links = [];
+    const passwordHash = await sha224Hash(user);
+    const wsPath = '/tr?ed=2048';
+
+    for (const item of list) {
+        let nodeName = item.isp.replace(/\s/g, '_');
+        if (item.colo && item.colo.trim()) nodeName += `-${item.colo.trim()}`;
+        const port = parseInt(item.port || 443);
+
+        // Trojan typically runs over TLS
+        const isTLS = port === 443 || CF_HTTPS_PORTS.includes(port);
+
+        if (!isTLS && disableNonTLS) continue;
+
+        const safeIP = item.ip.includes(':') ? `[${item.ip}]` : item.ip;
+
+        let link = `trojan://${passwordHash}@${safeIP}:${port}?security=tls&sni=${workerDomain}&type=ws&host=${workerDomain}&path=${encodeURIComponent(wsPath)}`;
+
+        if (echConfig) {
+             link += `&alpn=h3,h2,http/1.1&ech=${encodeURIComponent(echConfig)}&fp=chrome`;
+        } else {
+             link += `&alpn=h2,http/1.1&fp=chrome`;
+        }
+
+        link += `#${encodeURIComponent(nodeName)}`;
+        links.push(link);
+    }
+    return links;
 }
