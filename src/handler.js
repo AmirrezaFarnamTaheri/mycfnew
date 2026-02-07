@@ -5,48 +5,71 @@ import { generateLinksFromSource, generateVMessLinksFromSource, generateShadowso
 import { isValidFormat, parseAddressAndPort, isValidIP, E_INVALID_ID_STR } from './utils.js';
 
 export async function handleRequest(request, env, ctx) {
+    const startTime = Date.now();
+    const url = new URL(request.url);
+    const method = request.method;
+
+    // Log incoming request
+    console.log(JSON.stringify({
+        event: 'request_start',
+        method: method,
+        path: url.pathname,
+        ip: request.headers.get('cf-connecting-ip') || 'unknown',
+        region: request.cf?.colo || 'unknown'
+    }));
+
+    let response;
     try {
         await initKVStore(env);
 
         // Basic Config Loading
         const at = (env.u || env.U || '').toLowerCase();
-        if (!at) return new Response('UUID not set', { status: 500 });
+        if (!at) {
+             console.error('UUID not set in environment variables');
+             response = new Response('UUID not set', { status: 500 });
+        } else {
+            // Routing
+            if (url.pathname === '/dns-query') {
+                response = await handleDoHRequest(request, env, ctx);
+            } else if (url.pathname === '/dns-encoding') {
+                response = serveDNSEncodingExplanation();
+            } else if (url.pathname.includes('/api/config')) {
+                 response = await handleConfigAPI(request, env);
+            } else if (url.pathname === '/') {
+                // Language detection
+                const cookieHeader = request.headers.get('Cookie') || '';
+                let lang = 'en';
+                if (cookieHeader.includes('preferredLanguage=zh')) lang = 'zh';
+                else if (cookieHeader.includes('preferredLanguage=fa')) lang = 'fa';
 
-        const url = new URL(request.url);
+                const isFarsi = lang === 'fa';
+                const langAttr = isFarsi ? 'fa-IR' : (lang === 'zh' ? 'zh-CN' : 'en-US');
 
-        // Routing
-        if (url.pathname === '/dns-query') return await handleDoHRequest(request, env, ctx);
-        if (url.pathname === '/dns-encoding') return serveDNSEncodingExplanation();
-
-        if (url.pathname.includes('/api/config')) {
-             return await handleConfigAPI(request, env);
+                response = new Response(getTerminalHtml(lang, langAttr, isFarsi, null, getConfigValue('d')), {
+                    headers: { 'Content-Type': 'text/html; charset=utf-8' }
+                });
+            } else {
+                // Sub/Config Logic placeholders/handlers would be here
+                // For now, returning 404 as in previous logic
+                response = new Response(JSON.stringify({ error: 'Not Found' }), { status: 404 });
+            }
         }
-
-        // Main Page Logic
-        if (url.pathname === '/') {
-            // ... Logic for root path (Terminal)
-             // Language detection
-            const cookieHeader = request.headers.get('Cookie') || '';
-            let lang = 'en';
-            if (cookieHeader.includes('preferredLanguage=zh')) lang = 'zh';
-            else if (cookieHeader.includes('preferredLanguage=fa')) lang = 'fa';
-
-            const isFarsi = lang === 'fa';
-            const langAttr = isFarsi ? 'fa-IR' : (lang === 'zh' ? 'zh-CN' : 'en-US');
-
-            return new Response(getTerminalHtml(lang, langAttr, isFarsi, null, getConfigValue('d')), {
-                headers: { 'Content-Type': 'text/html; charset=utf-8' }
-            });
-        }
-
-        // Sub/Config Logic
-        // ... (Extraction of handleSubscriptionRequest and handleSubscriptionPage logic)
-
-        return new Response(JSON.stringify({ error: 'Not Found' }), { status: 404 });
 
     } catch (err) {
-        return new Response(err.toString(), { status: 500 });
+        console.error('Unhandled Exception:', err.stack || err);
+        response = new Response(err.toString(), { status: 500 });
+    } finally {
+        const duration = Date.now() - startTime;
+        console.log(JSON.stringify({
+            event: 'request_end',
+            method: method,
+            path: url.pathname,
+            status: response ? response.status : 500,
+            duration_ms: duration
+        }));
     }
+
+    return response;
 }
 
 async function handleConfigAPI(request, env) {
@@ -64,6 +87,7 @@ async function handleConfigAPI(request, env) {
                 headers: { 'Content-Type': 'application/json' }
             });
         } catch (e) {
+            console.error('Config API Error:', e);
             return new Response(JSON.stringify({ success: false, message: e.message }), { status: 500 });
         }
     }
