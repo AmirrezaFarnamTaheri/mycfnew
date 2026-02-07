@@ -41,13 +41,13 @@ describe('html.js', () => {
             const html = getSubscriptionPageHtml('en', 'en-US', false, null, {});
             expect(html).toContain('<!DOCTYPE html>');
             expect(html).toContain('<html lang="en-US" dir="ltr" class="dashboard">');
-            expect(html).toContain('<title>Configuration Dashboard</title>');
+            expect(html).toContain('<title>Config Dashboard</title>');
         });
 
         it('should include key dashboard sections', () => {
             const html = getSubscriptionPageHtml('en', 'en-US', false, null, {});
             expect(html).toContain('System Status');
-            expect(html).toContain('Configuration Management');
+            expect(html).toContain('Config Management');
             expect(html).toContain('Latency Test');
             expect(html).toContain('id="regionValue"');
             expect(html).toContain('id="ipValue"');
@@ -94,12 +94,12 @@ describe('html.js', () => {
 
         it('should default to English for dashboard if lang is missing', () => {
              const html = getSubscriptionPageHtml(null, 'en-US', false, null, {});
-             expect(html).toContain('Configuration Dashboard');
+             expect(html).toContain('Config Dashboard');
         });
 
         it('should default to English translations for dashboard if lang is unknown', () => {
              const html = getSubscriptionPageHtml('fr', 'fr-FR', false, null, {});
-             expect(html).toContain('Configuration Dashboard');
+             expect(html).toContain('Config Dashboard');
         });
     });
 });

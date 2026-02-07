@@ -1,39 +1,34 @@
-export function serveDNSEncodingExplanation() {
-    return new Response('DNS Encoding Explanation: GET requests must use base64url encoded DNS query in ?dns= param. POST requests send raw binary.', { status: 200 });
-}
-
 const translations = {
     en: {
         title: 'Terminal',
+        terminal: 'Terminal v2.9.3',
         congratulations: 'Congratulations, you made it!',
-        enterU: 'Please enter the value of your U variable',
-        enterD: 'Please enter the value of your D variable',
+        enterU: 'Please enter your U variable',
+        enterD: 'Please enter your D variable',
         command: 'Command: connect [',
         uuid: 'UUID',
         path: 'PATH',
-        inputU: 'Enter content of U variable and press Enter...',
-        inputD: 'Enter content of D variable and press Enter...',
+        inputU: 'Enter U variable content and hit Enter...',
+        inputD: 'Enter D variable content and hit Enter...',
         connecting: 'Connecting...',
         invading: 'Invading...',
-        success: 'Connection successful! Returning result...',
+        success: 'Connection established! Returning result...',
         error: 'Error: Invalid UUID format',
         reenter: 'Please re-enter a valid UUID',
         debugConsoleTitle: 'Debug Console',
         debugShow: 'Show',
         debugHide: 'Hide',
-        debugReady: 'Console ready',
-        debugUnknownError: 'Unknown error',
-        debugUnhandledPromise: 'Unhandled promise rejection',
-        terminal: 'Terminal v2.9.3',
+        debugReady: 'Console Ready',
+        debugUnknownError: 'Unknown Error',
         // Dashboard
-        dashTitle: 'Configuration Dashboard',
+        dashTitle: 'Config Dashboard',
         sysStatus: 'System Status',
-        configMgmt: 'Configuration Management',
+        configMgmt: 'Config Management',
         latencyTest: 'Latency Test',
         protocolSel: 'Protocol Selection',
-        saveConfig: 'Save Configuration',
-        loadConfig: 'Load Configuration',
-        resetConfig: 'Reset Configuration',
+        saveConfig: 'Save Config',
+        loadConfig: 'Load Config',
+        resetConfig: 'Reset Config',
         testLatency: 'Test Latency',
         region: 'Region',
         ip: 'IP',
@@ -227,6 +222,7 @@ export function getSubscriptionPageHtml(lang, langAttr, isFarsi, cp, savedConfig
 
         <div class="card">
             <h2>${tr.configMgmt}</h2>
+            <textarea id="configInput" placeholder="JSON Config"></textarea>
             <div class="btn-group">
                 <button onclick="saveConfig()">${tr.saveConfig}</button>
                 <button onclick="loadConfig()">${tr.loadConfig}</button>
@@ -241,7 +237,7 @@ export function getSubscriptionPageHtml(lang, langAttr, isFarsi, cp, savedConfig
     </div>
 
     <script>
-        const uuid = window.location.pathname.split('/')[1]; // Assume /UUID path
+        const uuid = window.location.pathname.split('/')[1];
 
         async function fetchStatus() {
             try {
@@ -255,11 +251,51 @@ export function getSubscriptionPageHtml(lang, langAttr, isFarsi, cp, savedConfig
         }
 
         async function saveConfig() {
-            alert('Save Config Placeholder');
+            const configText = document.getElementById('configInput').value;
+            let configJson;
+            try {
+                configJson = JSON.parse(configText);
+            } catch(e) {
+                alert('Invalid JSON');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/config?u=' + uuid, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(configJson)
+                });
+                if (res.status === 401) {
+                     alert('Unauthorized');
+                     return;
+                }
+                const data = await res.json();
+                if (data.success) {
+                    alert('${tr.saved}');
+                } else {
+                    alert('${tr.failed}: ' + data.message);
+                }
+            } catch (e) {
+                console.error(e);
+                alert('${tr.failed}');
+            }
         }
 
         async function loadConfig() {
-            alert('Load Config Placeholder');
+            try {
+                const res = await fetch('/api/config?u=' + uuid);
+                if (res.status === 401) {
+                     alert('Unauthorized');
+                     return;
+                }
+                const data = await res.json();
+                delete data.kvEnabled;
+                document.getElementById('configInput').value = JSON.stringify(data, null, 2);
+            } catch (e) {
+                console.error(e);
+                alert('${tr.failed}');
+            }
         }
 
         function runLatencyTest() {
@@ -273,4 +309,17 @@ export function getSubscriptionPageHtml(lang, langAttr, isFarsi, cp, savedConfig
     </script>
 </body>
 </html>`;
+}
+
+export function serveDNSEncodingExplanation() {
+    return new Response(
+        `<html>
+        <head><title>DNS Encoding Explanation</title></head>
+        <body>
+            <h1>DNS Encoding Explanation</h1>
+            <p>This page explains how DNS queries are encoded.</p>
+        </body>
+        </html>`,
+        { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+    );
 }

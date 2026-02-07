@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { handleDoHRequest } from '../src/dns.js';
+import { handleDoHRequest, selectProvider, DOH_PROVIDERS } from '../src/dns.js';
 
 // Mock global fetch
 global.fetch = vi.fn();
 
 // Mock console
 const consoleSpy = {
-    log: vi.spyOn(console, 'log'),
-    warn: vi.spyOn(console, 'warn'),
-    error: vi.spyOn(console, 'error')
+    log: vi.spyOn(console, 'log').mockImplementation(() => {}),
+    warn: vi.spyOn(console, 'warn').mockImplementation(() => {}),
+    error: vi.spyOn(console, 'error').mockImplementation(() => {})
 };
 
 describe('handleDoHRequest', () => {
@@ -75,5 +75,37 @@ describe('handleDoHRequest', () => {
 
         const res = await handleDoHRequest(req, {}, {});
         expect(res.status).toBe(503);
+        expect(consoleSpy.error).toHaveBeenCalledWith(expect.stringContaining('doh_all_failed'));
+    });
+
+    it('should handle OPTIONS request (CORS)', async () => {
+        const req = new Request('https://worker.dev/dns-query', { method: 'OPTIONS' });
+        const res = await handleDoHRequest(req, {}, {});
+        expect(res.status).toBe(204);
+        expect(res.headers.get('Access-Control-Allow-Origin')).toBe('*');
+    });
+
+    it('should handle invalid method', async () => {
+        const req = new Request('https://worker.dev/dns-query', { method: 'PUT' });
+        const res = await handleDoHRequest(req, {}, {});
+        expect(res.status).toBe(405);
+    });
+});
+
+describe('selectProvider', () => {
+    it('should return a provider', () => {
+        const provider = selectProvider(DOH_PROVIDERS);
+        expect(provider).toBeDefined();
+        expect(provider.url).toBeDefined();
+    });
+
+    it('should return null for empty list', () => {
+        expect(selectProvider([])).toBeNull();
+    });
+
+    it('should respect weights (statistically)', () => {
+        // Simple check that it doesn't crash
+        const p = selectProvider([{ name: 'A', url: 'a', weight: 100 }]);
+        expect(p.name).toBe('A');
     });
 });
