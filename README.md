@@ -8,7 +8,7 @@
 
 ## TL;DR (Quick Start)
 
-1. Deploy `worker.js` (or `worker_obfuscated.js`) to a new Cloudflare Worker.
+1. Deploy `worker.js`  to a new Cloudflare Worker.
 2. Set environment variable `u` = your UUID.
 3. Bind KV namespace as variable `C`.
 4. Open `https://<your-worker>.workers.dev/<YOUR_UUID>`.
@@ -140,6 +140,6 @@ This project uses a modular source structure.
 
 - **Source Code**: `src/` directory.
 - **Tests**: `test/` directory (run with `npm test`).
-- **Build**: Run `npm run build` to generate `worker.js` and `worker_obfuscated.js`.
+- **Build**: Run `npm run build` to generate `worker.js`.
 
 To deploy, simply upload the generated `worker.js`.

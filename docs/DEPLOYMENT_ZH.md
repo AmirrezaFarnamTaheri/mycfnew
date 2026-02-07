@@ -13,7 +13,7 @@
 
 ### 1.2 粘贴代码
 1. 点击 **Edit Code**
-2. 用 `worker.js`（或 `worker_obfuscated.js`）替换默认内容
+2. 用 `worker.js`替换默认内容
 3. **Save and Deploy**
 
 ---

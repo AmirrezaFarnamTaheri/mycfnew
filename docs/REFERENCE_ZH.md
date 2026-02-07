@@ -7,7 +7,7 @@
 ## 1) 应该部署哪个文件？
 
 - `worker.js`（推荐）：主 Worker 代码（可读）
-- `worker_obfuscated.js`：混淆版（难读，但行为一致）
+
 
 ---
 

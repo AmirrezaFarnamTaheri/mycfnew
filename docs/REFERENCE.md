@@ -7,7 +7,7 @@ This document is the full, end‑to‑end reference for everything in this repo:
 ## 1) Which file should I deploy?
 
 - `worker.js` (recommended): main Worker code (readable)
-- `worker_obfuscated.js`: obfuscated build (harder to read, same behavior)
+
 
 ---
 

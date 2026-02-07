@@ -13,7 +13,7 @@
 
 ### 1.2 جایگزینی کد
 1. **Edit Code** را باز کنید
-2. کد پیش‌فرض را با `worker.js` (یا `worker_obfuscated.js`) جایگزین کنید
+2. کد پیش‌فرض را با `worker.js`  جایگزین کنید
 3. **Save and Deploy**
 
 ---

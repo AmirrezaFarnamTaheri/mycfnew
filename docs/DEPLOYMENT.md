@@ -13,7 +13,7 @@ This document explains deployment options, environment variables, KV binding, an
 
 ### 1.2 Paste Code
 1. Click **Edit Code**
-2. Replace default content with `worker.js` (or `worker_obfuscated.js`)
+2. Replace default content with `worker.js`
 3. **Save and Deploy**
 
 ---
